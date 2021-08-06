@@ -1,0 +1,41 @@
+{
+  "name": "@buffchain/tokenx",
+  "version": "1.0.0",
+  "description": "BuffChain Smart Contract",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/BuffChain/tokenx.git"
+  },
+  "keywords": [
+    "buff",
+    "buffchain",
+    "ethereum",
+    "solidity",
+    "blockchain"
+  ],
+  "author": "BuffChain",
+  "contributors": [
+    "Jonathan Beckman <jonathantbeckman@gmail.com>",
+    "Ian Ballard <iballard95@gmail.com>"
+  ],
+  "license": "AGPLv3",
+  "bugs": {
+    "url": "https://github.com/BuffChain/tokenx/issues"
+  },
+  "homepage": "https://github.com/BuffChain/tokenx#readme",
+  "dependencies": {
+    "@aave/protocol-v2": "^1.0.1",
+    "@openzeppelin/contracts": "^4.2.0"
+  },
+  "devDependencies": {
+    "@nomiclabs/hardhat-ethers": "^2.0.2",
+    "@nomiclabs/hardhat-waffle": "^2.0.1",
+    "chai": "^4.3.4",
+    "ethereum-waffle": "^3.4.0",
+    "ethers": "^5.4.4",
+    "hardhat": "^2.5.0"
+  }
+}

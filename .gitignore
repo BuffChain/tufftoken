@@ -1,0 +1,15 @@
+# Hardhat files
+cache
+artifacts
+
+# Intellij
+.idea/
+*.iml
+
+# VS Code
+.vscode/
+
+# NPM
+node_modules/
+
+.secret
