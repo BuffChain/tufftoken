@@ -26,16 +26,14 @@ describe("buffToken", function () {
   beforeEach(async function () {
     [owner, ...accounts] = await ethers.getSigners();
 
-    buffToken = await buffTokenFactory.deploy();
-    await buffToken.deployed();
-
     transactionFeeManager = await transactionFeeManagerFactory.deploy();
     await transactionFeeManager.deployed();
-    await buffToken.setTransactionManagerAddr(transactionFeeManager.address);
 
     farmTreasury = await farmTreasuryFactory.deploy();
     await farmTreasury.deployed();
-    await buffToken.setFarmTreasuryAddr(farmTreasury.address);
+
+    buffToken = await buffTokenFactory.deploy(transactionFeeManager.address, farmTreasury.address);
+    await buffToken.deployed();
   });
 
   it("should get TransactionFeeManager address", async () => {
@@ -48,13 +46,10 @@ describe("buffToken", function () {
     expect(address).to.equal(farmTreasury.address, "get FarmTreasury address should be equal to FarmTreasury address");
   });
 
-  // it('should calculate farm fee amount with take fee true', async () => {
-  //   const feeAmount = await buffToken.calculateFarmFee(100, false);
-  //   console.log("++++")
-  //   console.log(feeAmount)
-  //   console.log("++++")
-  //   expect(feeAmount.toString()).to.equal('5', "incorrect farm fee amount");
-  // });
+  it('should calculate farm fee amount with take fee true', async () => {
+    const feeAmount = await buffToken.calculateFarmFee(100, true);
+    expect(feeAmount.toString()).to.equal('5', "incorrect farm fee amount");
+  });
 
   // it('should calculate farm fee amount with take fee false', async () => {
   //   const feeAmount = await buffToken.calculateFarmFee.call(100, false);

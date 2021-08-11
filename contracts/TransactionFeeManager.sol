@@ -23,5 +23,4 @@ contract TransactionFeeManager is Ownable {
     function getFarmFee() public view returns (uint256) {
         return farmFee;
     }
-
 }

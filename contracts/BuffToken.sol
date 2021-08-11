@@ -7,6 +7,8 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+import { TransactionFeeManager } from  "./TransactionFeeManager.sol";
+import { FarmTreasury } from  "./FarmTreasury.sol";
 
 contract BuffToken is Context, IERC20, Ownable {
     using SafeMath for uint256;
@@ -37,10 +39,13 @@ contract BuffToken is Context, IERC20, Ownable {
     string private _symbol = "BUFF";
     uint8 private _decimals = 9;
 
-    address transactionManagerAddr;
-    address farmTreasuryAddr;
+    TransactionFeeManager transactionFeeManager;
+    FarmTreasury farmTreasury;
 
-    constructor () public {
+    constructor(address _transactionFeeManagerAddr, address _farmTreasuryAddr) {
+        transactionFeeManager = TransactionFeeManager(_transactionFeeManagerAddr);
+        farmTreasury = FarmTreasury(_farmTreasuryAddr);
+
         _rOwned[_msgSender()] = _rTotal;
 
         //exclude owner and this contract from fee
@@ -50,20 +55,20 @@ contract BuffToken is Context, IERC20, Ownable {
         emit Transfer(address(0), _msgSender(), _tTotal);
     }
 
-    function setTransactionManagerAddr(address _transactionManagerAddr) public onlyOwner {
-        transactionManagerAddr = _transactionManagerAddr;
+    function setTransactionManager(address _transactionFeeManagerAddr) public onlyOwner {
+        transactionFeeManager = TransactionFeeManager(_transactionFeeManagerAddr);
     }
 
-    function setFarmTreasuryAddr(address _farmTreasuryAddr) public onlyOwner {
-        farmTreasuryAddr = _farmTreasuryAddr;
+    function setFarmTreasury(address _farmTreasuryAddr) public onlyOwner {
+        farmTreasury = FarmTreasury(_farmTreasuryAddr);
     }
 
     function getTransactionManagerAddr() public view onlyOwner returns (address) {
-        return transactionManagerAddr;
+        return address(transactionFeeManager);
     }
 
     function getFarmTreasuryAddr() public view onlyOwner returns (address) {
-        return farmTreasuryAddr;
+        return address(farmTreasury);
     }
 
     function name() public view returns (string memory) {
@@ -134,7 +139,7 @@ contract BuffToken is Context, IERC20, Ownable {
         _tFeeTotal = _tFeeTotal.add(tAmount);
     }
 
-    function reflectionFromToken(uint256 tAmount, bool deductTransferFee) public returns(uint256) {
+    function reflectionFromToken(uint256 tAmount, bool deductTransferFee) public view returns (uint256) {
         require(tAmount <= _tTotal, "Amount must be less than supply");
         if (!deductTransferFee) {
             (uint256 rAmount,,,,,) = _getValues(tAmount, true);
@@ -145,7 +150,7 @@ contract BuffToken is Context, IERC20, Ownable {
         }
     }
 
-    function tokenFromReflection(uint256 rAmount) public view returns(uint256) {
+    function tokenFromReflection(uint256 rAmount) public view returns (uint256) {
         require(rAmount <= _rTotal, "Amount must be less than total reflections");
         uint256 currentRate =  _getRate();
         return rAmount.div(currentRate);
@@ -191,13 +196,13 @@ contract BuffToken is Context, IERC20, Ownable {
         _tFeeTotal = _tFeeTotal.add(tReflectionFeeAmount);
     }
 
-    function _getValues(uint256 tAmount, bool takeFee) private returns (uint256, uint256, uint256, uint256, uint256, uint256) {
+    function _getValues(uint256 tAmount, bool takeFee) private view returns (uint256, uint256, uint256, uint256, uint256, uint256) {
         (uint256 tTransferAmount, uint256 tReflectionFeeAmount, uint256 tFarmFeeAmount) = _getTValues(tAmount, takeFee);
         (uint256 rAmount, uint256 rTransferAmount, uint256 rReflectionFeeAmount) = _getRValues(tAmount, tReflectionFeeAmount, tFarmFeeAmount, _getRate());
         return (rAmount, rTransferAmount, rReflectionFeeAmount, tTransferAmount, tReflectionFeeAmount, tFarmFeeAmount);
     }
 
-    function _getTValues(uint256 tAmount, bool takeFee) private returns (uint256, uint256, uint256) {
+    function _getTValues(uint256 tAmount, bool takeFee) private view returns (uint256, uint256, uint256) {
         uint256 tReflectionFeeAmount = calculateReflectionFee(tAmount, takeFee);
         uint256 tFarmFeeAmount = calculateFarmFee(tAmount, takeFee);
         uint256 tTransferAmount = tAmount.sub(tReflectionFeeAmount).sub(tFarmFeeAmount);
@@ -231,46 +236,31 @@ contract BuffToken is Context, IERC20, Ownable {
 
     // send farm fee amount to farm treasury
     function _takeFarmFee(uint256 tFarmFeeAmount) private {
+        address _farmTreasuryAddr = getFarmTreasuryAddr();
         uint256 currentRate =  _getRate();
         uint256 rFarmFeeAmount = tFarmFeeAmount.mul(currentRate);
-        _rOwned[farmTreasuryAddr] = _rOwned[farmTreasuryAddr].add(rFarmFeeAmount);
-        if(_isExcluded[farmTreasuryAddr])
-            _tOwned[farmTreasuryAddr] = _tOwned[farmTreasuryAddr].add(tFarmFeeAmount);
+
+        _rOwned[_farmTreasuryAddr] = _rOwned[_farmTreasuryAddr].add(rFarmFeeAmount);
+        if (_isExcluded[_farmTreasuryAddr])
+            _tOwned[_farmTreasuryAddr] = _tOwned[_farmTreasuryAddr].add(tFarmFeeAmount);
     }
 
-    function calculateReflectionFee(uint256 _amount, bool takeFee) public returns (uint256) {
-
+    function calculateReflectionFee(uint256 _amount, bool takeFee) public view returns (uint256) {
         if (!takeFee) {
             return 0;
         }
 
-        bytes memory payload = abi.encodeWithSignature("getReflectionFee()");
-        (bool success, bytes memory returnData) = address(transactionManagerAddr).call(payload);
-        require(success);
-
-        uint256 _fee = abi.decode(returnData, (uint256));
-
-        return _amount.mul(_fee).div(
-            10**2
-        );
-
+        uint256 _fee = transactionFeeManager.getReflectionFee();
+        return _amount.mul(_fee).div(10**2);
     }
 
-    function calculateFarmFee(uint256 _amount, bool takeFee) public returns (uint256) {
-
+    function calculateFarmFee(uint256 _amount, bool takeFee) public view returns (uint256) {
         if (!takeFee) {
             return 0;
         }
 
-        bytes memory payload = abi.encodeWithSignature("getFarmFee()");
-        (bool success, bytes memory returnData) = address(transactionManagerAddr).call(payload);
-        require(success);
-
-        uint256 _fee = abi.decode(returnData, (uint256));
-
-        return _amount.mul(_fee).div(
-            10**2
-        );
+        uint256 _fee = transactionFeeManager.getFarmFee();
+        return _amount.mul(_fee).div(10**2);
     }
 
     function isExcludedFromFee(address account) public view returns(bool) {
