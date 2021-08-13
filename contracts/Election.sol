@@ -2,61 +2,86 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+
+import { BuffToken } from  "./BuffToken.sol";
 
 contract Election is Ownable {
 
+    using SafeMath for uint256;
+
     struct Voter {
         bool voted;
-        uint256 voteIndex;
-    }
-
-    struct Candidate {
-        uint256 newValue;
-        uint256 voteCount;
+        bool approve;
     }
 
     string public name;
-    address public targetAddress;
-    string public targetFunction;
+    string public description;
+    string public author;
     uint256 public electionEnd;
     mapping (address => Voter) public voters;
-    Candidate[] public candidates;
+    mapping (bool => uint256) public candidates;
     bool public ended = false;
+    BuffToken token;
 
-    constructor (string memory _name, uint256[] memory _proposedNewValues, address _targetAddress, string memory _targetFunction) public {
+    constructor (
+        string memory _name,
+        string memory _description,
+        string memory _author,
+        uint256 _electionEnd,
+        address _tokenAddr
+    ) {
         name = _name;
-        targetFunction = _targetFunction;
-        targetAddress = _targetAddress;
-        electionEnd = block.timestamp + 60 seconds;
-        for (uint256 proposalIndex = 0; proposalIndex < _proposedNewValues.length; proposalIndex++) {
-            candidates.push(Candidate(_proposedNewValues[proposalIndex], 0));
-        }
-
+        electionEnd = _electionEnd;
+        description = _description;
+        author = _author;
+        token = BuffToken(_tokenAddr);
     }
 
-    function vote(uint256 voteIndex) public {
-        require(block.timestamp < electionEnd);
-        require(!voters[msg.sender].voted);
+
+    function vote(bool approve) public virtual returns (bool) {
+        require(block.timestamp < electionEnd, "Cannot vote after election has ended.");
+        require(!voters[msg.sender].voted, "Cannot vote twice.");
+        require(isHolder(msg.sender), "Must be a holder to vote.");
 
         voters[msg.sender].voted = true;
-        voters[msg.sender].voteIndex = voteIndex;
-        candidates[voteIndex].voteCount += 1;
+        voters[msg.sender].approve = approve;
+
+        candidates[approve] = candidates[approve].add(1);
+        return true;
     }
 
-    function getWinningValue() public view returns (uint256) {
-        uint256 maxVotes;
-        uint256 _winnerIndex;
-        for (uint256 candidateIndex = 0; candidateIndex < candidates.length; candidateIndex++) {
-            if (candidates[candidateIndex].voteCount > maxVotes) {
-                maxVotes = candidates[candidateIndex].voteCount;
-                _winnerIndex = candidateIndex;
-            }
+    function isHolder(address sender) public returns (bool) {
+        return token.balanceOf(sender) > 0;
+    }
+
+    function getVoteCounts() public view virtual returns (uint256, uint256) {
+        return (candidates[true], candidates[false]);
+    }
+
+    function getRemainingTime() public view virtual returns (uint256) {
+        return electionEnd.sub(block.timestamp);
+    }
+
+    // proposals will only fail with 2/3 veto
+    function isProposalSuccess() public view virtual returns (bool, uint256, uint256) {
+
+        uint256 vetoCount = candidates[false];
+
+        if (vetoCount == 0) {
+            return (true, candidates[true], candidates[false]);
         }
-        return candidates[_winnerIndex].newValue;
+
+        return (candidates[true].div(candidates[false]).mul(100) > 33, candidates[true], candidates[false]);
     }
 
-    function end() public onlyOwner {
+    function end() public virtual onlyOwner returns (bool, uint256, uint256) {
+        require(block.timestamp > electionEnd, "Cannot end before allotted time.");
+        require(!ended, "Election has already been ended.");
+
         ended = true;
+
+        return isProposalSuccess();
     }
 
 }

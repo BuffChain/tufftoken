@@ -6,31 +6,28 @@ import "./Election.sol";
 
 contract Governance is Ownable {
 
-    Election[] public elections;
+    mapping(address => Election) public elections;
+    address tokenAddr;
 
-    function createElection(string memory _name, uint256[] memory _proposedNewValues, address _targetAddress, string memory _targetFunction) public onlyOwner returns(address) {
-        Election election = new Election(_name, _proposedNewValues, _targetAddress, _targetFunction);
-        elections.push(election);
+    function setTokenAddr(address _tokenAddr) onlyOwner {
+        tokenAddr = _tokenAddr;
+    }
+
+    function createElection(
+        string memory _name,
+        string memory _description,
+        string memory _author,
+        uint256 _electionEnd
+    )
+    public onlyOwner returns(address) {
+        Election election = new Election(_name, _description, _author, _electionEnd, tokenAddr);
+        elections[address(election)] = election;
         return address(election);
     }
 
-    function endElection(uint256 electionIndex) public onlyOwner {
-        Election election = elections[electionIndex];
-
-        require(block.timestamp > election.electionEnd());
-        require(!election.ended());
-
-        election.end();
-
-        uint256 winningValue = election.getWinningValue();
-
-        string memory targetFunction = election.targetFunction();
-        address targetAddress = election.targetAddress();
-
-        bytes memory payload = abi.encodeWithSignature(targetFunction, winningValue);
-        (bool success, bytes memory returnData) = address(targetAddress).call(payload);
-        require(success);
-
+    function endElection(address electionAddress) public onlyOwner returns (bool, uint256, uint256) {
+        return elections[electionAddress].end();
     }
 
 }
+
