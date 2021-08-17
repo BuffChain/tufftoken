@@ -236,7 +236,7 @@ contract BuffToken is Context, IERC20, Ownable {
 
     // send farm fee amount to farm treasury
     function _takeFarmFee(uint256 tFarmFeeAmount) private {
-        address _farmTreasuryAddr = getFarmTreasuryAddr();
+        address _farmTreasuryAddr = address(farmTreasury);
         uint256 currentRate =  _getRate();
         uint256 rFarmFeeAmount = tFarmFeeAmount.mul(currentRate);
 
@@ -293,7 +293,7 @@ contract BuffToken is Context, IERC20, Ownable {
         }
 
         //transfer amount, it will take tax, burn, liquidity fee
-        _tokenTransfer(from,to,amount,takeFee);
+        _tokenTransfer(from, to, amount, takeFee);
     }
 
 
@@ -316,6 +316,8 @@ contract BuffToken is Context, IERC20, Ownable {
 
     function _transferStandard(address sender, address recipient, uint256 tAmount, bool takeFee) private {
         (uint256 rAmount, uint256 rTransferAmount, uint256 rReflectionFeeAmount, uint256 tTransferAmount, uint256 tReflectionFeeAmount, uint256 tFarmFeeAmount) = _getValues(tAmount, takeFee);
+
+        //TODO: Make sure sender has enough to send
         _rOwned[sender] = _rOwned[sender].sub(rAmount);
         _rOwned[recipient] = _rOwned[recipient].add(rTransferAmount);
         _takeFarmFee(tFarmFeeAmount);
