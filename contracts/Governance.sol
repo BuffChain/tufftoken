@@ -7,9 +7,9 @@ import "./Election.sol";
 contract Governance is Ownable {
 
     mapping(address => Election) public elections;
-    address tokenAddr;
+    address payable tokenAddr;
 
-    function setTokenAddr(address _tokenAddr) onlyOwner {
+    constructor(address payable _tokenAddr) {
         tokenAddr = _tokenAddr;
     }
 

@@ -29,7 +29,7 @@ contract Election is Ownable {
         string memory _description,
         string memory _author,
         uint256 _electionEnd,
-        address _tokenAddr
+        address payable _tokenAddr
     ) {
         name = _name;
         electionEnd = _electionEnd;
@@ -51,7 +51,7 @@ contract Election is Ownable {
         return true;
     }
 
-    function isHolder(address sender) public returns (bool) {
+    function isHolder(address sender) public view returns (bool) {
         return token.balanceOf(sender) > 0;
     }
 
