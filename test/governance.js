@@ -16,8 +16,8 @@ describe("Governance", function () {
     let farmTreasuryFactory;
     let farmTreasury;
 
-    let buffTokenFactory;
-    let buffToken;
+    let tuffTokenFactory;
+    let tuffToken;
 
     let governanceFactory;
     let governance;
@@ -27,7 +27,7 @@ describe("Governance", function () {
     let electionPastEnd;
 
     before(async function () {
-        buffTokenFactory = await ethers.getContractFactory("BuffToken");
+        tuffTokenFactory = await ethers.getContractFactory("TuffToken");
         governanceFactory = await ethers.getContractFactory("Governance");
         farmTreasuryFactory = await ethers.getContractFactory("FarmTreasury");
         electionFactory = await ethers.getContractFactory("Election");
@@ -39,18 +39,18 @@ describe("Governance", function () {
         farmTreasury = await farmTreasuryFactory.deploy();
         await farmTreasury.deployed();
 
-        buffToken = await buffTokenFactory.deploy(farmTreasury.address);
-        await buffToken.deployed();
+        tuffToken = await tuffTokenFactory.deploy(farmTreasury.address);
+        await tuffToken.deployed();
 
-        governance = await governanceFactory.deploy(buffToken.address);
+        governance = await governanceFactory.deploy(tuffToken.address);
         await governance.deployed();
 
         const currentTimestamp = Date.now();
         const electionEnd = currentTimestamp + 60000;
-        election = await electionFactory.deploy("Test Election", "This is a test.", "Ian Ballard", electionEnd, buffToken.address);
+        election = await electionFactory.deploy("Test Election", "This is a test.", "Ian Ballard", electionEnd, tuffToken.address);
         await election.deployed();
 
-        electionPastEnd = await electionFactory.deploy("Test Election 2", "This is a test.", "Ian Ballard", 1, buffToken.address);
+        electionPastEnd = await electionFactory.deploy("Test Election 2", "This is a test.", "Ian Ballard", 1, tuffToken.address);
         await electionPastEnd.deployed();
 
     });

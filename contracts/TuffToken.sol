@@ -9,7 +9,7 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 import { FarmTreasury } from  "./FarmTreasury.sol";
 
-contract BuffToken is Context, IERC20, Ownable {
+contract TuffToken is Context, IERC20, Ownable {
     using SafeMath for uint256;
     using Address for address;
 
@@ -34,7 +34,7 @@ contract BuffToken is Context, IERC20, Ownable {
     uint256 private _rTotal = (MAX - (MAX % _tTotal));
     uint256 private _tFeeTotal;
 
-    string private _name = "BuffToken";
+    string private _name = "TuffToken";
     string private _symbol = "BUFF";
     uint8 private _decimals = 9;
 
