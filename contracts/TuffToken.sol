@@ -35,7 +35,7 @@ contract TuffToken is Context, IERC20, Ownable {
     uint256 private _tFeeTotal;
 
     string private _name = "TuffToken";
-    string private _symbol = "BUFF";
+    string private _symbol = "TUFF";
     uint8 private _decimals = 9;
 
     uint256 public reflectionFee = 5;

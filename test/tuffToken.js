@@ -76,7 +76,7 @@ describe("TuffToken", function () {
 
   it('should get symbol', async () => {
     const symbol = await tuffToken.symbol();
-    expect(symbol).to.equal("BUFF", "incorrect symbol");
+    expect(symbol).to.equal("TUFF", "incorrect symbol");
   });
 
   it('should get decimals', async () => {
