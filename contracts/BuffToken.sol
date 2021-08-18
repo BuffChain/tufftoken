@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-import { TransactionFeeManager } from  "./TransactionFeeManager.sol";
 import { FarmTreasury } from  "./FarmTreasury.sol";
 
 contract BuffToken is Context, IERC20, Ownable {
@@ -39,11 +38,12 @@ contract BuffToken is Context, IERC20, Ownable {
     string private _symbol = "BUFF";
     uint8 private _decimals = 9;
 
-    TransactionFeeManager transactionFeeManager;
+    uint256 public reflectionFee = 5;
+    uint256 public farmFee = 5;
+
     FarmTreasury farmTreasury;
 
-    constructor(address _transactionFeeManagerAddr, address _farmTreasuryAddr) {
-        transactionFeeManager = TransactionFeeManager(_transactionFeeManagerAddr);
+    constructor(address _farmTreasuryAddr) {
         farmTreasury = FarmTreasury(_farmTreasuryAddr);
 
         _rOwned[_msgSender()] = _rTotal;
@@ -55,20 +55,28 @@ contract BuffToken is Context, IERC20, Ownable {
         emit Transfer(address(0), _msgSender(), _tTotal);
     }
 
-    function setTransactionManager(address _transactionFeeManagerAddr) public onlyOwner {
-        transactionFeeManager = TransactionFeeManager(_transactionFeeManagerAddr);
-    }
-
     function setFarmTreasury(address _farmTreasuryAddr) public onlyOwner {
         farmTreasury = FarmTreasury(_farmTreasuryAddr);
     }
 
-    function getTransactionManagerAddr() public view onlyOwner returns (address) {
-        return address(transactionFeeManager);
-    }
-
     function getFarmTreasuryAddr() public view onlyOwner returns (address) {
         return address(farmTreasury);
+    }
+
+    function setReflectionFee(uint256 _reflectionFee) public onlyOwner {
+        reflectionFee = _reflectionFee;
+    }
+
+    function setFarmFee(uint256 _farmFee) public onlyOwner {
+        farmFee = _farmFee;
+    }
+
+    function getReflectionFee() public view returns (uint256) {
+        return reflectionFee;
+    }
+
+    function getFarmFee() public view returns (uint256) {
+        return farmFee;
     }
 
     function name() public view returns (string memory) {
@@ -250,8 +258,7 @@ contract BuffToken is Context, IERC20, Ownable {
             return 0;
         }
 
-        uint256 _fee = transactionFeeManager.getReflectionFee();
-        return _amount.mul(_fee).div(10**2);
+        return _amount.mul(reflectionFee).div(10**2);
     }
 
     function calculateFarmFee(uint256 _amount, bool takeFee) public view returns (uint256) {
@@ -259,8 +266,7 @@ contract BuffToken is Context, IERC20, Ownable {
             return 0;
         }
 
-        uint256 _fee = transactionFeeManager.getFarmFee();
-        return _amount.mul(_fee).div(10**2);
+        return _amount.mul(farmFee).div(10**2);
     }
 
     function isExcludedFromFee(address account) public view returns(bool) {
