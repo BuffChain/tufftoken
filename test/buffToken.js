@@ -16,34 +16,22 @@ describe("BuffToken", function () {
   let buffTokenFactory;
   let buffToken;
 
-  let transactionFeeManagerFactory;
-  let transactionFeeManager;
-
   let farmTreasuryFactory;
   let farmTreasury;
 
   before(async function () {
     buffTokenFactory = await ethers.getContractFactory("BuffToken");
-    transactionFeeManagerFactory = await ethers.getContractFactory("TransactionFeeManager");
     farmTreasuryFactory = await ethers.getContractFactory("FarmTreasury");
   });
 
   beforeEach(async function () {
     [owner, ...accounts] = await ethers.getSigners();
 
-    transactionFeeManager = await transactionFeeManagerFactory.deploy();
-    await transactionFeeManager.deployed();
-
     farmTreasury = await farmTreasuryFactory.deploy();
     await farmTreasury.deployed();
 
-    buffToken = await buffTokenFactory.deploy(transactionFeeManager.address, farmTreasury.address);
+    buffToken = await buffTokenFactory.deploy(farmTreasury.address);
     await buffToken.deployed();
-  });
-
-  it("should get TransactionFeeManager address", async () => {
-    const address = await buffToken.getTransactionManagerAddr();
-    expect(address).to.equal(transactionFeeManager.address, "get TransactionFeeManager address should be equal to TransactionFeeManager address");
   });
 
   it('should get FarmTreasury address', async () => {

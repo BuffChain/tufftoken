@@ -13,9 +13,6 @@ describe("Governance", function () {
     let owner;
     let accounts;
 
-    let transactionFeeManagerFactory;
-    let transactionFeeManager;
-
     let farmTreasuryFactory;
     let farmTreasury;
 
@@ -32,7 +29,6 @@ describe("Governance", function () {
     before(async function () {
         buffTokenFactory = await ethers.getContractFactory("BuffToken");
         governanceFactory = await ethers.getContractFactory("Governance");
-        transactionFeeManagerFactory = await ethers.getContractFactory("TransactionFeeManager");
         farmTreasuryFactory = await ethers.getContractFactory("FarmTreasury");
         electionFactory = await ethers.getContractFactory("Election");
     });
@@ -40,13 +36,10 @@ describe("Governance", function () {
     beforeEach(async function () {
         [owner, ...accounts] = await ethers.getSigners();
 
-        transactionFeeManager = await transactionFeeManagerFactory.deploy();
-        await transactionFeeManager.deployed();
-
         farmTreasury = await farmTreasuryFactory.deploy();
         await farmTreasury.deployed();
 
-        buffToken = await buffTokenFactory.deploy(transactionFeeManager.address, farmTreasury.address);
+        buffToken = await buffTokenFactory.deploy(farmTreasury.address);
         await buffToken.deployed();
 
         governance = await governanceFactory.deploy(buffToken.address);
