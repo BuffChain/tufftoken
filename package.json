@@ -28,7 +28,8 @@
   "homepage": "https://github.com/BuffChain/tokenx#readme",
   "dependencies": {
     "@aave/protocol-v2": "^1.0.1",
-    "@openzeppelin/contracts": "^4.2.0"
+    "@openzeppelin/contracts": "^4.2.0",
+    "@chainlink/contracts": "^0.2.1"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
