@@ -28,7 +28,7 @@ module.exports = {
       },
     ],
     overrides: {
-      "contracts/AaveLPManager.sol": {
+      "contracts/v6": {
         version: "0.6.12",
         settings: {}
       }

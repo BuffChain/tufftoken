@@ -1,12 +1,7 @@
 // SPDX-License-Identifier: agpl-3.0
 
-const chai = require("chai");
-const { solidity } = require("ethereum-waffle");
-chai.use(solidity);
-
-const { expect } = chai;
+const { expect } = require("chai");
 const { ethers } = require("hardhat");
-
 
 describe("Governance", function () {
 
@@ -15,6 +10,9 @@ describe("Governance", function () {
 
     let farmTreasuryFactory;
     let farmTreasury;
+
+    let aaveLPManagerFactory;
+    let aaveLPManager;
 
     let tuffTokenFactory;
     let tuffToken;
@@ -30,13 +28,17 @@ describe("Governance", function () {
         tuffTokenFactory = await ethers.getContractFactory("TuffToken");
         governanceFactory = await ethers.getContractFactory("Governance");
         farmTreasuryFactory = await ethers.getContractFactory("FarmTreasury");
+        aaveLPManagerFactory = await ethers.getContractFactory("AaveLPManager");
         electionFactory = await ethers.getContractFactory("Election");
     });
 
     beforeEach(async function () {
         [owner, ...accounts] = await ethers.getSigners();
 
-        farmTreasury = await farmTreasuryFactory.deploy();
+        aaveLPManager = await aaveLPManagerFactory.deploy();
+        await aaveLPManager.deployed();
+
+        farmTreasury = await farmTreasuryFactory.deploy(aaveLPManager.address);
         await farmTreasury.deployed();
 
         tuffToken = await tuffTokenFactory.deploy(farmTreasury.address);

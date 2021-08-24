@@ -7,7 +7,11 @@ contract FarmTreasury is Ownable {
 
     address aaveLPManagerAddr;
 
-    function setAaveLPManagerAddr(address _aaveLPManagerAddr) public onlyOwner {
+    constructor(address _aaveLPManagerAddr) {
+        aaveLPManagerAddr = _aaveLPManagerAddr;
+    }
+
+    function setAaveLPManager(address _aaveLPManagerAddr) public onlyOwner {
         aaveLPManagerAddr = _aaveLPManagerAddr;
     }
 }

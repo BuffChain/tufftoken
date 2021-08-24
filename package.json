@@ -3,7 +3,8 @@
   "version": "1.0.0",
   "description": "BuffChain Smart Contract",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "compile": "hardhat compile",
+    "test": "npm run compile && hardhat test"
   },
   "repository": {
     "type": "git",
@@ -18,8 +19,8 @@
   ],
   "author": "BuffChain",
   "contributors": [
-    "Jonathan Beckman <jonathantbeckman@gmail.com>",
-    "Ian Ballard <ianballard.dev@gmail.com>"
+    "Jonathan Beckman <jbeckman@tufftoken.io>",
+    "Ian Ballard <iballard@tufftoken.io>"
   ],
   "license": "AGPLv3",
   "bugs": {
@@ -28,7 +29,8 @@
   "homepage": "https://github.com/BuffChain/tokenx#readme",
   "dependencies": {
     "@aave/protocol-v2": "^1.0.1",
-    "@openzeppelin/contracts": "^4.2.0"
+    "@openzeppelin/contracts": "^4.3.0",
+    "@openzeppelin/contracts-v6": "npm:@openzeppelin/contracts@3.4.0"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
