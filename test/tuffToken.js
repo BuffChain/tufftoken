@@ -43,22 +43,12 @@ describe("TuffToken", function () {
 
   it('should calculate farm fee amount with take fee true', async () => {
     const feeAmount = await tuffToken.calculateFarmFee(100, true);
-    expect(feeAmount).to.equal(5, "incorrect farm fee amount");
+    expect(feeAmount).to.equal(10, "incorrect farm fee amount");
   });
 
   it('should calculate farm fee amount with take fee false', async () => {
     const feeAmount = await tuffToken.calculateFarmFee(100, false);
     expect(feeAmount).to.equal(0, "incorrect farm fee amount");
-  });
-
-  it('should calculate reflection fee amount with take fee true', async () => {
-    const feeAmount = await tuffToken.calculateReflectionFee(100, true);
-    expect(feeAmount).to.equal(5, "incorrect reflection fee amount");
-  });
-
-  it('should calculate reflection fee amount with take fee false', async () => {
-    const feeAmount = await tuffToken.calculateReflectionFee(100, false);
-    expect(feeAmount).to.equal(0, "incorrect reflection fee amount");
   });
 
   it('should exclude from fees', async () => {
@@ -124,32 +114,6 @@ describe("TuffToken", function () {
     expect(endingAllowance).to.equal(0, "incorrect allowance");
   });
 
-  it('should get total fees', async () => {
-    const fees = await tuffToken.totalFees();
-    expect(fees).to.equal(0, "incorrect fees");
-  });
-
-  it('should get reward inclusion', async () => {
-    const isExcluded = await tuffToken.isExcludedFromReward(owner.getAddress());
-    expect(isExcluded).to.equal(false, "should be included in rewards");
-  });
-
-  it('should change account rewards', async () => {
-    let isExcluded = await tuffToken.isExcludedFromReward(accounts[3].getAddress());
-    expect(isExcluded).to.equal(false, "should be included in rewards");
-
-    await tuffToken.excludeFromReward(accounts[3].getAddress())
-
-    isExcluded = await tuffToken.isExcludedFromReward(accounts[3].getAddress());
-    expect(isExcluded).to.equal(true, "should be excluded from rewards");
-
-    await tuffToken.includeInReward(accounts[3].getAddress());
-
-    isExcluded = await tuffToken.isExcludedFromReward(accounts[3].getAddress());
-    expect(isExcluded).to.equal(false, "should be included in rewards");
-
-  });
-
   it('should get fee exclusion', async () => {
     let isExcluded = await tuffToken.isExcludedFromFee(accounts[3].getAddress());
     expect(isExcluded).to.equal(false, "should be included");
@@ -163,19 +127,6 @@ describe("TuffToken", function () {
 
     isExcluded = await tuffToken.isExcludedFromFee(accounts[3].getAddress());
     expect(isExcluded).to.equal(false, "should be included");
-  });
-
-  it('should get token from reflection', async () => {
-    const tokenFromReflection = parseFloat(await tuffToken.tokenFromReflection(100));
-    expect(tokenFromReflection).to.equal(0, "incorrect token from reflection");
-  });
-
-  it('should deliver tokens', async () => {
-    await tuffToken.deliver(100);
-
-    const fees = (await tuffToken.totalFees()).toNumber();
-
-    expect(fees).to.equal(100, "incorrect fees");
   });
 
   it('should send token correctly - both excluded from fees', async () => {
@@ -315,11 +266,10 @@ describe("TuffToken", function () {
 
     // Get fees
     const farmFeeAmount = await tuffToken.calculateFarmFee(amount, true);
-    const reflectionFeeAmount = await tuffToken.calculateReflectionFee(amount, true);
 
     // Then determine if fees were properly taken
     expect(senderEndingBalance).to.equal(senderStartingBalance - amount, "Amount wasn't correctly taken from the sender");
-    expect(receiverEndingBalance).to.equal(receiverStartingBalance + amount - farmFeeAmount - reflectionFeeAmount, "Amount wasn't correctly sent to the receiver");
+    expect(receiverEndingBalance).to.equal(receiverStartingBalance + amount - farmFeeAmount, "Amount wasn't correctly sent to the receiver");
     expect(farmTreasuryEndingBalance).to.equal(farmFeeAmount, "Amount wasn't correctly sent to Farm Treasury");
   });
 
@@ -350,11 +300,10 @@ describe("TuffToken", function () {
 
     // Get fees
     const farmFeeAmount = await tuffToken.calculateFarmFee(amount, true);
-    const reflectionFeeAmount = await tuffToken.calculateReflectionFee(amount, true);
 
     // Then determine if fees were properly taken
     expect(senderEndingBalance).to.equal(senderStartingBalance - amount, "Amount wasn't correctly taken from the sender");
-    expect(receiverEndingBalance).to.equal(receiverStartingBalance + amount - farmFeeAmount - reflectionFeeAmount, "Amount wasn't correctly sent to the receiver");
+    expect(receiverEndingBalance).to.equal(receiverStartingBalance + amount - farmFeeAmount, "Amount wasn't correctly sent to the receiver");
     expect(farmTreasuryEndingBalance).to.equal(farmFeeAmount, "Amount wasn't correctly sent to Farm Treasury");
   });
 });
