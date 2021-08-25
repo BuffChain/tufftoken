@@ -18,8 +18,6 @@ contract TuffToken is Context, IERC20, Ownable {
     mapping (address => mapping (address => uint256)) private _allowances;
     mapping (address => bool) private _isExcludedFromFee;
 
-    uint256 public totalFees;
-
     string public name = "TuffToken";
     string public symbol = "TUFF";
     uint8 public decimals = 9;
@@ -139,7 +137,6 @@ contract TuffToken is Context, IERC20, Ownable {
 
         address _farmTreasuryAddr = address(farmTreasury);
         balances[_farmTreasuryAddr] = balances[_farmTreasuryAddr].add(farmFeeAmount);
-        totalFees.add(farmFeeAmount);
 
         emit Transfer(from, to, transferAmount);
         emit Transfer(from, _farmTreasuryAddr, farmFeeAmount);

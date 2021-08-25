@@ -114,11 +114,6 @@ describe("TuffToken", function () {
     expect(endingAllowance).to.equal(0, "incorrect allowance");
   });
 
-  it('should get total fees', async () => {
-    const fees = await tuffToken.totalFees();
-    expect(fees).to.equal(0, "incorrect fees");
-  });
-
   it('should get fee exclusion', async () => {
     let isExcluded = await tuffToken.isExcludedFromFee(accounts[3].getAddress());
     expect(isExcluded).to.equal(false, "should be included");
