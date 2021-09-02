@@ -6,7 +6,7 @@ contract ILockable {
     uint256 private _unlocked = 1;
 
     modifier lock() {
-        require(_unlocked == 1, 'BUFF: LOCKED');
+        require(_unlocked == 1, 'TUFF: LOCKED');
         _unlocked = 0;
         _;
         _unlocked = 1;

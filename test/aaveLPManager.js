@@ -36,8 +36,16 @@ describe('AaveLPManager', function () {
         await tuffToken.deployed();
     });
 
+    it('should set pool address correctly', async () => {
+        const address = await aaveLPManager.getLPAddr();
+
+        //The correct address is pulled from https://docs.aave.com/developers/deployed-contracts/deployed-contracts
+        expect(address).to.equal("0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9");
+    });
+
     it('should deposit dai into aave', async () => {
-        // const aaveLPManagerInstance = await AaveLPManager.deployed();
-        // const loanId = await aaveLPManagerInstance.stake.call();
+        const daiAddr = "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+
+        await aaveLPManager.deposit(daiAddr, 5);
     });
 });

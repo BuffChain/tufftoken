@@ -1,4 +1,5 @@
 require("@nomiclabs/hardhat-waffle");
+require('dotenv').config();
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -34,4 +35,17 @@ module.exports = {
       }
     }
   },
+  networks: {
+    hardhat: {
+      forking: {
+        url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMAPI_KEY}`,
+
+        //Feel free to update at any time. This just make local development and caching easier
+        blockNumber: 13089820
+      }
+    },
+    mainnet_cloudflare: {
+      url: "https://cloudflare-eth.com"
+    },
+  }
 };
