@@ -23,6 +23,8 @@ contract TuffToken is Context, IERC20, Ownable {
     uint8 public decimals = 9;
     uint256 public farmFee = 10;
     uint256 private _totalSupply = 1000000000 * 10 ** decimals;
+    uint256 private _totalSupplyForRedemption = _totalSupply;
+    uint256 contractExpiration = block.timestamp + (6 * 365 days);
 
     FarmTreasury farmTreasury;
 
@@ -61,6 +63,10 @@ contract TuffToken is Context, IERC20, Ownable {
 
     function totalSupply() external view override returns (uint256) {
         return _totalSupply;
+    }
+
+    function totalSupplyForRedemption() external view returns (uint256) {
+        return _totalSupplyForRedemption;
     }
 
     function allowance(address owner, address spender) public view override returns (uint256) {
@@ -149,6 +155,24 @@ contract TuffToken is Context, IERC20, Ownable {
         }
 
         return _amount.mul(farmFee).div(10**2);
+    }
+
+    function hasExpired() public view returns (bool) {
+        return block.timestamp >= contractExpiration;
+    }
+
+    function burn(address account, uint256 amount) public onlyOwner {
+        require(account != address(0), "ERC20: burn from the zero address");
+
+        uint256 accountBalance = balances[account];
+        require(accountBalance >= amount, "ERC20: burn amount exceeds balance");
+        unchecked {
+            balances[account] = accountBalance - amount;
+        }
+        _totalSupply -= amount;
+
+        emit Transfer(account, address(0), amount);
+
     }
 
 }
