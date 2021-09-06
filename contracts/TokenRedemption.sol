@@ -10,6 +10,7 @@ contract TokenRedemption {
     TuffToken tuffToken;
     mapping(address => bool) ownersRedeemed;
     uint256 startingEthBalance;
+    bool isTreasuryLiquidated = false;
 
     constructor (address payable _tokenAddr) payable {
         tuffToken = TuffToken(_tokenAddr);
@@ -36,9 +37,15 @@ contract TokenRedemption {
         return getContractStartingEthBalance().mul(balanceOf(account)).div(totalSupplyForRedemption());
     }
 
+    function setIsTreasuryLiquidated(bool _isTreasuryLiquidated) public onlyOwner {
+        isTreasuryLiquidated = _isTreasuryLiquidated;
+    }
+
     function redeem() public returns (uint256) {
 
         require(hasExpired(), "Address can not redeem before expiration.");
+
+        require(isTreasuryLiquidated, "Address can not redeem before treasury has been liquidated.");
 
         address payable account = payable(msg.sender);
 
