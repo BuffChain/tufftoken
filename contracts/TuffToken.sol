@@ -148,7 +148,9 @@ contract TuffToken is Context, IERC20, Ownable {
             return 0;
         }
 
-        return _amount.mul(farmFee).div(10**2);
+        uint256 fee = _amount.mul(farmFee).div(10**2);
+        require(fee > 0, "Insufficient amount.");
+        return fee;
     }
 
 }
