@@ -9,9 +9,11 @@ contract TokenRedemption {
 
     TuffToken tuffToken;
     mapping(address => bool) ownersRedeemed;
+    uint256 startingEthBalance;
 
     constructor (address payable _tokenAddr) payable {
         tuffToken = TuffToken(_tokenAddr);
+        startingEthBalance = address(this).balance;
     }
 
     function balanceOf(address account) public view returns (uint256) {
@@ -26,16 +28,12 @@ contract TokenRedemption {
         return tuffToken.totalSupplyForRedemption();
     }
 
-    function getContractETHBalance() public view returns (uint256) {
-        return address(this).balance;
+    function getContractStartingEthBalance() public view returns (uint256) {
+        return startingEthBalance;
     }
 
     function getRedemptionAmount(address account) public view returns (uint256) {
-        return getContractETHBalance().mul(getBalanceToTotalSupplyRatio(account));
-    }
-
-    function getBalanceToTotalSupplyRatio(address account) public view returns (uint256) {
-        return balanceOf(account).div(totalSupplyForRedemption());
+        return getContractStartingEthBalance().mul(balanceOf(account)).div(totalSupplyForRedemption());
     }
 
     function redeem() public returns (uint256) {
@@ -65,5 +63,8 @@ contract TokenRedemption {
         return account.balance;
     }
 
-}
+    function getCurrentContractEthBalance() public view returns (uint256) {
+        return address(this).balance;
+    }
 
+}
