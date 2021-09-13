@@ -40,7 +40,7 @@ contract AaveLPManager is Ownable, ILockable {
         return _lpAddr;
     }
 
-    function deposit(address token, uint256 amount) public lock {
+    function deposit(address token, address onBehalfOf, uint256 amount) public lock {
         bool _isAcceptedToken = false;
         for (uint256 i = 0; i < _acceptedTokens.length; i++) {
             if (_acceptedTokens[i] == token) {
@@ -48,8 +48,8 @@ contract AaveLPManager is Ownable, ILockable {
                 break;
             }
         }
-        require(_isAcceptedToken, "TUFF: Invalid token, cannot deposit into Aave");
+//        require(_isAcceptedToken, "TUFF: Invalid token, cannot deposit into Aave");
 
-        ILendingPool(_lpAddr).deposit(token, amount, _owner, 0);
+        LendingPool(_lpAddr).deposit(token, amount, onBehalfOf, 0);
     }
 }

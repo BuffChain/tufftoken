@@ -2,6 +2,9 @@
 
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const setUpAccountFunds = require("./utils")
+const hre = require("hardhat");
+const {BigNumber} = require("ethers");
 
 describe('AaveLPManager', function () {
 
@@ -34,6 +37,8 @@ describe('AaveLPManager', function () {
 
         tuffToken = await tuffTokenFactory.deploy(farmTreasury.address);
         await tuffToken.deployed();
+
+        await setUpAccountFunds(owner, tuffToken.address);
     });
 
     it('should set pool address correctly', async () => {
@@ -46,6 +51,14 @@ describe('AaveLPManager', function () {
     it('should deposit dai into aave', async () => {
         const daiAddr = "0x6B175474E89094C44Da98b954EedeAC495271d0F"
 
-        await aaveLPManager.deposit(daiAddr, 5);
+        const stakeAmount = 5000;
+        // const stakeOwner = accounts[0].getAddress();
+        const stakeOwner = owner.getAddress();
+        const balance = parseFloat(await tuffToken.balanceOf(stakeOwner));
+        expect(balance).to.equal(1000000000 * 10**9, "tokens weren't in the owner account");
+
+        await tuffToken.approve(stakeOwner, stakeAmount)
+        await aaveLPManager.deposit(daiAddr, stakeOwner, stakeAmount);
+        // await aaveLPManager.deposit(aaveLPManager.address, stakeOwner, stakeAmount);
     });
 });

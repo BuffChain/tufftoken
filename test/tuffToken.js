@@ -245,7 +245,6 @@ describe("TuffToken", function () {
     const senderEndingBalance = parseFloat(await tuffToken.balanceOf(sender));
     const receiverEndingBalance = parseFloat(await tuffToken.balanceOf(receiver));
 
-
     expect(senderEndingBalance).to.equal(senderStartingBalance - amount, "Amount wasn't correctly taken from the sender");
     expect(receiverEndingBalance).to.equal(receiverStartingBalance + amount, "Amount wasn't correctly sent to the receiver");
   });

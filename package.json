@@ -30,7 +30,9 @@
   "dependencies": {
     "@aave/protocol-v2": "^1.0.1",
     "@openzeppelin/contracts": "^4.3.0",
-    "@openzeppelin/contracts-v6": "npm:@openzeppelin/contracts@3.4.0"
+    "@openzeppelin/contracts-v6": "npm:@openzeppelin/contracts@3.4.0",
+    "@uniswap/v3-periphery": "^1.1.1",
+    "@uniswap/v3-sdk": "^3.4.1"
   },
   "devDependencies": {
     "@nomiclabs/hardhat-ethers": "^2.0.2",
