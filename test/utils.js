@@ -1,21 +1,18 @@
 // SPDX-License-Identifier: agpl-3.0
 
-const { ethers } = require("hardhat");
 const {BigNumber} = require("ethers");
 const hre = require("hardhat");
 
-// import { ethers } from "ethers";
 const { Pool } = require("@uniswap/v3-sdk");
 const { Token } = require("@uniswap/sdk-core");
-// const { abi } = require("@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json");
-const { abi } = require("@uniswap/v3-periphery/artifacts/contracts/interfaces/ISwapRouter.sol/ISwapRouter.json");
-// const { ExactInputSingleParams } = require("@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol");
+const ISwapRouterABI = require("@uniswap/v3-periphery/artifacts/contracts/interfaces/ISwapRouter.sol/ISwapRouter.json").abi;
+const SwapRouterABI = require("@uniswap/v3-periphery/artifacts/contracts/SwapRouter.sol/SwapRouter.json").abi;
 
-// const UNISWAP_ROUTER_ADDRESS = 0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D;
-const UNISWAP_ROUTER_ADDRESS = 0xE592427A0AEce92De3Edee1F18E0157C05861564;
-const WETH9_ADDRESS = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-const DAI_ADDRESS = 0x6B175474E89094C44Da98b954EedeAC495271d0F;
-const USDC_ADDRESS = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+// const UNISWAP_V2_ROUTER_ADDRESS = "0x7a250d5630B4cF539739dF2C5dAcb4c659F2488D";
+const UNISWAP_V3_ROUTER_ADDRESS = "0xE592427A0AEce92De3Edee1F18E0157C05861564";
+const WETH9_ADDRESS = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
+const DAI_ADDRESS = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
+const USDC_ADDRESS = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
 
 module.exports = async function setUpAccountFunds(owner, treasuryAddress) {
     // const accountBalanceInGwei = BigNumber.from(String(Math.pow(10, 9)));
@@ -26,7 +23,7 @@ module.exports = async function setUpAccountFunds(owner, treasuryAddress) {
 
     const transactionHash = await owner.sendTransaction({
         to: treasuryAddress,
-        value: ethers.utils.parseEther("100.0"),
+        value: hre.ethers.utils.parseEther("100.0"),
     });
 
     // const tokenAddress = "0x1f9840a85d5aF5bf1D1762F925BDADdC4201F984"
@@ -60,19 +57,10 @@ module.exports = async function setUpAccountFunds(owner, treasuryAddress) {
     // console.log(signer);
     // console.log(await signer.getAddress());
 
-    // const uniswapSwapRouterContract = await ethers.getContractAt(
-    //     abi, `${UNISWAP_ROUTER_ADDRESS}`
-    //     // await signer.getAddress()
-    //     // `"${owner.address}"`
-    //     // owner.address
-    // );
-
-    const uniswapSwapRouterContract = new ethers.Contract(
-        UNISWAP_ROUTER_ADDRESS,
-        abi,
-        // `${owner.address}`
-        // owner
-        await owner.getAddress()
+    const uniswapSwapRouterContract = await hre.ethers.getContractAt(
+        SwapRouterABI,
+        UNISWAP_V3_ROUTER_ADDRESS,
+        owner
     );
 
     const params = {
@@ -81,7 +69,8 @@ module.exports = async function setUpAccountFunds(owner, treasuryAddress) {
         fee: 3000,
         recipient: treasuryAddress,
         deadline: expiryDate,
-        amountIn: "50.0",
+        // amountIn: "50.0",
+        amountIn: BigNumber.from(50).toHexString() ,
         amountOutMinimum: 0,
         sqrtPriceLimitX96: 0,
     };
@@ -93,7 +82,7 @@ module.exports = async function setUpAccountFunds(owner, treasuryAddress) {
         gas: 238989, // gas fee needs updating?
         data: encoded_tx,
         from: treasuryAddress,
-        to: UNISWAP_ROUTER_ADDRESS
+        to: UNISWAP_V3_ROUTER_ADDRESS
     });
 
     // const trace = await hre.network.provider.send("eth_sendTransaction", [
