@@ -19,11 +19,12 @@ contract PriceConsumer is Ownable {
 
     constructor(address _aggregatorAddress) public {
         priceFeed = AggregatorV3Interface(_aggregatorAddress);
+        initRoundData();
     }
 
     function setPriceFeed(address _aggregatorAddress) public onlyOwner {
         priceFeed = AggregatorV3Interface(_aggregatorAddress);
-        setPrevRoundData(0, 0, 0, 0, 0);
+        initRoundData();
     }
 
     function getLatestRoundData() public view returns (
@@ -68,6 +69,26 @@ contract PriceConsumer is Ownable {
             _startedAt,
             _timeStamp,
             _answeredInRound
+        );
+
+    }
+
+    function initRoundData() private onlyOwner {
+
+        (
+            uint80 roundID,
+            int price,
+            uint startedAt,
+            uint timeStamp,
+            uint80 answeredInRound
+        ) = getLatestRoundData();
+
+        setPrevRoundData(
+            roundID,
+            price,
+            startedAt,
+            timeStamp,
+            answeredInRound
         );
 
     }
