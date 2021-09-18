@@ -6,100 +6,69 @@ import "@openzeppelin/contracts/access/Ownable.sol";
 
 contract PriceConsumer is Ownable {
 
-    struct Pair {
-        string name;
-        address aggregatorAddress;
-        int256 price;
-        uint8 decimals;
+    struct PrevRoundData {
+        uint80 roundID;
+        int price;
+        uint startedAt;
         uint timeStamp;
+        uint80 answeredInRound;
     }
 
-    string[] pairKeys;
-    mapping(string => Pair) pairs;
+    AggregatorV3Interface internal priceFeed;
+    PrevRoundData public prevRoundData;
 
-    /**
-     * Network: Kovan
-     * Aggregator: ETH/USD
-     * Address: 0x9326BFA02ADD2366b30bacB125260Af641031331
-     */
-    constructor() {
-
-        addPair("ETH/USD", 0x9326BFA02ADD2366b30bacB125260Af641031331);
-
-        // updatePairs();
-
+    constructor(address _aggregatorAddress) public {
+        priceFeed = AggregatorV3Interface(_aggregatorAddress);
     }
 
-    function addPair(string memory pairKey, address aggregatorAddress) public onlyOwner {
-        pairKeys.push(pairKey);
-        pairs[pairKey] = Pair(pairKey, aggregatorAddress, 0, 0, 0);
+    function setPriceFeed(address _aggregatorAddress) public onlyOwner {
+        priceFeed = AggregatorV3Interface(_aggregatorAddress);
+        setPrevRoundData(0, 0, 0, 0, 0);
     }
 
-    function removePair(string memory pairKey) public onlyOwner {
-        delete pairs[pairKey];
+    function getLatestRoundData() public view returns (
+        uint80,
+        int,
+        uint,
+        uint,
+        uint80
+    ) {
 
-        uint8 pairKeyIndex = findPairIndex(pairKey);
-
-        deleteFromPairKeys(pairKeyIndex);
+        return priceFeed.latestRoundData();
 
     }
 
-    function findPairIndex(string memory pairKey) private view returns (uint8) {
-        uint8 pairIndex = 0;
-        for (pairIndex; pairIndex < pairKeys.length; pairIndex++) {
+    function getPrevRoundData() public view returns (
+        uint80,
+        int,
+        uint,
+        uint,
+        uint80
+    ) {
 
-            if (keccak256(abi.encodePacked((pairKeys[pairIndex]))) == keccak256(abi.encodePacked((pairKey)))) {
-                break;
-            }
-
-        }
-        return pairIndex;
+        return (
+            prevRoundData.roundID,
+            prevRoundData.price,
+            prevRoundData.startedAt,
+            prevRoundData.timeStamp,
+            prevRoundData.answeredInRound
+        );
     }
 
-    function deleteFromPairKeys(uint8 pairIndex) private {
-        pairKeys[pairIndex] = pairKeys[pairKeys.length - 1];
-        pairKeys.pop();
-    }
+    function setPrevRoundData(
+        uint80 _roundID,
+        int _price,
+        uint _startedAt,
+        uint _timeStamp,
+        uint80 _answeredInRound) public onlyOwner {
 
-    function getPairKeysLength() private view returns (uint256) {
-        return pairKeys.length;
-    }
-
-    /**
-     * Returns the latest round data of a given pair key
-     */
-    function getPair(string memory pairKey) public onlyOwner view returns (
-        string memory,
-        address,
-        int256,
-        uint8,
-        uint) {
-
-        Pair memory pair = pairs[pairKey];
-        return (pair.name, pair.aggregatorAddress, pair.price, pair.decimals, pair.timeStamp);
-
-    }
-
-    function updatePairs() public onlyOwner {
-        require(block.timestamp > pairs[pairKeys[0]].timeStamp + 1 days, "Can't update pairs more than 1 time per day.");
-
-        for (uint8 pairIndex = 0; pairIndex < pairKeys.length; pairIndex++) {
-
-            string memory pairKey = pairKeys[pairIndex];
-
-            AggregatorV3Interface priceFeed = AggregatorV3Interface(pairs[pairKey].aggregatorAddress);
-
-            (,int price,,uint timeStamp,) = priceFeed.latestRoundData();
-
-            if (timeStamp >= pairs[pairKey].timeStamp + 1 days) {
-
-                pairs[pairKey].decimals = priceFeed.decimals();
-                pairs[pairKey].timeStamp = timeStamp;
-                pairs[pairKey].price = price;
-
-            }
-
-        }
+        prevRoundData = PrevRoundData(
+            _roundID,
+            _price,
+            _startedAt,
+            _timeStamp,
+            _answeredInRound
+        );
 
     }
 
