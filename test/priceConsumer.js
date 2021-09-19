@@ -37,18 +37,6 @@ describe('PriceConsumer', function () {
         expect(price).to.not.equal(0, "should not be 0.");
     });
 
-    it('should get previous price', async () => {
-        const [
-            roundID,
-            price,
-            startedAt,
-            timeStamp,
-            answeredInRound
-        ] = await priceConsumer.getPrevRoundData();
-
-        expect(price).to.not.equal(0, "should not be 0.");
-    });
-
     it('should set new price feed', async () => {
 
         const [
@@ -78,30 +66,6 @@ describe('PriceConsumer', function () {
         expect(price2).to.not.equal(0, "should not be 0.");
 
         expect(price1).to.not.equal(price2, "price should not be equal.");
-    });
-
-    it('should compare round data', async () => {
-
-        await priceConsumer.setPrevRoundData(0, 0, 0, 0, 0)
-
-        const [
-            roundID,
-            price,
-            startedAt,
-            timeStamp,
-            answeredInRound
-        ] = await priceConsumer.getLatestRoundData();
-
-        const [
-            prevRoundID,
-            prevPrice,
-            prevStartedAt,
-            prevTimeStamp,
-            prevAnsweredInRound
-        ] = await priceConsumer.getPrevRoundData();
-
-        expect(prevRoundID).to.not.equal(roundID, "round should not be equal.");
-
     });
 
 });
