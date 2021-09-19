@@ -33,6 +33,24 @@ describe('MarketTrend', function () {
 
     });
 
+    it('should set range start', async () => {
+        let rangeStart = await marketTrend.getRangeStart();
+        expect(rangeStart).to.equal(30, "range start should be 30.");
+
+        await marketTrend.setRangeStart(0);
+        rangeStart = await marketTrend.getRangeStart();
+        expect(rangeStart).to.equal(0, "range start should now be 0.");
+    });
+
+    it('should set range end', async () => {
+        let rangeEnd = await marketTrend.getRangeEnd();
+        expect(rangeEnd).to.equal(90, "range start should be 30.");
+
+        await marketTrend.setRangeEnd(0);
+        rangeEnd = await marketTrend.getRangeEnd();
+        expect(rangeEnd).to.equal(0, "range start should now be 0.");
+    });
+
     it('should get current tracking period index', async () => {
         const currentIndex = await marketTrend.getCurrentTrackingPeriodIndex();
         expect(currentIndex).to.equal(0, "current index should be 0.");

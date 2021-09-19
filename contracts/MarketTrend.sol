@@ -32,12 +32,16 @@ contract MarketTrend is Ownable {
         createTrackingPeriod();
     }
 
-    function setPriceConsumer(address _priceConsumerAddress) public onlyOwner {
-        priceConsumer = PriceConsumer(_priceConsumerAddress);
+    function getRangeStart() public view onlyOwner returns (uint) {
+        return rangeStart;
     }
 
     function setRangeStart(uint _rangeStart) public onlyOwner {
         rangeStart = _rangeStart;
+    }
+
+    function getRangeEnd() public view onlyOwner returns (uint) {
+        return rangeEnd;
     }
 
     function setRangeEnd(uint _rangeEnd) public onlyOwner {
@@ -92,7 +96,7 @@ contract MarketTrend is Ownable {
             !trackingPeriods[trackingPeriods.length - 1].isActive,
             "Can only have one active tracking period."
         );
-        uint randomNumberOfDays = getPseudoRandomNumber(rangeStart, rangeEnd);
+        uint randomNumberOfDays = getPseudoRandomNumber(getRangeStart(), getRangeEnd());
         uint periodStartTimestamp = block.timestamp;
         uint periodEndTimeStamp = periodStartTimestamp + (randomNumberOfDays * 1 days);
 
