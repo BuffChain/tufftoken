@@ -15,3 +15,4 @@ node_modules/
 .secret
 
 package-lock.json
+/.env
