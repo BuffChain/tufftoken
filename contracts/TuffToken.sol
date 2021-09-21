@@ -43,7 +43,7 @@ contract TuffToken is Context, IERC20, Ownable {
 
     FarmTreasury farmTreasury;
 
-    constructor(address _farmTreasuryAddr) {
+    constructor(address payable _farmTreasuryAddr) {
         farmTreasury = FarmTreasury(_farmTreasuryAddr);
 
         _rOwned[_msgSender()] = _rTotal;
@@ -55,7 +55,7 @@ contract TuffToken is Context, IERC20, Ownable {
         emit Transfer(address(0), _msgSender(), _tTotal);
     }
 
-    function setFarmTreasury(address _farmTreasuryAddr) public onlyOwner {
+    function setFarmTreasury(address payable _farmTreasuryAddr) public onlyOwner {
         farmTreasury = FarmTreasury(_farmTreasuryAddr);
     }
 
@@ -194,9 +194,7 @@ contract TuffToken is Context, IERC20, Ownable {
         _isExcludedFromFee[account] = false;
     }
 
-    //to recieve ETH from uniswapV2Router when swaping
     receive() external payable {}
-
 
     // decreasing _rTotal increases the value of tokens
     function _reflectFee(uint256 rReflectionFeeAmount, uint256 tReflectionFeeAmount) private {

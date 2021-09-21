@@ -2,7 +2,7 @@
 
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const { setUpAccountFunds } = require("./utils")
+const utils = require("./utils")
 const hre = require("hardhat");
 const {BigNumber} = require("ethers");
 
@@ -38,7 +38,9 @@ describe('AaveLPManager', function () {
         tuffToken = await tuffTokenFactory.deploy(farmTreasury.address);
         await tuffToken.deployed();
 
-        await setUpAccountFunds(owner, tuffToken.address);
+        await utils.sendTokensToAddress(accounts.at(-1), tuffToken.address);
+        await utils.sendTokensToAddress(accounts.at(-2), aaveLPManager.address);
+        await utils.sendTokensToAddress(accounts.at(-3), farmTreasury.address);
     });
 
     it('should set pool address correctly', async () => {
@@ -49,16 +51,32 @@ describe('AaveLPManager', function () {
     });
 
     it('should deposit dai into aave', async () => {
-        const daiAddr = "0x6B175474E89094C44Da98b954EedeAC495271d0F"
+        const qtyInDAI = hre.ethers.utils.parseEther("2000");
+        const daiContract = await utils.getDAIContract();
+        const lpAddr = await aaveLPManager.getLPAddr();
 
-        const stakeAmount = 5000;
-        // const stakeOwner = accounts[0].getAddress();
-        // const stakeOwner = owner.getAddress();
-        // const balance = parseFloat(await tuffToken.balanceOf(stakeOwner));
-        // expect(balance).to.equal(1000000000 * 10**9, "tokens weren't in the owner account");
+        const aaveLPManagerAcct = await hre.ethers.getSigner(aaveLPManager.address);
+        await utils.runCallbackImpersonatingAcct(aaveLPManagerAcct, async (acct) => {
+            await daiContract.connect(acct).approve(aaveLPManager.address, qtyInDAI);
+            await daiContract.connect(acct).approve(farmTreasury.address, qtyInDAI);
+            await daiContract.connect(acct).approve(tuffToken.address, qtyInDAI);
+            await daiContract.connect(acct).approve(lpAddr, qtyInDAI);
 
-        // await tuffToken.approve(stakeOwner, stakeAmount)
-        // await aaveLPManager.deposit(daiAddr, stakeOwner, stakeAmount);
-        // await aaveLPManager.deposit(aaveLPManager.address, stakeOwner, stakeAmount);
+            console.log(`Depositing [${hre.ethers.utils.formatEther(qtyInDAI.div(2))}] DAI`);
+            // await aaveLPManager.connect(acct).deposit(utils.DAI_ADDRESS, qtyInDAI.div(2), tuffToken.address);
+        });
+
+        const tuffTokenAcct = await hre.ethers.getSigner(tuffToken.address);
+        const stakeOwner = tuffToken.address;
+        await utils.runCallbackImpersonatingAcct(tuffTokenAcct, async (acct) => {
+            await daiContract.connect(acct).approve(aaveLPManager.address, qtyInDAI);
+            await daiContract.connect(acct).approve(farmTreasury.address, qtyInDAI);
+            await daiContract.connect(acct).approve(tuffToken.address, qtyInDAI);
+            await daiContract.connect(acct).approve(lpAddr, qtyInDAI);
+            // await aaveLPManager.connect(acct).approve(lpAddr, qtyInDAI);
+
+            console.log(`Depositing [${hre.ethers.utils.formatEther(qtyInDAI.div(2))}] DAI`);
+            await aaveLPManager.connect(acct).deposit(utils.DAI_ADDRESS, qtyInDAI.div(2), stakeOwner);
+        });
     });
 });

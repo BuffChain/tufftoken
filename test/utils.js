@@ -56,108 +56,84 @@ async function transferETH(fromAccount, toAddr, amount="100") {
     }
 }
 
-async function setUpAccountFunds(owner, treasuryAddress) {
-    const treasuryAcct = await hre.ethers.getSigner(treasuryAddress);
-    await transferETH(owner, treasuryAddress)
-    const expiryDate = Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes from the current Unix time
-    const ethToSend = BigNumber.from(5000).toHexString();
-    const qtyWETHIn = hre.ethers.utils.parseEther("1");
+/**
+ * Use this function to sign txs, within the `callbackFn`, for accounts that hardhat does not maintain.
+ * @param acct: ethers.Signer account for a specific address. i.e. `await hre.ethers.getSigner(address)`
+ * @param callbackFn: Async function that contains eth calls and txs to be run under the impersonated account
+ * @returns {Promise<void>}
+ */
+async function runCallbackImpersonatingAcct(acct, callbackFn) {
+    await hre.network.provider.request({
+        method: "hardhat_impersonateAccount",
+        params: [acct.address],
+    });
 
+    await callbackFn(acct)
+
+    await hre.network.provider.request({
+        method: "hardhat_stopImpersonatingAccount",
+        params: [acct.address],
+    });
+}
+
+/**
+ * General method to procure ETH, WETH, and DAI to a specific address
+ * @param fromAcct:
+ * @param toAddr
+ * @returns {Promise<void>}
+ */
+async function sendTokensToAddress(fromAcct, toAddr) {
+    //Set up accounts and variables
+    const toAcct = await hre.ethers.getSigner(toAddr);
+    await transferETH(fromAcct, toAddr)
+    const expiryDate = Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes from the current Unix time
+    const qtyInWETH = hre.ethers.utils.parseEther("20");
+
+    //Get smart contracts
+    const daiContract = await getDAIContract();
+    const weth9Contract = await getWETH9Contract();
     const uniswapSwapRouterContract = await hre.ethers.getContractAt(
         SwapRouterABI,
         UNISWAP_V3_ROUTER_ADDRESS
     );
 
-    const weth9Contract = await getWETH9Contract();
+    //Convert ETH to WETH
+    await runCallbackImpersonatingAcct(toAcct, async (acct) => {
+        await weth9Contract.connect(acct).approve(acct.address, qtyInWETH)
+        await weth9Contract.connect(acct).deposit({"value": qtyInWETH})
+    })
 
-    await hre.network.provider.request({
-        method: "hardhat_impersonateAccount",
-        params: [treasuryAddress],
-    });
-    await weth9Contract.connect(treasuryAcct).approve(treasuryAddress, qtyWETHIn)
-    await weth9Contract.connect(treasuryAcct).deposit({"value": qtyWETHIn})
-    await hre.network.provider.request({
-        method: "hardhat_stopImpersonatingAccount",
-        params: [treasuryAddress],
-    });
-
-    await weth9Contract.approve(owner.address, qtyWETHIn)
-    await weth9Contract.deposit({"value": qtyWETHIn})
-
-    const daiContract = await getDAIContract();
-    // await hre.network.provider.request({
-    //     method: "hardhat_impersonateAccount",
-    //     params: [treasuryAddress],
-    // });
-    // await daiContract.connect(treasuryAcct).approve(treasuryAddress, ethToSend)
-    // await hre.network.provider.request({
-    //     method: "hardhat_stopImpersonatingAccount",
-    //     params: [treasuryAddress],
-    // });
-    //
-    // await daiContract.approve(owner.address, ethToSend)
-
-    if (hre.hardhatArguments.verbose) {
-        console.log(`The balance of WETH is [${hre.ethers.utils.formatEther(await weth9Contract.balanceOf(treasuryAddress))}]`)
-        console.log(`The balance of WETH is [${hre.ethers.utils.formatEther(await weth9Contract.balanceOf(owner.address))}]`)
-
-        console.log(`The balance of DAI is [${hre.ethers.utils.formatEther(await daiContract.balanceOf(treasuryAddress))}]`)
-        console.log(`The balance of DAI is [${hre.ethers.utils.formatEther(await daiContract.balanceOf(owner.address))}]`)
-    }
-
-    /// @notice swapExactInputSingle swaps a fixed amount of WETH9 for a maximum possible amount of DAI
-    /// using the DAI/WETH9 0.3% pool by calling `exactInputSingle` in the swap router.
-    /// @dev The calling address must approve this contract to spend at least `amountIn` worth of its WETH9 for this function to succeed.
-    /// @param amountIn The exact amount of WETH9 that will be swapped for DAI.
-    /// @return amountOut The amount of DAI received.
+    //Swap half of the WETH to DAI with uniswap_v3
     const params = {
         tokenIn: WETH9_ADDRESS,
         tokenOut: DAI_ADDRESS,
         fee: 3000,
-        // recipient: treasuryAddress,
-        recipient: owner.address,
+        recipient: toAddr,
         deadline: expiryDate,
-        // amountIn: "50.0",
-        amountIn: qtyWETHIn,
+        amountIn: qtyInWETH.div(2),
         amountOutMinimum: 0,
         sqrtPriceLimitX96: 0,
     };
-    console.log(params)
-
-    await weth9Contract.approve(uniswapSwapRouterContract.address, qtyWETHIn)
-    const tx_builder = await uniswapSwapRouterContract.exactInputSingle(params);
-    if (hre.hardhatArguments.verbose) {
-        console.log(tx_builder)
-
-        console.log(`The balance of WETH is [${await weth9Contract.balanceOf(treasuryAddress)}]`)
-        console.log(`The balance of WETH is [${await weth9Contract.balanceOf(owner.address)}]`)
-
-        console.log(`The balance of DAI is [${await daiContract.balanceOf(treasuryAddress)}]`)
-        console.log(`The balance of DAI is [${await daiContract.balanceOf(owner.address)}]`)
-    }
-
-    // const encoded_tx = tx_builder.encodeABI();
-    //
-    // const swapTxHash = await owner.sendTransaction({
-    //     gas: 238989, // gas fee needs updating?
-    //     data: encoded_tx,
-    //     from: treasuryAddress,
-    //     to: UNISWAP_V3_ROUTER_ADDRESS
-    // });
-
-    // const trace = await hre.network.provider.send("eth_sendTransaction", [
-    //     "0x123...",
-    //     ...txOptions
-    // ]);
-
-
-
-    // const _uniswapV2Router = IUniswapV2Router02(UNISWAP_ROUTER_ADDRESS);
-    // uniswapV2Pair = IUniswapV2Factory(_uniswapV2Router.factory()).createPair(address(this), _uniswapV2Router.WETH());
+    await runCallbackImpersonatingAcct(toAcct, async (acct) => {
+        //Approve transfer for uniswap to take from treasuryAcct later
+        await weth9Contract.connect(acct).approve(uniswapSwapRouterContract.address, qtyInWETH);
+        const tx_builder = await uniswapSwapRouterContract.connect(acct).exactInputSingle(params);
+        if (hre.hardhatArguments.verbose) {
+            console.log(tx_builder);
+        }
+    })
+    console.log(`[${toAddr}] balance of ETH is [${hre.ethers.utils.formatEther(await hre.ethers.provider.getBalance(toAddr))}]`);
+    console.log(`[${toAddr}] balance of WETH is [${hre.ethers.utils.formatEther(await weth9Contract.balanceOf(toAddr))}]`)
+    console.log(`[${toAddr}] balance of DAI is [${hre.ethers.utils.formatEther(await daiContract.balanceOf(toAddr))}]`)
 }
+
+module.exports.WETH9_ADDRESS = WETH9_ADDRESS;
+module.exports.DAI_ADDRESS = DAI_ADDRESS;
+module.exports.USDC_ADDRESS = USDC_ADDRESS;
 
 module.exports.getDAIContract = getDAIContract;
 module.exports.getWETH9Contract = getWETH9Contract;
 module.exports.getUSDCContract = getUSDCContract;
 module.exports.transferETH = transferETH;
-module.exports.setUpAccountFunds = setUpAccountFunds;
+module.exports.runCallbackImpersonatingAcct = runCallbackImpersonatingAcct;
+module.exports.sendTokensToAddress = sendTokensToAddress;

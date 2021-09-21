@@ -14,7 +14,7 @@ contract AaveLPManager is Ownable, ILockable {
     uint256 private _unlocked = 1;
 
     //TODO: Create governance around this
-    address[] private _acceptedTokens;
+    address[] private _supportedTokens;
 
     uint256 _aTokenHolding;
 
@@ -33,23 +33,26 @@ contract AaveLPManager is Ownable, ILockable {
         _lpProviderAddr = address(0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5);
         _lpAddr = LendingPoolAddressesProvider(_lpProviderAddr).getLendingPool();
 
-        _acceptedTokens.push(address(0x6B175474E89094C44Da98b954EedeAC495271d0F)); //DAI
+        _supportedTokens.push(address(0x6B175474E89094C44Da98b954EedeAC495271d0F)); //DAI
     }
 
     function getLPAddr() public view onlyOwner returns (address) {
         return _lpAddr;
     }
 
-    function deposit(address token, address onBehalfOf, uint256 amount) public lock {
-        bool _isAcceptedToken = false;
-        for (uint256 i = 0; i < _acceptedTokens.length; i++) {
-            if (_acceptedTokens[i] == token) {
-                _isAcceptedToken = true;
+    function deposit(address token, uint256 amount, address onBehalfOf) public lock {
+        bool _isSupportedToken = false;
+        for (uint256 i = 0; i < _supportedTokens.length; i++) {
+            if (_supportedTokens[i] == token) {
+                _isSupportedToken = true;
                 break;
             }
         }
-//        require(_isAcceptedToken, "TUFF: Invalid token, cannot deposit into Aave");
+        require(_isSupportedToken, "TUFF: This token is not currently supported");
 
+        //TODO: Add referral account, currently 0
         LendingPool(_lpAddr).deposit(token, amount, onBehalfOf, 0);
     }
+
+    receive() external payable {}
 }
