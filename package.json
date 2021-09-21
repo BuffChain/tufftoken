@@ -4,7 +4,8 @@
   "description": "BuffChain Smart Contract",
   "scripts": {
     "compile": "hardhat compile",
-    "test": "npm run compile && hardhat test"
+    "test": "npm run compile && hardhat test",
+    "test verbose": "npm run test -- --verbose"
   },
   "repository": {
     "type": "git",

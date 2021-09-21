@@ -2,7 +2,7 @@
 
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
-const setUpAccountFunds = require("./utils")
+const { setUpAccountFunds } = require("./utils")
 const hre = require("hardhat");
 const {BigNumber} = require("ethers");
 
@@ -53,12 +53,12 @@ describe('AaveLPManager', function () {
 
         const stakeAmount = 5000;
         // const stakeOwner = accounts[0].getAddress();
-        const stakeOwner = owner.getAddress();
-        const balance = parseFloat(await tuffToken.balanceOf(stakeOwner));
-        expect(balance).to.equal(1000000000 * 10**9, "tokens weren't in the owner account");
+        // const stakeOwner = owner.getAddress();
+        // const balance = parseFloat(await tuffToken.balanceOf(stakeOwner));
+        // expect(balance).to.equal(1000000000 * 10**9, "tokens weren't in the owner account");
 
-        await tuffToken.approve(stakeOwner, stakeAmount)
-        await aaveLPManager.deposit(daiAddr, stakeOwner, stakeAmount);
+        // await tuffToken.approve(stakeOwner, stakeAmount)
+        // await aaveLPManager.deposit(daiAddr, stakeOwner, stakeAmount);
         // await aaveLPManager.deposit(aaveLPManager.address, stakeOwner, stakeAmount);
     });
 });
