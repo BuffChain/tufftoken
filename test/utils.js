@@ -1,6 +1,5 @@
 // SPDX-License-Identifier: agpl-3.0
 
-const {BigNumber} = require("ethers");
 const hre = require("hardhat");
 
 const SwapRouterABI = require("@uniswap/v3-periphery/artifacts/contracts/SwapRouter.sol/SwapRouter.json").abi;
@@ -11,6 +10,7 @@ const UNISWAP_V3_ROUTER_ADDRESS = "0xE592427A0AEce92De3Edee1F18E0157C05861564";
 const WETH9_ADDRESS = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
 const DAI_ADDRESS = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
 const USDC_ADDRESS = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
+const ADAI_ADDRESS = "0x028171bCA77440897B824Ca71D1c56caC55b68A3";
 
 async function getDAIContract() {
     return await hre.ethers.getContractAt(
@@ -30,6 +30,13 @@ async function getUSDCContract() {
     return await hre.ethers.getContractAt(
         IERC20ABI,
         USDC_ADDRESS
+    );
+}
+
+async function getADAIContract() {
+    return await hre.ethers.getContractAt(
+        IERC20ABI,
+        ADAI_ADDRESS
     );
 }
 
@@ -115,25 +122,26 @@ async function sendTokensToAddress(fromAcct, toAddr) {
         sqrtPriceLimitX96: 0,
     };
     await runCallbackImpersonatingAcct(toAcct, async (acct) => {
-        //Approve transfer for uniswap to take from treasuryAcct later
         await weth9Contract.connect(acct).approve(uniswapSwapRouterContract.address, qtyInWETH);
-        const tx_builder = await uniswapSwapRouterContract.connect(acct).exactInputSingle(params);
-        if (hre.hardhatArguments.verbose) {
-            console.log(tx_builder);
-        }
+        await uniswapSwapRouterContract.connect(acct).exactInputSingle(params);
     })
-    console.log(`[${toAddr}] balance of ETH is [${hre.ethers.utils.formatEther(await hre.ethers.provider.getBalance(toAddr))}]`);
-    console.log(`[${toAddr}] balance of WETH is [${hre.ethers.utils.formatEther(await weth9Contract.balanceOf(toAddr))}]`)
-    console.log(`[${toAddr}] balance of DAI is [${hre.ethers.utils.formatEther(await daiContract.balanceOf(toAddr))}]`)
+
+    if (hre.hardhatArguments.verbose) {
+        console.log(`[${toAddr}] balance of ETH is [${hre.ethers.utils.formatEther(await hre.ethers.provider.getBalance(toAddr))}]`);
+        console.log(`[${toAddr}] balance of WETH is [${hre.ethers.utils.formatEther(await weth9Contract.balanceOf(toAddr))}]`)
+        console.log(`[${toAddr}] balance of DAI is [${hre.ethers.utils.formatEther(await daiContract.balanceOf(toAddr))}]`)
+    }
 }
 
 module.exports.WETH9_ADDRESS = WETH9_ADDRESS;
 module.exports.DAI_ADDRESS = DAI_ADDRESS;
 module.exports.USDC_ADDRESS = USDC_ADDRESS;
+module.exports.ADAI_ADDRESS = ADAI_ADDRESS;
 
 module.exports.getDAIContract = getDAIContract;
 module.exports.getWETH9Contract = getWETH9Contract;
 module.exports.getUSDCContract = getUSDCContract;
+module.exports.getADAIContract = getADAIContract;
 module.exports.transferETH = transferETH;
 module.exports.runCallbackImpersonatingAcct = runCallbackImpersonatingAcct;
 module.exports.sendTokensToAddress = sendTokensToAddress;

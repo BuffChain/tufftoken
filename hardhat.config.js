@@ -1,4 +1,5 @@
 require("@nomiclabs/hardhat-waffle");
+require("@nomiclabs/hardhat-web3");
 require('dotenv').config();
 // const hre = require("hardhat");
 
