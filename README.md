@@ -24,21 +24,18 @@ First install all dependencies with:
 npm install
 ```
 
-This includes the main framework Hardhat. Hardhat will let you run a dev blockchain, test cases, and other utility 
-commands. Some helpful hardhat commands are:
-```
-npx hardhat accounts
-npx hardhat compile
-npx hardhat test
-npx hardhat node
-node scripts/sample-script.js
-npx hardhat help
-```
+Next, copy the `.env-template` to a `.env` file. Fill out the variables, you can reach out to a team member to acquire 
+any shared secrets.
 
-However, it is recommended to use the scripts provided in `./package.json`, such as:
+Now you are ready to start running some commands. `./package.json` contains helpful aliases, but here are a few common 
+commands:
 ```
 npm run test
+npm run test test/aaveLPManager.js
 npm run compile
+
+npx hardhat accounts
+npx hardhat node
 ```
 
 ## Contract Development

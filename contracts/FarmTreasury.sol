@@ -3,7 +3,7 @@ pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract FarmTreasury is Ownable {
+contract FarmTreasury is Context, Ownable  {
 
     address aaveLPManagerAddr;
 
@@ -14,4 +14,6 @@ contract FarmTreasury is Ownable {
     function setAaveLPManager(address _aaveLPManagerAddr) public onlyOwner {
         aaveLPManagerAddr = _aaveLPManagerAddr;
     }
+
+    receive() external payable {}
 }
