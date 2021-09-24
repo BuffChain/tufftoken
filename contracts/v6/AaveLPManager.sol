@@ -8,7 +8,6 @@ import {LendingPoolAddressesProvider} from "@aave/protocol-v2/contracts/protocol
 import "../ILockable.sol";
 
 contract AaveLPManager is Ownable, ILockable {
-    address private _owner;
     uint256 private _unlocked = 1;
 
     //TODO: Create governance around this
@@ -21,10 +20,9 @@ contract AaveLPManager is Ownable, ILockable {
     address private _lpProviderAddr;
     address private _lpAddr;
 
-    constructor() public {
+    constructor(address initialOwner) public {
         //TODO: The owner should always be the FarmTreasury. This should do it, but lets make sure and add governance
-        _owner = _msgSender();
-        emit OwnershipTransferred(address(0), _owner);
+        transferOwnership(initialOwner);
 
         _lpProviderAddr = address(0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5);
 
