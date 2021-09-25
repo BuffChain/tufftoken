@@ -13,31 +13,19 @@ const USDC_ADDRESS = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
 const ADAI_ADDRESS = "0x028171bCA77440897B824Ca71D1c56caC55b68A3";
 
 async function getDAIContract() {
-    return await hre.ethers.getContractAt(
-        IERC20ABI,
-        DAI_ADDRESS
-    );
+    return await hre.ethers.getContractAt(IERC20ABI, DAI_ADDRESS);
 }
 
 async function getWETH9Contract() {
-    return await hre.ethers.getContractAt(
-        WETH9ABI,
-        WETH9_ADDRESS
-    );
+    return await hre.ethers.getContractAt(WETH9ABI, WETH9_ADDRESS);
 }
 
 async function getUSDCContract() {
-    return await hre.ethers.getContractAt(
-        IERC20ABI,
-        USDC_ADDRESS
-    );
+    return await hre.ethers.getContractAt(IERC20ABI, USDC_ADDRESS);
 }
 
 async function getADAIContract() {
-    return await hre.ethers.getContractAt(
-        IERC20ABI,
-        ADAI_ADDRESS
-    );
+    return await hre.ethers.getContractAt(IERC20ABI, ADAI_ADDRESS);
 }
 
 /**

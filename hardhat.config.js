@@ -1,7 +1,9 @@
 require("@nomiclabs/hardhat-waffle");
 require("@nomiclabs/hardhat-web3");
+require('hardhat-deploy');
+require('hardhat-deploy-ethers');
+
 require('dotenv').config();
-// const hre = require("hardhat");
 
 // This is a sample Hardhat task. To learn how to create your own go to
 // https://hardhat.org/guides/create-task.html
@@ -72,6 +74,22 @@ module.exports = {
         mainnet_cloudflare: {
             url: "https://cloudflare-eth.com"
         },
+    },
+    namedAccounts: {
+        deployer: {
+            default: 0, //For tests and hardhat network, use accounts[0]
+            1: '', //TODO: Multi-sig ETH account
+            "rinkeby": '', //TODO: ETH account
+        },
+        contractOwner: {
+            default: 1, //For tests and hardhat network, use accounts[1]
+            1: '', //TODO: Multi-sig ETH account
+            "rinkeby": '', //TODO: ETH account
+        }
+    },
+    etherscan: {
+        //TODO: This will help verify the smart contract code (https://github.com/wighawag/hardhat-deploy/tree/master#4-hardhat-etherscan-verify)
+        apiKey: ''
     }
 };
 

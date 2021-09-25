@@ -25,16 +25,19 @@ contract Election is Ownable {
     TuffToken token;
 
     constructor (
+        address initialOwner,
         string memory _name,
         string memory _description,
         string memory _author,
         uint256 _electionEnd,
         address payable _tokenAddr
     ) {
+        transferOwnership(initialOwner);
+
         name = _name;
-        electionEnd = _electionEnd;
         description = _description;
         author = _author;
+        electionEnd = _electionEnd;
         token = TuffToken(_tokenAddr);
     }
 

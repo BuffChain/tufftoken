@@ -26,16 +26,16 @@ contract TuffToken is Context, IERC20, Ownable {
 
     FarmTreasury farmTreasury;
 
-    constructor(address payable _farmTreasuryAddr) {
-        farmTreasury = FarmTreasury(_farmTreasuryAddr);
-
-        balances[_msgSender()] = _totalSupply;
+    constructor(address initialOwner, address payable _farmTreasuryAddr) {
+        transferOwnership(initialOwner);
+        balances[owner()] = _totalSupply;
+        emit Transfer(address(0), owner(), _totalSupply);
 
         //exclude owner and this contract from fee
         _isExcludedFromFee[owner()] = true;
         _isExcludedFromFee[address(this)] = true;
 
-        emit Transfer(address(0), _msgSender(), _totalSupply);
+        farmTreasury = FarmTreasury(_farmTreasuryAddr);
     }
 
     function setFarmTreasury(address payable _farmTreasuryAddr) public onlyOwner {

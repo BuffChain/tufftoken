@@ -7,42 +7,32 @@ const {
     expectEvent,  // Assertions for emitted events
     expectRevert, // Assertions for transactions that should fail
 } = require('@openzeppelin/test-helpers');
-
-const { ethers } = require("hardhat");
-const utils = require("./utils")
 const hre = require("hardhat");
+
+const utils = require("./utils")
 
 describe('AaveLPManager', function () {
 
     let owner;
     let accounts;
 
-    let tuffTokenFactory;
+    let aaveLPManager;
+    let farmTreasury;
     let tuffToken;
 
-    let farmTreasuryFactory;
-    let farmTreasury;
-
-    let aaveLPManagerFactory;
-    let aaveLPManager;
-
     before(async function () {
-        tuffTokenFactory = await ethers.getContractFactory("TuffToken");
-        farmTreasuryFactory = await ethers.getContractFactory("FarmTreasury");
-        aaveLPManagerFactory = await ethers.getContractFactory("AaveLPManager");
+        const { contractOwner } = await hre.getNamedAccounts();
+        owner = await hre.ethers.getSigner(contractOwner);
+
+        //Per `hardhat.config.js`, the 0 and 1 index accounts are named accounts. They are reserved for deployment uses
+        [,, ...accounts] = await hre.ethers.getSigners();
     });
 
     beforeEach(async function () {
-        [owner, ...accounts] = await ethers.getSigners();
-
-        aaveLPManager = await aaveLPManagerFactory.deploy();
-        await aaveLPManager.deployed();
-
-        farmTreasury = await farmTreasuryFactory.deploy(aaveLPManager.address);
-        await farmTreasury.deployed();
-
-        tuffToken = await tuffTokenFactory.deploy(farmTreasury.address);
-        await tuffToken.deployed();
+        const { AaveLPManager, FarmTreasury, TuffToken } = await hre.deployments.fixture();
+        aaveLPManager = await hre.ethers.getContractAt(AaveLPManager.abi, AaveLPManager.address,  owner);
+        farmTreasury = await hre.ethers.getContractAt(FarmTreasury.abi, FarmTreasury.address, owner);
+        tuffToken = await hre.ethers.getContractAt(TuffToken.abi, TuffToken.address, owner);
 
         // await utils.sendTokensToAddress(accounts.at(-1), tuffToken.address);
         await utils.sendTokensToAddress(accounts.at(-2), aaveLPManager.address); //Need to pay gas fees
@@ -54,6 +44,11 @@ describe('AaveLPManager', function () {
 
         //The correct address is pulled from https://docs.aave.com/developers/deployed-contracts/deployed-contracts
         expect(address).to.equal("0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9");
+    });
+
+    it('should be owned by FarmTreasury', async () => {
+        const owner_address = await aaveLPManager.owner();
+        expect(owner_address).to.equal(farmTreasury.address);
     });
 
     it('should deposit dai into aave from FarmTreasury', async () => {

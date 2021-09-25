@@ -7,7 +7,9 @@ contract FarmTreasury is Context, Ownable  {
 
     address aaveLPManagerAddr;
 
-    constructor(address _aaveLPManagerAddr) {
+    constructor(address initialOwner, address _aaveLPManagerAddr) {
+        transferOwnership(initialOwner);
+
         aaveLPManagerAddr = _aaveLPManagerAddr;
     }
 
