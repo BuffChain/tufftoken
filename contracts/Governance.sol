@@ -9,7 +9,9 @@ contract Governance is Ownable {
     mapping(address => Election) public elections;
     address payable tokenAddr;
 
-    constructor(address payable _tokenAddr) {
+    constructor(address initialOwner, address payable _tokenAddr) {
+        transferOwnership(initialOwner);
+
         tokenAddr = _tokenAddr;
     }
 
@@ -18,9 +20,8 @@ contract Governance is Ownable {
         string memory _description,
         string memory _author,
         uint256 _electionEnd
-    )
-    public onlyOwner returns(address) {
-        Election election = new Election(_name, _description, _author, _electionEnd, tokenAddr);
+    ) public onlyOwner returns(address) {
+        Election election = new Election(owner(), _name, _description, _author, _electionEnd, tokenAddr);
         elections[address(election)] = election;
         return address(election);
     }
@@ -30,4 +31,3 @@ contract Governance is Ownable {
     }
 
 }
-

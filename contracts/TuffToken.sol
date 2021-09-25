@@ -26,19 +26,19 @@ contract TuffToken is Context, IERC20, Ownable {
 
     FarmTreasury farmTreasury;
 
-    constructor(address _farmTreasuryAddr) {
-        farmTreasury = FarmTreasury(_farmTreasuryAddr);
-
-        balances[_msgSender()] = _totalSupply;
+    constructor(address initialOwner, address payable _farmTreasuryAddr) {
+        transferOwnership(initialOwner);
+        balances[owner()] = _totalSupply;
+        emit Transfer(address(0), owner(), _totalSupply);
 
         //exclude owner and this contract from fee
         _isExcludedFromFee[owner()] = true;
         _isExcludedFromFee[address(this)] = true;
 
-        emit Transfer(address(0), _msgSender(), _totalSupply);
+        farmTreasury = FarmTreasury(_farmTreasuryAddr);
     }
 
-    function setFarmTreasury(address _farmTreasuryAddr) public onlyOwner {
+    function setFarmTreasury(address payable _farmTreasuryAddr) public onlyOwner {
         farmTreasury = FarmTreasury(_farmTreasuryAddr);
     }
 
@@ -96,7 +96,6 @@ contract TuffToken is Context, IERC20, Ownable {
         _isExcludedFromFee[account] = false;
     }
 
-    //to recieve ETH from uniswapV2Router when swaping
     receive() external payable {}
 
     function isExcludedFromFee(address account) public view returns(bool) {
@@ -148,7 +147,9 @@ contract TuffToken is Context, IERC20, Ownable {
             return 0;
         }
 
-        return _amount.mul(farmFee).div(10**2);
+        uint256 fee = _amount.mul(farmFee).div(10**2);
+        require(fee > 0, "Insufficient amount.");
+        return fee;
     }
 
 }

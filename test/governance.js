@@ -2,59 +2,33 @@
 
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const hre = require("hardhat");
+const utils = require("./utils");
 
 describe("Governance", function () {
 
     let owner;
     let accounts;
 
-    let farmTreasuryFactory;
-    let farmTreasury;
-
-    let aaveLPManagerFactory;
-    let aaveLPManager;
-
-    let tuffTokenFactory;
     let tuffToken;
-
-    let governanceFactory;
     let governance;
-
-    let electionFactory;
     let election;
     let electionPastEnd;
 
     before(async function () {
-        tuffTokenFactory = await ethers.getContractFactory("TuffToken");
-        governanceFactory = await ethers.getContractFactory("Governance");
-        farmTreasuryFactory = await ethers.getContractFactory("FarmTreasury");
-        aaveLPManagerFactory = await ethers.getContractFactory("AaveLPManager");
-        electionFactory = await ethers.getContractFactory("Election");
+        const { contractOwner } = await hre.getNamedAccounts();
+        owner = await hre.ethers.getSigner(contractOwner);
+
+        //Per `hardhat.config.js`, the 0 and 1 index accounts are named accounts. They are reserved for deployment uses
+        [,, ...accounts] = await hre.ethers.getSigners();
     });
 
     beforeEach(async function () {
-        [owner, ...accounts] = await ethers.getSigners();
-
-        aaveLPManager = await aaveLPManagerFactory.deploy();
-        await aaveLPManager.deployed();
-
-        farmTreasury = await farmTreasuryFactory.deploy(aaveLPManager.address);
-        await farmTreasury.deployed();
-
-        tuffToken = await tuffTokenFactory.deploy(farmTreasury.address);
-        await tuffToken.deployed();
-
-        governance = await governanceFactory.deploy(tuffToken.address);
-        await governance.deployed();
-
-        const currentTimestamp = Date.now();
-        const electionEnd = currentTimestamp + 60000;
-        election = await electionFactory.deploy("Test Election", "This is a test.", "Ian Ballard", electionEnd, tuffToken.address);
-        await election.deployed();
-
-        electionPastEnd = await electionFactory.deploy("Test Election 2", "This is a test.", "Ian Ballard", 1, tuffToken.address);
-        await electionPastEnd.deployed();
-
+        const { TuffToken, Governance, Election, ElectionPastEnd } = await hre.deployments.fixture();
+        tuffToken = await hre.ethers.getContractAt(TuffToken.abi, TuffToken.address, owner);
+        governance = await hre.ethers.getContractAt(Governance.abi, Governance.address, owner);
+        election = await hre.ethers.getContractAt(Election.abi, Election.address, owner);
+        electionPastEnd = await hre.ethers.getContractAt(ElectionPastEnd.abi, ElectionPastEnd.address, owner);
     });
 
     it("should create an election from governance", async () => {
@@ -65,10 +39,10 @@ describe("Governance", function () {
     });
 
     it("should get is holder", async () => {
-        let isHolder = await election.isHolder(owner.getAddress());
+        let isHolder = await election.isHolder(owner.address);
         expect(isHolder).to.equal(true, "should be holder");
 
-        isHolder = await election.isHolder(accounts[0].getAddress());
+        isHolder = await election.isHolder(accounts[0].address);
         expect(isHolder).to.equal(false, "should not be holder");
     });
 
