@@ -4,9 +4,10 @@ pragma solidity >=0.5.0 <0.8.0;
 import "@openzeppelin/contracts-v6/access/Ownable.sol";
 import "@uniswap/v3-periphery/contracts/libraries/OracleLibrary.sol";
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
+import "./IPriceConsumer.sol";
 
 
-contract UniswapV3PoolManager is Ownable {
+contract UniswapV3PoolManager is Ownable, IPriceConsumer {
 
     address tokenA;
     address tokenB;
@@ -52,6 +53,10 @@ contract UniswapV3PoolManager is Ownable {
 
         return _quoteAmount;
 
+    }
+
+    function getPrice() public override view returns (uint256) {
+        return getQuote(60) * 10 ** 8;
     }
 
 }

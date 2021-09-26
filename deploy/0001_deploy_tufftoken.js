@@ -56,6 +56,17 @@ module.exports = async () => {
     log: true,
   });
 
+
+  // // Main net ETH/USD 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419
+  // const marketTrend = await deploy('MarketTrend', {
+  //   from: deployer,
+  //   args: [
+  //     "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419",
+  //     false
+  //   ],
+  //   log: true,
+  // });
+
 };
 
 module.exports.tags = ['v0001'];

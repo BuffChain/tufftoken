@@ -3,6 +3,7 @@ pragma solidity >=0.5.0 <0.8.0;
 
 import "@openzeppelin/contracts-v6/access/Ownable.sol";
 import {UniswapV3PoolManager} from "./UniswapV3PoolManager.sol";
+import {IPriceConsumer} from "./IPriceConsumer.sol";
 
 
 /*
@@ -31,7 +32,7 @@ contract MarketTrend is Ownable {
         bool isBuyBackFulfilled;
     }
 
-    UniswapV3PoolManager poolManager;
+    IPriceConsumer priceConsumer;
     TrackingPeriod[] trackingPeriods;
     PriceData[] priceDataEntries;
     uint daysInEpoch = 7;
@@ -39,7 +40,7 @@ contract MarketTrend is Ownable {
     uint amountOfEpochsUpperLimit = 10;
 
     constructor(address _poolManagerAddress, bool createInitialTrackingPeriod) {
-        poolManager = UniswapV3PoolManager(_poolManagerAddress);
+        priceConsumer = IPriceConsumer(_poolManagerAddress);
         if (createInitialTrackingPeriod) {
             createTrackingPeriod(block.timestamp, getPrice());
         }
@@ -132,11 +133,10 @@ contract MarketTrend is Ownable {
     }
 
     function getPrice() public view returns (uint256) {
-        uint32 period = 3600;
-        return poolManager.getQuote(period);
+        return priceConsumer.getPrice();
     }
 
-    function isBuyBackNeeded(uint256 startPrice, uint256 endPrice) public view returns (bool){
+    function isBuyBackNeeded(uint256 startPrice, uint256 endPrice) public pure returns (bool){
         return endPrice < startPrice;
     }
 
