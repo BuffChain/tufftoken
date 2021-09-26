@@ -38,6 +38,15 @@ module.exports = async () => {
     args: [contractOwner, farmTreasury.address],
     log: true,
   });
+
+  const uniswapV3PoolManager = await deploy('UniswapV3PoolManager', {
+    from: deployer,
+    args: [
+        contractOwner,
+    ],
+    log: true,
+  });
+
 };
 
 module.exports.tags = ['v0001'];

@@ -70,6 +70,33 @@ module.exports = {
                         runs: 1000,
                     },
                 }
+            },
+            "@uniswap/v3-core/contracts/libraries/TickMath.sol": {
+                version: "0.7.6",
+                settings: {
+                    optimizer: {
+                        enabled: true,
+                        runs: 1000,
+                    },
+                }
+            },
+            "@uniswap/v3-core/contracts/libraries/FullMath.sol": {
+                version: "0.7.6",
+                settings: {
+                    optimizer: {
+                        enabled: true,
+                        runs: 1000,
+                    },
+                }
+            },
+            "@uniswap/v3-periphery/contracts/libraries/PoolAddress.sol": {
+                version: "0.7.6",
+                settings: {
+                    optimizer: {
+                        enabled: true,
+                        runs: 1000,
+                    },
+                }
             }
         }
     },
@@ -80,7 +107,7 @@ module.exports = {
                 // url: "https://cloudflare-eth.com"
 
                 //Feel free to update at any time. This is here to make local development and caching easier
-                blockNumber: 13089820
+                blockNumber: 13302370
             },
 
             // This is useful to imitate mainnet block processing

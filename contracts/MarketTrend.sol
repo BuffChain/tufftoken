@@ -4,6 +4,18 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import {PriceConsumer} from "./PriceConsumer.sol";
 
+
+/*
+epoch = 7 days
+base market trend period = range of 3 to 10 epochs
+can buy back when it has been at least base market trend period is met since last buy back and the next epoch trend is bear
+
+Ex: base market trend period = 3 epochs, buy back happens on day x
+	- case 4 epochs passed since day x and 4th epoch was bull: buy back = false;
+	- case 5 epochs passed since day x and 5th epoch was bear: buy back = true;
+*/
+
+
 contract MarketTrend is Ownable {
 
     struct TrackingPeriod {
