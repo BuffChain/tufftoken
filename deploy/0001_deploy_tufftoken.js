@@ -47,6 +47,15 @@ module.exports = async () => {
     log: true,
   });
 
+  const marketTrend = await deploy('MarketTrend', {
+    from: deployer,
+    args: [
+        uniswapV3PoolManager.address,
+        false
+    ],
+    log: true,
+  });
+
 };
 
 module.exports.tags = ['v0001'];

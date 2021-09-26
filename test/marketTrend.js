@@ -2,141 +2,120 @@
 
 const { expect } = require("chai");
 const { ethers } = require("hardhat");
+const hre = require("hardhat");
 
 describe('MarketTrend', function () {
 
     let owner;
     let accounts;
-
-    let priceConsumerFactory;
-    let priceConsumer;
-
-    let marketTrendFactory;
+    let poolManager;
     let marketTrend;
 
+    //    KOVAN
+    //    tokenA: 0xd0A1E359811322d97991E03f863a0C30C2cF029C WETH9
+    //    tokenB: 0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa DAI
+
+    //    MAIN
+    //    tokenA: 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2 WETH9
+    //    tokenB: 0x6B175474E89094C44Da98b954EedeAC495271d0F DAI
+
+    //    fees: 500, 3000, 10000
+
+    let tokenA = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
+    let tokenB = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
+    let fee = 500;
+
     before(async function () {
-        priceConsumerFactory = await ethers.getContractFactory("PriceConsumer");
-        marketTrendFactory = await ethers.getContractFactory("MarketTrend");
+        const { contractOwner } = await hre.getNamedAccounts();
+        owner = await hre.ethers.getSigner(contractOwner);
+
+        //Per `hardhat.config.js`, the 0 and 1 index accounts are named accounts. They are reserved for deployment uses
+        [,, ...accounts] = await hre.ethers.getSigners();
     });
 
     beforeEach(async function () {
-        [owner, ...accounts] = await ethers.getSigners();
+        const { UniswapV3PoolManager, MarketTrend } = await hre.deployments.fixture();
+        poolManager = await hre.ethers.getContractAt(UniswapV3PoolManager.abi, UniswapV3PoolManager.address, owner);
+        await poolManager.setPool(tokenA, tokenB, fee);
 
-        // Total Marketcap / USD
-        // https://docs.chain.link/docs/ethereum-addresses/
-        const aggregatorAddress = "0xEC8761a0A73c34329CA5B1D3Dc7eD07F30e836e2";
-        priceConsumer = await priceConsumerFactory.deploy(aggregatorAddress);
-        await priceConsumer.deployed();
-
-        marketTrend = await marketTrendFactory.deploy(priceConsumer.address);
-        await marketTrend.deployed();
-
+        marketTrend = await hre.ethers.getContractAt(MarketTrend.abi, MarketTrend.address, owner);
     });
 
-    it('should set range start', async () => {
-        let rangeStart = await marketTrend.getRangeStart();
-        expect(rangeStart).to.equal(30, "range start should be 30.");
-
-        await marketTrend.setRangeStart(0);
-        rangeStart = await marketTrend.getRangeStart();
-        expect(rangeStart).to.equal(0, "range start should now be 0.");
-    });
-
-    it('should set range end', async () => {
-        let rangeEnd = await marketTrend.getRangeEnd();
-        expect(rangeEnd).to.equal(90, "range start should be 30.");
-
-        await marketTrend.setRangeEnd(0);
-        rangeEnd = await marketTrend.getRangeEnd();
-        expect(rangeEnd).to.equal(0, "range start should now be 0.");
-    });
-
-    it('should get current tracking period index', async () => {
+    it('should create tracking period', async () => {
+        await marketTrend.createTrackingPeriod(1632672415, 1632672416);
         const currentIndex = await marketTrend.getCurrentTrackingPeriodIndex();
         expect(currentIndex).to.equal(0, "current index should be 0.");
     });
 
-    it('should get current tracking period meta data', async () => {
+    it('should get price', async () => {
+        const price = await marketTrend.getPrice();
+        expect(price).to.equal(3030, "unexpected price.");
+    });
+
+    it('should get is buy back needed', async () => {
+        const isNeeded = await marketTrend.isBuyBackNeeded(1, 0);
+        expect(isNeeded).to.equal(true, "buy back should be needed.");
+    });
+
+    it('should get is buy back fulfilled', async () => {
+        await marketTrend.createTrackingPeriod(1632672415, 1632672416);
         const currentIndex = await marketTrend.getCurrentTrackingPeriodIndex();
+        let isFulfilled = await marketTrend.getIsBuyBackFulfilled(currentIndex);
+        expect(isFulfilled).to.equal(false, "buy back should not be fulfilled yet.");
 
-        const [periodStartTimestamp, periodEndTimestamp, isActive] =
-            await marketTrend.getTrackingPeriodMetaData(currentIndex);
-
-        expect(isActive).to.equal(true, "should be active.");
-
-        const timeDiff = periodEndTimestamp.toNumber() - periodStartTimestamp.toNumber();
-
-        const daysDiff = Math.floor(timeDiff/60/60/24);
-
-        expect(daysDiff >= 30 && daysDiff <= 120).to.equal(true, "tracking period should be between 30 and 120 days.");
-
+        await marketTrend.setIsBuyBackFulfilled(currentIndex, true);
+        isFulfilled = await marketTrend.getIsBuyBackFulfilled(currentIndex);
+        expect(isFulfilled).to.equal(true, "buy back should be fulfilled.");
     });
 
 
-    it('should get tracking period has ended', async () => {
+    it('should process market trend', async () => {
 
-        const currentIndex = await marketTrend.getCurrentTrackingPeriodIndex();
-        expect(currentIndex).to.equal(0, "current index should be 0.");
-
-        const hasEnded = await marketTrend.hasTrackingPeriodEnded(currentIndex);
-
-        expect(hasEnded).to.not.equal(true, "should not be ended.");
-
-    });
-
-    it('should process tracking period', async () => {
-
-        let currentIndex = await marketTrend.getCurrentTrackingPeriodIndex();
-
-        await marketTrend.completeTrackingPeriod(currentIndex);
-
-        const [periodStartTimestamp, periodEndTimestamp, isActive] =
-            await marketTrend.getTrackingPeriodMetaData(currentIndex);
-
-        expect(isActive).to.equal(false, "active indicator should be false.");
-
-        const [
-            startRoundID,
-            startPrice,
-            startStartedAt,
-            startTimeStamp,
-            startAnsweredInRound
-        ] = await marketTrend.getTrackingPeriodRoundData(currentIndex, true);
-
-        expect(startPrice).to.not.equal(0, "start price should not be 0.");
-
-        const [
-            endRoundID,
-            endPrice,
-            endStartedAt,
-            endTimeStamp,
-            endAnsweredInRound
-        ] = await marketTrend.getTrackingPeriodRoundData(currentIndex, false);
-
-        expect(endPrice).to.not.equal(0, "end price should not be 0.");
-
-        const isBuyBackNeeded = await marketTrend.isBuyBackNeeded(startPrice, endPrice);
+        let isBuyBackNeeded = await marketTrend.anyBuyBacksRequired();
         expect(isBuyBackNeeded).to.equal(false, "buy back should not be needed.");
 
-        await marketTrend.createTrackingPeriod();
+        await marketTrend.createTrackingPeriod(1632672415, 1632672416);
+
+        let currentIndex = await marketTrend.getCurrentTrackingPeriodIndex();
+        expect(currentIndex).to.equal(0, "current index should be 0.");
+
+        await marketTrend.pushPriceData(3030);
+        await marketTrend.pushPriceData(3031);
+        await marketTrend.pushPriceData(3032);
+        await marketTrend.pushPriceData(3033);
+        await marketTrend.pushPriceData(3034);
+        await marketTrend.pushPriceData(3035);
+
+
+        //bullish trends
+        await marketTrend.processMarketTrend(1632672418, 3036);
+
+        currentIndex = await marketTrend.getCurrentTrackingPeriodIndex();
+        expect(currentIndex).to.equal(0, "current index should be 0.");
+
+        isBuyBackNeeded = await marketTrend.anyBuyBacksRequired();
+        expect(isBuyBackNeeded).to.equal(false, "buy back should not be needed.");
+
+
+
+        await marketTrend.processMarketTrend(1632672418, 3037);
+
+        currentIndex = await marketTrend.getCurrentTrackingPeriodIndex();
+        expect(currentIndex).to.equal(0, "current index should be 0.");
+
+        isBuyBackNeeded = await marketTrend.anyBuyBacksRequired();
+        expect(isBuyBackNeeded).to.equal(false, "buy back should not be needed.");
+
+
+        //bearish trend
+        await marketTrend.processMarketTrend(1632672418, 3000);
 
         currentIndex = await marketTrend.getCurrentTrackingPeriodIndex();
         expect(currentIndex).to.equal(1, "current index should be 1.");
 
-    });
-
-    it('should get is buy back needed', async () => {
-
-        let isBuyBackNeeded = await marketTrend.isBuyBackNeeded(0, 1);
-        expect(isBuyBackNeeded).to.equal(false, "buy back should not be needed.");
-
-        isBuyBackNeeded = await marketTrend.isBuyBackNeeded(0, 0);
-        expect(isBuyBackNeeded).to.equal(false, "buy back should not be needed.");
-
-        isBuyBackNeeded = await marketTrend.isBuyBackNeeded(1, 0);
+        isBuyBackNeeded = await marketTrend.anyBuyBacksRequired();
         expect(isBuyBackNeeded).to.equal(true, "buy back should be needed.");
 
     });
-
 
 });
