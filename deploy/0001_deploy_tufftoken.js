@@ -39,33 +39,59 @@ module.exports = async () => {
     log: true,
   });
 
-  const uniswapV3PoolManager = await deploy('UniswapV3PoolManager', {
+  // MAIN NET WETH9 / DAI
+  const tokenA = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
+  const tokenB = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
+  const fee = 500;
+
+  const uniswapPoolDeployer = await deploy('UniswapPoolDeployer', {
     from: deployer,
     args: [
         contractOwner,
+        tokenA,
+        tokenB,
+        fee
     ],
     log: true,
   });
 
-  const marketTrend = await deploy('MarketTrend', {
+  const uniswapPriceConsumer = await deploy('UniswapPriceConsumer', {
     from: deployer,
     args: [
-        uniswapV3PoolManager.address,
-        false
+      contractOwner,
+      tokenA,
+      tokenB,
+      fee
     ],
     log: true,
   });
 
+  // Main net ETH/USD 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419
+  const chainLinkPriceConsumer = await deploy('ChainLinkPriceConsumer', {
+    from: deployer,
+    args: [
+        "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419",
+    ],
+    log: true,
+  });
 
-  // // Main net ETH/USD 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419
-  // const marketTrend = await deploy('MarketTrend', {
+  // const uniswapMarketTrend = await deploy('MarketTrend', {
   //   from: deployer,
   //   args: [
-  //     "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419",
+  //     uniswapPriceConsumer.address,
   //     false
   //   ],
   //   log: true,
   // });
+
+  const chainLinkMarketTrend = await deploy('MarketTrend', {
+    from: deployer,
+    args: [
+      chainLinkPriceConsumer.address,
+      false
+    ],
+    log: true,
+  });
 
 };
 

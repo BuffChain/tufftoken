@@ -8,22 +8,7 @@ describe('MarketTrend', function () {
 
     let owner;
     let accounts;
-    let poolManager;
     let marketTrend;
-
-    //    KOVAN
-    //    tokenA: 0xd0A1E359811322d97991E03f863a0C30C2cF029C WETH9
-    //    tokenB: 0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa DAI
-
-    //    MAIN
-    //    tokenA: 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2 WETH9
-    //    tokenB: 0x6B175474E89094C44Da98b954EedeAC495271d0F DAI
-
-    //    fees: 500, 3000, 10000
-
-    let tokenA = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
-    let tokenB = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
-    let fee = 500;
 
     before(async function () {
         const { contractOwner } = await hre.getNamedAccounts();
@@ -34,22 +19,19 @@ describe('MarketTrend', function () {
     });
 
     beforeEach(async function () {
-        const { UniswapV3PoolManager, MarketTrend } = await hre.deployments.fixture();
-        poolManager = await hre.ethers.getContractAt(UniswapV3PoolManager.abi, UniswapV3PoolManager.address, owner);
-        await poolManager.setPool(tokenA, tokenB, fee);
-
+        const { MarketTrend } = await hre.deployments.fixture();
         marketTrend = await hre.ethers.getContractAt(MarketTrend.abi, MarketTrend.address, owner);
+    });
+
+    it('should get price', async () => {
+        const price = await marketTrend.getPrice();
+        expect(price >= 300000000000 && price <= 310000000000).to.equal(true, "unexpected price.");
     });
 
     it('should create tracking period', async () => {
         await marketTrend.createTrackingPeriod(1632672415, 1632672416);
         const currentIndex = await marketTrend.getCurrentTrackingPeriodIndex();
         expect(currentIndex).to.equal(0, "current index should be 0.");
-    });
-
-    it('should get price', async () => {
-        const price = await marketTrend.getPrice();
-        expect(price).to.equal(3030, "unexpected price.");
     });
 
     it('should get is buy back needed', async () => {
@@ -79,16 +61,18 @@ describe('MarketTrend', function () {
         let currentIndex = await marketTrend.getCurrentTrackingPeriodIndex();
         expect(currentIndex).to.equal(0, "current index should be 0.");
 
-        await marketTrend.pushPriceData(3030);
-        await marketTrend.pushPriceData(3031);
-        await marketTrend.pushPriceData(3032);
-        await marketTrend.pushPriceData(3033);
-        await marketTrend.pushPriceData(3034);
-        await marketTrend.pushPriceData(3035);
+        const startingPrice = await marketTrend.getPrice();
+
+        await marketTrend.pushPriceData(startingPrice + 1);
+        await marketTrend.pushPriceData(startingPrice + 2);
+        await marketTrend.pushPriceData(startingPrice + 3);
+        await marketTrend.pushPriceData(startingPrice + 4);
+        await marketTrend.pushPriceData(startingPrice + 5);
+        await marketTrend.pushPriceData(startingPrice + 6);
 
 
         //bullish trends
-        await marketTrend.processMarketTrend(1632672418, 3036);
+        await marketTrend.processMarketTrend(1632672418, startingPrice + 7);
 
         currentIndex = await marketTrend.getCurrentTrackingPeriodIndex();
         expect(currentIndex).to.equal(0, "current index should be 0.");
@@ -98,7 +82,7 @@ describe('MarketTrend', function () {
 
 
 
-        await marketTrend.processMarketTrend(1632672418, 3037);
+        await marketTrend.processMarketTrend(1632672418, startingPrice + 8);
 
         currentIndex = await marketTrend.getCurrentTrackingPeriodIndex();
         expect(currentIndex).to.equal(0, "current index should be 0.");
@@ -108,7 +92,7 @@ describe('MarketTrend', function () {
 
 
         //bearish trend
-        await marketTrend.processMarketTrend(1632672418, 3000);
+        await marketTrend.processMarketTrend(1632672418, startingPrice - 1);
 
         currentIndex = await marketTrend.getCurrentTrackingPeriodIndex();
         expect(currentIndex).to.equal(1, "current index should be 1.");

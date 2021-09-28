@@ -5,7 +5,7 @@ import "@chainlink/contracts/src/v0.7/interfaces/AggregatorV3Interface.sol";
 import "@openzeppelin/contracts-v6/access/Ownable.sol";
 import "./IPriceConsumer.sol";
 
-contract LinkPriceConsumer is Ownable, IPriceConsumer {
+contract ChainLinkPriceConsumer is Ownable, IPriceConsumer {
 
     AggregatorV3Interface internal priceFeed;
 

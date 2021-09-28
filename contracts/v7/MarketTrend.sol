@@ -2,7 +2,6 @@
 pragma solidity >=0.5.0 <0.8.0;
 
 import "@openzeppelin/contracts-v6/access/Ownable.sol";
-import {UniswapV3PoolManager} from "./UniswapV3PoolManager.sol";
 import {IPriceConsumer} from "./IPriceConsumer.sol";
 
 

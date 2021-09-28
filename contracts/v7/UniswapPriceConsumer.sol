@@ -7,32 +7,23 @@ import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
 import "./IPriceConsumer.sol";
 
 
-contract UniswapV3PoolManager is Ownable, IPriceConsumer {
+contract UniswapPriceConsumer is Ownable, IPriceConsumer {
 
     address tokenA;
     address tokenB;
     uint24 fee;
     IUniswapV3Factory factory;
 
-    constructor (address initialOwner) {
-        transferOwnership(initialOwner);
+    constructor (address initialOwner, address _tokenA, address _tokenB, uint24 _fee) {
 
         address uniswapFactoryAddr = address(0x1F98431c8aD98523631AE4a59f267346ea31F984);
         factory = IUniswapV3Factory(uniswapFactoryAddr);
-    }
-
-    function setPool(address _tokenA, address _tokenB, uint24 _fee) public onlyOwner {
-
-        address _poolAddress = getPoolAddress(_tokenA, _tokenB, _fee);
-
-        if (_poolAddress == address(0)) {
-            factory.createPool(_tokenA, _tokenB, _fee);
-            _poolAddress = getPoolAddress(_tokenA, _tokenB, _fee);
-        }
 
         tokenA = _tokenA;
         tokenB = _tokenB;
         fee = _fee;
+
+        transferOwnership(initialOwner);
 
     }
 
@@ -56,7 +47,7 @@ contract UniswapV3PoolManager is Ownable, IPriceConsumer {
     }
 
     function getPrice() public override view returns (uint256) {
-        return getQuote(60) * 10 ** 8;
+        return getQuote(3600) * 10 ** 8;
     }
 
 }
