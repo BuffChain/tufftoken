@@ -55,7 +55,7 @@ describe('UniswapPriceConsumer', function () {
 
         const price = await priceConsumer.getPrice();
 
-        expect(price).to.equal(303000000000);
+        expect(price).to.equal(3030);
 
     });
 

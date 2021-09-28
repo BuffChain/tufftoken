@@ -29,6 +29,7 @@ contract MarketTrend is Ownable {
         bool isActive;
         bool isBuyBackNeeded;
         bool isBuyBackFulfilled;
+        IPriceConsumer priceConsumer;
     }
 
     IPriceConsumer priceConsumer;
@@ -38,11 +39,19 @@ contract MarketTrend is Ownable {
     uint amountOfEpochsLowerLimit = 4;
     uint amountOfEpochsUpperLimit = 10;
 
-    constructor(address _poolManagerAddress, bool createInitialTrackingPeriod) {
-        priceConsumer = IPriceConsumer(_poolManagerAddress);
+    constructor(address priceConsumerAddress, bool createInitialTrackingPeriod) {
+        priceConsumer = IPriceConsumer(priceConsumerAddress);
         if (createInitialTrackingPeriod) {
             createTrackingPeriod(block.timestamp, getPrice());
         }
+    }
+
+    function setPriceConsumer(address priceConsumerAddress) public {
+        priceConsumer = IPriceConsumer(priceConsumerAddress);
+    }
+
+    function getPriceConsumer() public view returns (address) {
+        return address(priceConsumer);
     }
 
     function getPseudoRandomNumber(uint _rangeStart, uint _rangeEnd) private view returns (uint) {
@@ -71,6 +80,7 @@ contract MarketTrend is Ownable {
         trackingPeriod.baseTrackingPeriodStart = baseTrackingPeriodStart;
         trackingPeriod.baseTrackingPeriodEnd = baseTrackingPeriodEnd;
         trackingPeriod.isActive = true;
+        trackingPeriod.priceConsumer = priceConsumer;
         trackingPeriods.push(trackingPeriod);
 
     }
@@ -132,7 +142,13 @@ contract MarketTrend is Ownable {
     }
 
     function getPrice() public view returns (uint256) {
-        return priceConsumer.getPrice();
+        if (trackingPeriods.length > 0) {
+            uint256 currentTrackingPeriodIndex = getCurrentTrackingPeriodIndex();
+            TrackingPeriod memory trackingPeriod = trackingPeriods[currentTrackingPeriodIndex];
+            return trackingPeriod.priceConsumer.getPrice();
+        } else {
+            return priceConsumer.getPrice();
+        }
     }
 
     function isBuyBackNeeded(uint256 startPrice, uint256 endPrice) public pure returns (bool){

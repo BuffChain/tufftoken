@@ -47,7 +47,7 @@ contract UniswapPriceConsumer is Ownable, IPriceConsumer {
     }
 
     function getPrice() public override view returns (uint256) {
-        return getQuote(3600) * 10 ** 8;
+        return getQuote(3600);
     }
 
 }

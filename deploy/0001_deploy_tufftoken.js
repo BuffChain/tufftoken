@@ -75,19 +75,10 @@ module.exports = async () => {
     log: true,
   });
 
-  // const uniswapMarketTrend = await deploy('MarketTrend', {
-  //   from: deployer,
-  //   args: [
-  //     uniswapPriceConsumer.address,
-  //     false
-  //   ],
-  //   log: true,
-  // });
-
-  const chainLinkMarketTrend = await deploy('MarketTrend', {
+  const uniswapMarketTrend = await deploy('MarketTrend', {
     from: deployer,
     args: [
-      chainLinkPriceConsumer.address,
+      uniswapPriceConsumer.address,
       false
     ],
     log: true,
