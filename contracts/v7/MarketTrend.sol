@@ -48,6 +48,7 @@ contract MarketTrend is Ownable {
         }
     }
 
+//    This will only take effect on next tracking period
     function setPriceConsumer(address priceConsumerAddress) public {
         priceConsumer = IPriceConsumer(priceConsumerAddress);
     }
