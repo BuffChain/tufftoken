@@ -6,13 +6,15 @@ import {IPriceConsumer} from "./IPriceConsumer.sol";
 
 
 /*
-epoch = 7 days
-base market trend period = range of 3 to 10 epochs
-can buy back when it has been at least base market trend period is met since last buy back and the next epoch trend is bear
 
-Ex: base market trend period = 3 epochs, buy back happens on day x
-	- case 4 epochs passed since day x and 4th epoch was bull: buy back = false;
-	- case 5 epochs passed since day x and 5th epoch was bear: buy back = true;
+can buy back when
+1. it has been at least base market trend period is met since last buy back
+2. price change from current day to 1 epoch's worth of days ago is negative
+
+Ex: buy back happens on day x, epoch = 7 days, base market trend period = 4 epochs
+	- case 1: current day = x + 3 epochs and 6 days => no buy back;
+	- case 2: current day = x + 4 epochs and 0 days, price change from current day - 7 days ago is + => no buy back;
+	- case 3: current day = x + 4 epochs and 0 days, price change from current day - 7 days ago is - => buy back;
 */
 
 
