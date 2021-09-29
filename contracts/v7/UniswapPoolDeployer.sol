@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: agpl-3.0
-pragma solidity >=0.5.0 <0.8.0;
+pragma solidity >=0.7.0 <0.8.0;
 
 import "@openzeppelin/contracts-v6/access/Ownable.sol";
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";

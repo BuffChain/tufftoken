@@ -1,8 +1,8 @@
 // SPDX-License-Identifier: agpl-3.0
-pragma solidity >=0.5.0 <0.8.0;
+pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts-v6/access/Ownable.sol";
-import {IPriceConsumer} from "./IPriceConsumer.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
+import "./v7/IPriceConsumer.sol";
 
 
 /*
@@ -10,11 +10,13 @@ import {IPriceConsumer} from "./IPriceConsumer.sol";
 can buy back when
 1. it has been at least base market trend period is met since last buy back
 2. price change from current day to 1 epoch's worth of days ago is negative
+TODO work in probability that increases per epoch of buy back
 
 Ex: buy back happens on day x, epoch = 7 days, base market trend period = 4 epochs
 	- case 1: current day = x + 3 epochs and 6 days => no buy back;
 	- case 2: current day = x + 4 epochs and 0 days, price change from current day - 7 days ago is + => no buy back;
 	- case 3: current day = x + 4 epochs and 0 days, price change from current day - 7 days ago is - => buy back;
+	- case 4: current day = x + 4 epochs and 1 days, price change from current day - 7 days ago is - => buy back;
 */
 
 
@@ -44,7 +46,9 @@ contract MarketTrend is Ownable {
     constructor(address priceConsumerAddress, bool createInitialTrackingPeriod) {
         priceConsumer = IPriceConsumer(priceConsumerAddress);
         if (createInitialTrackingPeriod) {
-            createTrackingPeriod(block.timestamp, getPrice());
+            uint randomNumberOfEpochs = getPseudoRandomNumber(amountOfEpochsLowerLimit, amountOfEpochsUpperLimit);
+            uint baseTrackingPeriodEnd = block.timestamp + (randomNumberOfEpochs * daysInEpoch * 1 days);
+            createTrackingPeriod(block.timestamp, baseTrackingPeriodEnd);
         }
     }
 

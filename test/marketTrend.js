@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: agpl-3.0
 
 const { expect } = require("chai");
-const { ethers } = require("hardhat");
 const hre = require("hardhat");
 
 describe('MarketTrend', function () {
@@ -27,7 +26,7 @@ describe('MarketTrend', function () {
         chainLinkPriceConsumerAddress = ChainLinkPriceConsumer.address;
     });
 
-    async function getPrice(expectedPrice) {
+    async function assertPrice(expectedPrice) {
         const price = await marketTrend.getPrice();
         expect(price).to.equal(expectedPrice, "unexpected price.");
     }
@@ -108,7 +107,7 @@ describe('MarketTrend', function () {
     });
 
     it('should get price: UNISWAP', async () => {
-        await getPrice(3030);
+        await assertPrice(3030);
     });
 
     it('should create tracking period: UNISWAP', async () => {
@@ -135,7 +134,7 @@ describe('MarketTrend', function () {
 
     it('should get price: CHAINLINK', async () => {
         await marketTrend.setPriceConsumer(chainLinkPriceConsumerAddress);
-        await getPrice(306406750447);
+        await assertPrice(306406750447);
     });
 
     it('should create tracking period: CHAINLINK', async () => {

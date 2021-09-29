@@ -1,10 +1,8 @@
 // SPDX-License-Identifier: agpl-3.0
 
 const { expect } = require("chai");
-const { ethers } = require("hardhat");
 const hre = require("hardhat");
-const utils = require("./utils");
-const {BN} = require("@openzeppelin/test-helpers");
+const {WETH9_ADDRESS, DAI_ADDRESS, USDC_ADDRESS, UNISWAP_WETH_DAI_POOL_ADDRESS, UNISWAP_WETH_USDC_POOL_ADDRESS} = require("./utils");
 
 describe('UniswapPoolDeployer', function () {
 
@@ -27,29 +25,22 @@ describe('UniswapPoolDeployer', function () {
 
     it('should get pool', async () => {
 
-        let tokenA = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
-        let tokenB = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
         let fee = 500;
 
-        const poolAddress = await poolDeployer.getPoolAddress(tokenA, tokenB, fee);
+        const poolAddress = await poolDeployer.getPoolAddress(WETH9_ADDRESS, DAI_ADDRESS, fee);
 
-        expect(poolAddress).to.equal("0x60594a405d53811d3BC4766596EFD80fd545A270", "unexpected pool address.")
+        expect(poolAddress).to.equal(UNISWAP_WETH_DAI_POOL_ADDRESS, "unexpected pool address.")
     });
 
     it('should init pool', async () => {
 
-        //    MAIN
-        //    tokenB: 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48 USDC
-
-        let tokenA = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
-        let tokenB = "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48";
         let fee = 500;
 
-        await poolDeployer.setPool(tokenA, tokenB, fee);
+        await poolDeployer.setPool(WETH9_ADDRESS, USDC_ADDRESS, fee);
 
-        const poolAddress = await poolDeployer.getPoolAddress(tokenA, tokenB, fee);
+        const poolAddress = await poolDeployer.getPoolAddress(WETH9_ADDRESS, USDC_ADDRESS, fee);
 
-        expect(poolAddress).to.equal("0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640", "unexpected pool address.")
+        expect(poolAddress).to.equal(UNISWAP_WETH_USDC_POOL_ADDRESS, "unexpected pool address.")
     });
 
 });
