@@ -9,15 +9,16 @@ contract ChainLinkPriceConsumer is Ownable, IPriceConsumer {
 
     AggregatorV3Interface internal priceFeed;
 
-    constructor(address _aggregatorAddress) {
+    constructor(address initialOwner, address _aggregatorAddress) {
         priceFeed = AggregatorV3Interface(_aggregatorAddress);
+        transferOwnership(initialOwner);
     }
 
     function setPriceFeed(address _aggregatorAddress) public onlyOwner {
         priceFeed = AggregatorV3Interface(_aggregatorAddress);
     }
 
-    function getLatestRoundData() public view returns (
+    function getLatestRoundData() public view onlyOwner returns (
         uint80,
         int,
         uint,
@@ -29,7 +30,7 @@ contract ChainLinkPriceConsumer is Ownable, IPriceConsumer {
 
     }
 
-    function getPrice() public override view returns (uint256) {
+    function getPrice() public override view onlyOwner returns (uint256) {
         (,int price,,,) = getLatestRoundData();
         return uint256(price);
     }

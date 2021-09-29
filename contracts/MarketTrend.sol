@@ -43,21 +43,22 @@ contract MarketTrend is Ownable {
     uint amountOfEpochsLowerLimit = 4;
     uint amountOfEpochsUpperLimit = 10;
 
-    constructor(address priceConsumerAddress, bool createInitialTrackingPeriod) {
+    constructor(address initialOwner, address priceConsumerAddress, bool createInitialTrackingPeriod) {
         priceConsumer = IPriceConsumer(priceConsumerAddress);
         if (createInitialTrackingPeriod) {
             uint randomNumberOfEpochs = getPseudoRandomNumber(amountOfEpochsLowerLimit, amountOfEpochsUpperLimit);
             uint baseTrackingPeriodEnd = block.timestamp + (randomNumberOfEpochs * daysInEpoch * 1 days);
             createTrackingPeriod(block.timestamp, baseTrackingPeriodEnd);
         }
+        transferOwnership(initialOwner);
     }
 
 //    This will only take effect on next tracking period
-    function setPriceConsumer(address priceConsumerAddress) public {
+    function setPriceConsumer(address priceConsumerAddress) public onlyOwner {
         priceConsumer = IPriceConsumer(priceConsumerAddress);
     }
 
-    function getPriceConsumer() public view returns (address) {
+    function getPriceConsumer() public onlyOwner view returns (address) {
         return address(priceConsumer);
     }
 
@@ -67,11 +68,11 @@ contract MarketTrend is Ownable {
         return randomNumber;
     }
 
-    function getCurrentTrackingPeriodIndex() public view returns (uint256) {
+    function getCurrentTrackingPeriodIndex() public onlyOwner view returns (uint256) {
         return trackingPeriods.length - 1;
     }
 
-    function createTrackingPeriod(uint baseTrackingPeriodStart, uint baseTrackingPeriodEnd) public {
+    function createTrackingPeriod(uint baseTrackingPeriodStart, uint baseTrackingPeriodEnd) public onlyOwner {
         require(
             trackingPeriods.length == 0 ||
             !trackingPeriods[trackingPeriods.length - 1].isActive,
@@ -92,24 +93,24 @@ contract MarketTrend is Ownable {
 
     }
 
-    function completeTrackingPeriod(uint256 trackingPeriodIndex, bool _isBuyBackNeeded) public  {
+    function completeTrackingPeriod(uint256 trackingPeriodIndex, bool _isBuyBackNeeded) public onlyOwner {
         require(trackingPeriods[trackingPeriodIndex].isActive, "Cannot complete an inactive tracking period.");
         trackingPeriods[trackingPeriodIndex].isActive = false;
         trackingPeriods[trackingPeriodIndex].isBuyBackNeeded = _isBuyBackNeeded;
     }
 
-    function pushPriceData(uint256 currentPrice) public {
+    function pushPriceData(uint256 currentPrice) public onlyOwner {
         PriceData memory currentPriceData;
         currentPriceData.price = currentPrice;
         currentPriceData.timestamp = block.timestamp;
         priceDataEntries.push(currentPriceData);
     }
 
-    function processCurrentMarketTrend() public {
+    function processCurrentMarketTrend() public onlyOwner {
         processMarketTrend(block.timestamp, getPrice());
     }
 
-    function processMarketTrend(uint256 timestamp, uint256 currentPrice) public {
+    function processMarketTrend(uint256 timestamp, uint256 currentPrice) public onlyOwner {
 
         uint256 currentTrackingPeriodIndex = getCurrentTrackingPeriodIndex();
         TrackingPeriod memory trackingPeriod = trackingPeriods[currentTrackingPeriodIndex];
@@ -136,19 +137,19 @@ contract MarketTrend is Ownable {
 
     }
 
-    function getPriceDataEntriesLength() public view returns (uint256) {
+    function getPriceDataEntriesLength() public view onlyOwner returns (uint256) {
         return priceDataEntries.length;
     }
 
-    function getStartingEntryIndex(uint256 lastEntryIndex) public view returns (uint256) {
+    function getStartingEntryIndex(uint256 lastEntryIndex) public view onlyOwner returns (uint256) {
         return lastEntryIndex - daysInEpoch;
     }
 
-    function getPriceFromDataEntry(uint256 priceDataIndex) public view returns (uint256) {
+    function getPriceFromDataEntry(uint256 priceDataIndex) public view onlyOwner returns (uint256) {
         return priceDataEntries[priceDataIndex].price;
     }
 
-    function getPrice() public view returns (uint256) {
+    function getPrice() public view onlyOwner returns (uint256) {
         if (trackingPeriods.length > 0) {
             uint256 currentTrackingPeriodIndex = getCurrentTrackingPeriodIndex();
             TrackingPeriod memory trackingPeriod = trackingPeriods[currentTrackingPeriodIndex];
@@ -162,7 +163,7 @@ contract MarketTrend is Ownable {
         return endPrice < startPrice;
     }
 
-    function anyBuyBacksRequired() public view returns (bool) {
+    function anyBuyBacksRequired() public view onlyOwner returns (bool) {
         bool required = false;
         for (uint256 trackingPeriod = 0; trackingPeriod < trackingPeriods.length; trackingPeriod++) {
             if (trackingPeriods[trackingPeriod].isBuyBackNeeded && !getIsBuyBackFulfilled(trackingPeriod)) {
@@ -173,11 +174,11 @@ contract MarketTrend is Ownable {
         return required;
     }
 
-    function getIsBuyBackFulfilled(uint256 trackingPeriod) public view returns (bool) {
+    function getIsBuyBackFulfilled(uint256 trackingPeriod) public view onlyOwner returns (bool) {
         return trackingPeriods[trackingPeriod].isBuyBackFulfilled;
     }
 
-    function setIsBuyBackFulfilled(uint256 trackingPeriod, bool fulfilled) public {
+    function setIsBuyBackFulfilled(uint256 trackingPeriod, bool fulfilled) public onlyOwner {
         trackingPeriods[trackingPeriod].isBuyBackFulfilled = fulfilled;
     }
 

@@ -2,6 +2,7 @@
 
 const hre = require("hardhat");
 const { getContractAddress } = require("@ethersproject/address");
+const {WETH9_ADDRESS, DAI_ADDRESS} = require("../test/utils");
 
 module.exports = async () => {
   const { deployments, getNamedAccounts } = hre;
@@ -12,7 +13,7 @@ module.exports = async () => {
   console.log(`Contract owner address [${contractOwner}]`)
 
   const deployerAcct = await hre.ethers.getSigner(deployer);
-  const transactionCount = await deployerAcct.getTransactionCount();
+  let transactionCount = await deployerAcct.getTransactionCount();
   const farmTreasuryAddress = getContractAddress({
     from: deployer,
 
@@ -39,28 +40,34 @@ module.exports = async () => {
     log: true,
   });
 
-  // MAIN NET WETH9 / DAI
-  const tokenA = "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2";
-  const tokenB = "0x6B175474E89094C44Da98b954EedeAC495271d0F";
   const fee = 500;
 
   const uniswapPoolDeployer = await deploy('UniswapPoolDeployer', {
     from: deployer,
     args: [
         contractOwner,
-        tokenA,
-        tokenB,
+        WETH9_ADDRESS,
+        DAI_ADDRESS,
         fee
     ],
     log: true,
   });
 
+  transactionCount = await deployerAcct.getTransactionCount();
+
+  const marketTrendAddress = getContractAddress({
+    from: deployer,
+
+    //Add one as we want the contract address after next.
+    nonce: transactionCount + 2
+  })
+
   const uniswapPriceConsumer = await deploy('UniswapPriceConsumer', {
     from: deployer,
     args: [
-      contractOwner,
-      tokenA,
-      tokenB,
+      marketTrendAddress,
+      WETH9_ADDRESS,
+      DAI_ADDRESS,
       fee
     ],
     log: true,
@@ -70,14 +77,16 @@ module.exports = async () => {
   const chainLinkPriceConsumer = await deploy('ChainLinkPriceConsumer', {
     from: deployer,
     args: [
+      marketTrendAddress,
         "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419",
     ],
     log: true,
   });
 
-  const uniswapMarketTrend = await deploy('MarketTrend', {
+  const marketTrend = await deploy('MarketTrend', {
     from: deployer,
     args: [
+      contractOwner,
       uniswapPriceConsumer.address,
       false
     ],

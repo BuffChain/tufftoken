@@ -27,13 +27,13 @@ contract UniswapPriceConsumer is Ownable, IPriceConsumer {
 
     }
 
-    function getPoolAddress(address _tokenA, address _tokenB, uint24 _fee) public view returns (
+    function getPoolAddress(address _tokenA, address _tokenB, uint24 _fee) public view onlyOwner returns (
         address
     ) {
         return factory.getPool(_tokenA, _tokenB, _fee);
     }
 
-    function getQuote(uint32 period) public view returns (uint256 quoteAmount) {
+    function getQuote(uint32 period) public view onlyOwner returns (uint256 quoteAmount) {
 
         address _poolAddress = getPoolAddress(tokenA, tokenB, fee);
 
@@ -46,7 +46,7 @@ contract UniswapPriceConsumer is Ownable, IPriceConsumer {
 
     }
 
-    function getPrice() public override view returns (uint256) {
+    function getPrice() public override view onlyOwner returns (uint256) {
         return getQuote(3600);
     }
 
