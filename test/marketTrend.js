@@ -10,6 +10,8 @@ describe('MarketTrend', function () {
     let marketTrend;
     let chainLinkPriceConsumerAddress;
     let uniswapPriceConsumerAddress;
+    const nowTimeStamp = Math.floor(Date.now() / 1000);
+    const mockPrice = 3000;
 
     before(async function () {
         const { contractOwner } = await hre.getNamedAccounts();
@@ -27,12 +29,20 @@ describe('MarketTrend', function () {
     });
 
     async function assertPrice(expectedPrice) {
-        const price = await marketTrend.getPrice();
+
+        const mockMarketTrend = {
+            ...marketTrend,
+            ...{
+                getPrice: async () => mockPrice
+            }
+        }
+
+        const price = await mockMarketTrend.getPrice();
         expect(price).to.equal(expectedPrice, "unexpected price.");
     }
 
     async function createTrackingPeriod() {
-        await marketTrend.createTrackingPeriod(1632672415, 1632672416);
+        await marketTrend.createTrackingPeriod(nowTimeStamp, nowTimeStamp + 1);
         const currentIndex = await marketTrend.getCurrentTrackingPeriodIndex();
         expect(currentIndex).to.equal(0, "current index should be 0.");
     }
@@ -43,7 +53,7 @@ describe('MarketTrend', function () {
     }
 
     async function isBuyBackFulfilled() {
-        await marketTrend.createTrackingPeriod(1632672415, 1632672416);
+        await marketTrend.createTrackingPeriod(nowTimeStamp, nowTimeStamp + 1);
         const currentIndex = await marketTrend.getCurrentTrackingPeriodIndex();
         let isFulfilled = await marketTrend.getIsBuyBackFulfilled(currentIndex);
         expect(isFulfilled).to.equal(false, "buy back should not be fulfilled yet.");
@@ -57,7 +67,7 @@ describe('MarketTrend', function () {
         let isBuyBackNeeded = await marketTrend.anyBuyBacksRequired();
         expect(isBuyBackNeeded).to.equal(false, "buy back should not be needed.");
 
-        await marketTrend.createTrackingPeriod(1632672415, 1632672416);
+        await marketTrend.createTrackingPeriod(nowTimeStamp, nowTimeStamp + 1);
 
         let currentIndex = await marketTrend.getCurrentTrackingPeriodIndex();
         expect(currentIndex).to.equal(0, "current index should be 0.");
@@ -73,7 +83,7 @@ describe('MarketTrend', function () {
 
 
         //bullish trends
-        await marketTrend.processMarketTrend(1632672418, startingPrice + 7);
+        await marketTrend.processMarketTrend(nowTimeStamp + 2, startingPrice + 7);
 
         currentIndex = await marketTrend.getCurrentTrackingPeriodIndex();
         expect(currentIndex).to.equal(0, "current index should be 0.");
@@ -82,7 +92,7 @@ describe('MarketTrend', function () {
         expect(isBuyBackNeeded).to.equal(false, "buy back should not be needed.");
 
 
-        await marketTrend.processMarketTrend(1632672418, startingPrice + 8);
+        await marketTrend.processMarketTrend(nowTimeStamp + 3, startingPrice + 8);
 
         currentIndex = await marketTrend.getCurrentTrackingPeriodIndex();
         expect(currentIndex).to.equal(0, "current index should be 0.");
@@ -92,7 +102,7 @@ describe('MarketTrend', function () {
 
 
         //bearish trend
-        await marketTrend.processMarketTrend(1632672418, startingPrice - 1);
+        await marketTrend.processMarketTrend(nowTimeStamp + 4, startingPrice - 1);
 
         currentIndex = await marketTrend.getCurrentTrackingPeriodIndex();
         expect(currentIndex).to.equal(1, "current index should be 1.");
@@ -107,7 +117,7 @@ describe('MarketTrend', function () {
     });
 
     it('should get price: UNISWAP', async () => {
-        await assertPrice(3030);
+        await assertPrice(mockPrice);
     });
 
     it('should create tracking period: UNISWAP', async () => {
@@ -134,7 +144,7 @@ describe('MarketTrend', function () {
 
     it('should get price: CHAINLINK', async () => {
         await marketTrend.setPriceConsumer(chainLinkPriceConsumerAddress);
-        await assertPrice(306406750447);
+        await assertPrice(mockPrice);
     });
 
     it('should create tracking period: CHAINLINK', async () => {
