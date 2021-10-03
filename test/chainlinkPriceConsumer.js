@@ -2,10 +2,6 @@
 
 const { expect } = require("chai");
 const hre = require("hardhat");
-const {WETH9_ADDRESS, DAI_ADDRESS, UNISWAP_WETH_DAI_POOL_ADDRESS,
-    UNISWAP_POOL_BASE_FEE
-} = require("./utils");
-const { smockit } = require("@eth-optimism/smock");
 const {CHAINLINK_ETH_USD_AGGREGATOR_ADDRESS} = require("../test/utils");
 
 describe('ChainLinkPriceConsumer', function () {
