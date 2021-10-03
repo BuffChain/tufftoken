@@ -2,7 +2,7 @@
 
 const { expect } = require("chai");
 const hre = require("hardhat");
-const { smoddit, smockit } = require("@eth-optimism/smock");
+const { smockit } = require("@eth-optimism/smock");
 
 describe('MarketTrend', function () {
 
