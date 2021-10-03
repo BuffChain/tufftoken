@@ -14,10 +14,9 @@ contract UniswapPriceConsumer is Ownable, IPriceConsumer {
     uint24 fee;
     IUniswapV3Factory factory;
 
-    constructor (address initialOwner, address _tokenA, address _tokenB, uint24 _fee) {
+    constructor (address initialOwner, address _tokenA, address _tokenB, uint24 _fee, address _factoryAddress) {
 
-        address uniswapFactoryAddr = address(0x1F98431c8aD98523631AE4a59f267346ea31F984);
-        factory = IUniswapV3Factory(uniswapFactoryAddr);
+        factory = IUniswapV3Factory(_factoryAddress);
 
         tokenA = _tokenA;
         tokenB = _tokenB;

@@ -2,7 +2,7 @@
 
 const hre = require("hardhat");
 const { getContractAddress } = require("@ethersproject/address");
-const {WETH9_ADDRESS, DAI_ADDRESS, UNISWAP_POOL_BASE_FEE} = require("../test/utils");
+const {WETH9_ADDRESS, DAI_ADDRESS, UNISWAP_POOL_BASE_FEE, CHAINLINK_ETH_USD_AGGREGATOR_ADDRESS, UNISWAP_FACTORY_ADDRESS} = require("../test/utils");
 
 module.exports = async () => {
   const { deployments, getNamedAccounts } = hre;
@@ -66,7 +66,8 @@ module.exports = async () => {
       marketTrendAddress,
       WETH9_ADDRESS,
       DAI_ADDRESS,
-      UNISWAP_POOL_BASE_FEE
+      UNISWAP_POOL_BASE_FEE,
+      UNISWAP_FACTORY_ADDRESS
     ],
     log: true,
   });
@@ -76,7 +77,7 @@ module.exports = async () => {
     from: deployer,
     args: [
       marketTrendAddress,
-        "0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419",
+      CHAINLINK_ETH_USD_AGGREGATOR_ADDRESS,
     ],
     log: true,
   });

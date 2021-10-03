@@ -3,10 +3,12 @@
 const { expect } = require("chai");
 const hre = require("hardhat");
 const {WETH9_ADDRESS, DAI_ADDRESS, UNISWAP_WETH_DAI_POOL_ADDRESS,
-    UNISWAP_POOL_BASE_FEE, UNISWAP_FACTORY_ADDRESS
+    UNISWAP_POOL_BASE_FEE
 } = require("./utils");
+const { smockit } = require("@eth-optimism/smock");
+const {CHAINLINK_ETH_USD_AGGREGATOR_ADDRESS} = require("../test/utils");
 
-describe('UniswapPriceConsumer', function () {
+describe('ChainLinkPriceConsumer', function () {
 
     let owner;
     let deployerAccount;
@@ -24,34 +26,29 @@ describe('UniswapPriceConsumer', function () {
 
     beforeEach(async function () {
         // deploying this way to not transfer ownership to MarketTrend contract
-        const UniswapPriceConsumer = await hre.ethers.getContractFactory("UniswapPriceConsumer");
+        const ChainLinkPriceConsumer = await hre.ethers.getContractFactory("ChainLinkPriceConsumer");
 
-        priceConsumer = await UniswapPriceConsumer.deploy(
+        priceConsumer = await ChainLinkPriceConsumer.deploy(
             deployerAccount.address,
-            WETH9_ADDRESS,
-            DAI_ADDRESS,
-            UNISWAP_POOL_BASE_FEE,
-            UNISWAP_FACTORY_ADDRESS
+            CHAINLINK_ETH_USD_AGGREGATOR_ADDRESS
         );
 
         await priceConsumer.deployed();
 
     });
 
-    it('should get pool', async () => {
+    it('should get latest round data', async () => {
 
-        const poolAddress = await priceConsumer.getPoolAddress(WETH9_ADDRESS, DAI_ADDRESS, UNISWAP_POOL_BASE_FEE);
+        const [
+            roundId,
+            answer,
+            startedAt,
+            updatedAt,
+            answeredInRound
+        ] = await priceConsumer.getLatestRoundData();
 
-        expect(poolAddress).to.equal(UNISWAP_WETH_DAI_POOL_ADDRESS, "unexpected pool address.")
+        expect(answer > 0).to.equal(true, "unexpected answer.")
     });
-
-    it('should get quote', async () => {
-
-        const quote = await priceConsumer.getQuote(3600);
-
-        expect(quote > 0).to.equal(true, "unexpected quote.")
-    });
-
 
     it('should get price', async () => {
 
