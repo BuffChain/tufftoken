@@ -4,7 +4,7 @@ pragma solidity ^0.8.0;
 import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
-import { BuffToken } from  "./BuffToken.sol";
+import { TuffToken } from  "./TuffToken.sol";
 
 contract Election is Ownable {
 
@@ -22,20 +22,23 @@ contract Election is Ownable {
     mapping (address => Voter) public voters;
     mapping (bool => uint256) public candidates;
     bool public ended = false;
-    BuffToken token;
+    TuffToken token;
 
     constructor (
+        address initialOwner,
         string memory _name,
         string memory _description,
         string memory _author,
         uint256 _electionEnd,
         address payable _tokenAddr
     ) {
+        transferOwnership(initialOwner);
+
         name = _name;
-        electionEnd = _electionEnd;
         description = _description;
         author = _author;
-        token = BuffToken(_tokenAddr);
+        electionEnd = _electionEnd;
+        token = TuffToken(_tokenAddr);
     }
 
 

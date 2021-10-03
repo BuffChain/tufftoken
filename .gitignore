@@ -13,5 +13,6 @@ artifacts
 node_modules/
 
 .secret
+.env
 
 package-lock.json
