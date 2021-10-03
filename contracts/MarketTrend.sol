@@ -10,13 +10,13 @@ import "./v7/IPriceConsumer.sol";
 can buy back when
 1. it has been at least base market trend period is met since last buy back
 2. price change from current day to 1 epoch's worth of days ago is negative
-TODO work in probability that increases per epoch of buy back
+3. random number choice is below current chance percent
 
 Ex: buy back happens on day x, epoch = 7 days, base market trend period = 4 epochs
 	- case 1: current day = x + 3 epochs and 6 days => no buy back;
 	- case 2: current day = x + 4 epochs and 0 days, price change from current day - 7 days ago is + => no buy back;
-	- case 3: current day = x + 4 epochs and 0 days, price change from current day - 7 days ago is - => buy back;
-	- case 4: current day = x + 4 epochs and 1 days, price change from current day - 7 days ago is - => buy back;
+	- case 3: current day = x + 4 epochs and 0 days, price change from current day - 7 days ago is -, chance = 10%, choice = 19 => no buy back;
+	- case 4: current day = x + 4 epochs and 1 days, price change from current day - 7 days ago is -, chance = 20%, choice = 19  => buy back;
 */
 
 
