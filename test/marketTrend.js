@@ -49,8 +49,8 @@ describe('MarketTrend', function () {
         expect(currentIndex).to.equal(0, "current index should be 0.");
     }
 
-    async function isBuyBackNeeded() {
-        const isNeeded = await marketTrend.isBuyBackNeeded(1, 0);
+    async function isNegativeOrZeroPriceChange() {
+        const isNeeded = await marketTrend.isNegativeOrZeroPriceChange(1, 0);
         expect(isNeeded).to.equal(true, "buy back should be needed.");
     }
 
@@ -104,14 +104,36 @@ describe('MarketTrend', function () {
 
 
         //bearish trend
-        await marketTrend.processMarketTrend(nowTimeStamp + 4, startingPrice - 1);
+        let increment = 0;
+        while (!isBuyBackNeeded) {
+            await marketTrend.processMarketTrend(nowTimeStamp + 4 + increment, startingPrice - increment);
+
+            isBuyBackNeeded = await marketTrend.anyBuyBacksRequired();
+
+            const [buyBackChance, chosenNumber] = await marketTrend.getLastBuyBackChoiceResults(0);
+
+            console.log(`Current Buy Back Conditions: chance=${buyBackChance}%, choice=${chosenNumber}`);
+
+            increment += 1;
+
+        }
+
+        console.log(`Buy Back needed after ${increment} negative price changes`);
+
+        expect(isBuyBackNeeded).to.equal(true, "buy back should be needed.");
 
         currentIndex = await marketTrend.getCurrentTrackingPeriodIndex();
+
         expect(currentIndex).to.equal(1, "current index should be 1.");
 
-        isBuyBackNeeded = await marketTrend.anyBuyBacksRequired();
-        expect(isBuyBackNeeded).to.equal(true, "buy back should be needed.");
     }
+
+    it('should get price random number', async () => {
+        const rangeStart = 1;
+        const rangeEnd = 100;
+        const choice = await marketTrend.getPseudoRandomNumber(rangeStart, rangeEnd);
+        expect(choice >= rangeStart && choice <= rangeEnd).to.equal(true, "unexpected choice.");
+    });
 
     it('should get price consumer address: UNISWAP', async () => {
         const priceConsumer = await marketTrend.getPriceConsumer();
@@ -127,7 +149,7 @@ describe('MarketTrend', function () {
     });
 
     it('should get is buy back needed: UNISWAP', async () => {
-        await isBuyBackNeeded();
+        await isNegativeOrZeroPriceChange();
     });
 
     it('should get is buy back fulfilled: UNISWAP', async () => {
@@ -155,7 +177,7 @@ describe('MarketTrend', function () {
 
     it('should get is buy back needed: CHAINLINK', async () => {
         await marketTrend.setPriceConsumer(chainLinkPriceConsumer.address);
-        await isBuyBackNeeded();
+        await isNegativeOrZeroPriceChange();
     });
 
     it('should get is buy back fulfilled: CHAINLINK', async () => {
