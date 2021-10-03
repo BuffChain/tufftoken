@@ -9,8 +9,6 @@ describe('MarketTrend', function () {
     let owner;
     let accounts;
     let marketTrend;
-    let chainLinkPriceConsumerAddress;
-    let uniswapPriceConsumerAddress;
     let chainLinkPriceConsumer;
     let uniswapPriceConsumer;
     const nowTimeStamp = Math.floor(Date.now() / 1000);
@@ -28,8 +26,6 @@ describe('MarketTrend', function () {
         marketTrend = await hre.ethers.getContractAt(MarketTrend.abi, MarketTrend.address, owner);
         chainLinkPriceConsumer = await hre.ethers.getContractAt(ChainLinkPriceConsumer.abi, ChainLinkPriceConsumer.address, owner);
         uniswapPriceConsumer = await hre.ethers.getContractAt(UniswapPriceConsumer.abi, UniswapPriceConsumer.address, owner);
-        uniswapPriceConsumerAddress = UniswapPriceConsumer.address;
-        chainLinkPriceConsumerAddress = ChainLinkPriceConsumer.address;
     });
 
     async function assertPrice(priceConsumer) {
@@ -119,7 +115,7 @@ describe('MarketTrend', function () {
 
     it('should get price consumer address: UNISWAP', async () => {
         const priceConsumer = await marketTrend.getPriceConsumer();
-        expect(priceConsumer).to.equal(uniswapPriceConsumerAddress, "current price consumer should be uniswap.");
+        expect(priceConsumer).to.equal(uniswapPriceConsumer.address, "current price consumer should be uniswap.");
     });
 
     it('should get price: UNISWAP', async () => {
@@ -143,9 +139,9 @@ describe('MarketTrend', function () {
     });
 
     it('should get price consumer address: CHAINLINK', async () => {
-        await marketTrend.setPriceConsumer(chainLinkPriceConsumerAddress);
+        await marketTrend.setPriceConsumer(chainLinkPriceConsumer.address);
         const priceConsumer = await marketTrend.getPriceConsumer();
-        expect(priceConsumer).to.equal(chainLinkPriceConsumerAddress, "current price consumer should be link.");
+        expect(priceConsumer).to.equal(chainLinkPriceConsumer.address, "current price consumer should be link.");
     });
 
     it('should get price: CHAINLINK', async () => {
@@ -153,22 +149,22 @@ describe('MarketTrend', function () {
     });
 
     it('should create tracking period: CHAINLINK', async () => {
-        await marketTrend.setPriceConsumer(chainLinkPriceConsumerAddress);
+        await marketTrend.setPriceConsumer(chainLinkPriceConsumer.address);
         await createTrackingPeriod();
     });
 
     it('should get is buy back needed: CHAINLINK', async () => {
-        await marketTrend.setPriceConsumer(chainLinkPriceConsumerAddress);
+        await marketTrend.setPriceConsumer(chainLinkPriceConsumer.address);
         await isBuyBackNeeded();
     });
 
     it('should get is buy back fulfilled: CHAINLINK', async () => {
-        await marketTrend.setPriceConsumer(chainLinkPriceConsumerAddress);
+        await marketTrend.setPriceConsumer(chainLinkPriceConsumer.address);
         await isBuyBackFulfilled();
     });
 
     it('should process market trend: CHAINLINK', async () => {
-        await marketTrend.setPriceConsumer(chainLinkPriceConsumerAddress);
+        await marketTrend.setPriceConsumer(chainLinkPriceConsumer.address);
         await processMarketTrend();
     });
 
