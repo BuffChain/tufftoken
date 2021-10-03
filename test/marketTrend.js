@@ -2,6 +2,7 @@
 
 const { expect } = require("chai");
 const hre = require("hardhat");
+const { smoddit, smockit } = require("@eth-optimism/smock");
 
 describe('MarketTrend', function () {
 
@@ -10,8 +11,9 @@ describe('MarketTrend', function () {
     let marketTrend;
     let chainLinkPriceConsumerAddress;
     let uniswapPriceConsumerAddress;
+    let chainLinkPriceConsumer;
+    let uniswapPriceConsumer;
     const nowTimeStamp = Math.floor(Date.now() / 1000);
-    const mockPrice = 3000;
 
     before(async function () {
         const { contractOwner } = await hre.getNamedAccounts();
@@ -24,21 +26,25 @@ describe('MarketTrend', function () {
     beforeEach(async function () {
         const { MarketTrend, ChainLinkPriceConsumer, UniswapPriceConsumer } = await hre.deployments.fixture();
         marketTrend = await hre.ethers.getContractAt(MarketTrend.abi, MarketTrend.address, owner);
+        chainLinkPriceConsumer = await hre.ethers.getContractAt(ChainLinkPriceConsumer.abi, ChainLinkPriceConsumer.address, owner);
+        uniswapPriceConsumer = await hre.ethers.getContractAt(UniswapPriceConsumer.abi, UniswapPriceConsumer.address, owner);
         uniswapPriceConsumerAddress = UniswapPriceConsumer.address;
         chainLinkPriceConsumerAddress = ChainLinkPriceConsumer.address;
     });
 
-    async function assertPrice(expectedPrice) {
+    async function assertPrice(priceConsumer) {
 
-        const mockMarketTrend = {
-            ...marketTrend,
-            ...{
-                getPrice: async () => mockPrice
-            }
-        }
+        const MockPriceConsumer = await smockit(priceConsumer);
 
-        const price = await mockMarketTrend.getPrice();
-        expect(price).to.equal(expectedPrice, "unexpected price.");
+        const mockedPrice = 3000;
+
+        MockPriceConsumer.smocked.getPrice.will.return.with(mockedPrice);
+
+        await marketTrend.setPriceConsumer(MockPriceConsumer.address);
+
+        const price = await marketTrend.getPrice();
+
+        expect(price).to.equal(mockedPrice, "unexpected price.");
     }
 
     async function createTrackingPeriod() {
@@ -117,7 +123,7 @@ describe('MarketTrend', function () {
     });
 
     it('should get price: UNISWAP', async () => {
-        await assertPrice(mockPrice);
+        await assertPrice(uniswapPriceConsumer);
     });
 
     it('should create tracking period: UNISWAP', async () => {
@@ -143,8 +149,7 @@ describe('MarketTrend', function () {
     });
 
     it('should get price: CHAINLINK', async () => {
-        await marketTrend.setPriceConsumer(chainLinkPriceConsumerAddress);
-        await assertPrice(mockPrice);
+        await assertPrice(chainLinkPriceConsumer);
     });
 
     it('should create tracking period: CHAINLINK', async () => {
