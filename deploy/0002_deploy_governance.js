@@ -14,20 +14,6 @@ module.exports = async () => {
     log: true,
   });
 
-  const currentTimestamp = Date.now();
-  const electionEnd = currentTimestamp + 60000;
-  const election = await deploy('Election', {
-    from: deployer,
-    args: [contractOwner, "Test Election", "This is a test.", "Ian Ballard", electionEnd, tuffToken.address],
-    log: true,
-  });
-
-  const electionPastEnd = await deploy('ElectionPastEnd', {
-    contract: 'Election',
-    from: deployer,
-    args: [contractOwner, "Test Election 2", "This is a test.", "Ian Ballard", 1, tuffToken.address],
-    log: true,
-  });
 };
 
 module.exports.tags = ['v0002'];
