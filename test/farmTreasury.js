@@ -11,7 +11,7 @@ const hre = require("hardhat");
 
 const utils = require("./utils")
 
-describe('AaveLPManager', function () {
+describe('FarmTreasury', function () {
 
     let owner;
     let accounts;
@@ -66,12 +66,6 @@ describe('AaveLPManager', function () {
         expect(new BN(0)).to.be.bignumber.equal(new BN(startAdaiQty.toString()));
 
         //Make the deposit
-        //TODO: This call shouldn't need to made, will look into using diamond smart contract to manage this for us
-        const aaveLPManagerAcct = await hre.ethers.getSigner(aaveLPManager.address);
-        await utils.runCallbackImpersonatingAcct(aaveLPManagerAcct, async (acct) => {
-            await daiContract.connect(acct).approve(lpAddr, qtyInDAI);
-        });
-
         const farmTreasuryAcct = await hre.ethers.getSigner(farmTreasury.address);
         await utils.runCallbackImpersonatingAcct(farmTreasuryAcct, async (acct) => {
             await daiContract.connect(acct).approve(lpAddr, qtyInDAI);

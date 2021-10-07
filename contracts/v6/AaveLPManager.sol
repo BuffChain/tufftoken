@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: agpl-3.0
 pragma solidity ^0.6.0;
 
-import {Ownable} from "@openzeppelin/contracts-v6/access/Ownable.sol";
-import {LendingPool} from "@aave/protocol-v2/contracts/protocol/lendingpool/LendingPool.sol";
-import {LendingPoolAddressesProvider} from "@aave/protocol-v2/contracts/protocol/configuration/LendingPoolAddressesProvider.sol";
+import { Ownable } from "@openzeppelin/contracts-v6/access/Ownable.sol";
+import { LendingPool } from "@aave/protocol-v2/contracts/protocol/lendingpool/LendingPool.sol";
+import { LendingPoolAddressesProvider } from "@aave/protocol-v2/contracts/protocol/configuration/LendingPoolAddressesProvider.sol";
+import { IERC20 } from "@openzeppelin/contracts-v6/token/ERC20/IERC20.sol";
+
 
 import "../ILockable.sol";
 
@@ -21,7 +23,6 @@ contract AaveLPManager is Ownable, ILockable {
     address private _lpAddr;
 
     constructor(address initialOwner) public {
-        //TODO: The owner should always be the FarmTreasury. This should do it, but lets make sure and add governance
         transferOwnership(initialOwner);
 
         _lpProviderAddr = address(0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5);
@@ -33,19 +34,18 @@ contract AaveLPManager is Ownable, ILockable {
         return LendingPoolAddressesProvider(_lpProviderAddr).getLendingPool();
     }
 
-    function deposit(address token, uint256 amount, address onBehalfOf) public lock {
+    function deposit(address erc20Token, uint256 amount, address onBehalfOf) public payable onlyOwner lock {
         //TODO: Make address to bool mapping
         bool _isSupportedToken = false;
         for (uint256 i = 0; i < _supportedTokens.length; i++) {
-            if (_supportedTokens[i] == token) {
+            if (_supportedTokens[i] == erc20Token) {
                 _isSupportedToken = true;
                 break;
             }
         }
         require(_isSupportedToken, "TUFF: This token is not currently supported");
 
-        //TODO: Add referral account, currently 0
-        LendingPool(getLPAddr()).deposit(token, amount, onBehalfOf, 0);
+        LendingPool(getLPAddr()).deposit(erc20Token, amount, onBehalfOf, 0);
     }
 
     receive() external payable {}
