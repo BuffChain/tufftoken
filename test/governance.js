@@ -1,9 +1,7 @@
 // SPDX-License-Identifier: agpl-3.0
 
 const { expect } = require("chai");
-const { ethers } = require("hardhat");
 const hre = require("hardhat");
-const utils = require("./utils");
 
 describe("Governance", function () {
 
