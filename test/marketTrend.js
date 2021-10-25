@@ -3,6 +3,7 @@
 const { expect } = require("chai");
 const hre = require("hardhat");
 const { smockit } = require("@eth-optimism/smock");
+const {randomBytes} = require("ethers/lib/utils");
 
 describe('MarketTrend', function () {
 
@@ -11,6 +12,7 @@ describe('MarketTrend', function () {
     let marketTrend;
     let chainLinkPriceConsumer;
     let uniswapPriceConsumer;
+    let marketTrendKeeperHelper;
     const nowTimeStamp = Math.floor(Date.now() / 1000);
 
     before(async function () {
@@ -22,10 +24,11 @@ describe('MarketTrend', function () {
     });
 
     beforeEach(async function () {
-        const { MarketTrend, ChainLinkPriceConsumer, UniswapPriceConsumer } = await hre.deployments.fixture();
+        const { MarketTrend, ChainLinkPriceConsumer, UniswapPriceConsumer, MarketTrendKeeperHelper } = await hre.deployments.fixture();
         marketTrend = await hre.ethers.getContractAt(MarketTrend.abi, MarketTrend.address, owner);
         chainLinkPriceConsumer = await hre.ethers.getContractAt(ChainLinkPriceConsumer.abi, ChainLinkPriceConsumer.address, owner);
         uniswapPriceConsumer = await hre.ethers.getContractAt(UniswapPriceConsumer.abi, UniswapPriceConsumer.address, owner);
+        marketTrendKeeperHelper = await hre.ethers.getContractAt(MarketTrendKeeperHelper.abi, MarketTrendKeeperHelper.address, owner);
     });
 
     async function assertPrice(priceConsumer) {
@@ -189,5 +192,34 @@ describe('MarketTrend', function () {
         await marketTrend.setPriceConsumer(chainLinkPriceConsumer.address);
         await processMarketTrend();
     });
+
+    it('should call check up keep', async () => {
+
+        const MarketTrendKeeperHelper = await smockit(marketTrendKeeperHelper);
+
+        MarketTrendKeeperHelper.smocked.upkeepNeeded.will.return.with(true);
+
+        await marketTrend.setMarketTrendKeeperHelper(MarketTrendKeeperHelper.address);
+
+        let [needed, performData] = await marketTrend.checkUpkeep(randomBytes(0));
+
+        expect(needed).to.equal(true, "should need upkeep.");
+
+    });
+
+    it('should call perform upkeep', async () => {
+
+        const MarketTrendKeeperHelper = await smockit(marketTrendKeeperHelper);
+
+        MarketTrendKeeperHelper.smocked.upkeepNeeded.will.return.with(true);
+
+        await marketTrend.setMarketTrendKeeperHelper(MarketTrendKeeperHelper.address);
+
+        await marketTrend.createTrackingPeriod(nowTimeStamp, nowTimeStamp + 1);
+
+        await marketTrend.performUpkeep(randomBytes(0));
+
+    });
+
 
 });

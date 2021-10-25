@@ -18,4 +18,9 @@ contract FarmTreasury is Context, Ownable  {
     }
 
     receive() external payable {}
+
+    function doBuyBack() public {
+
+    }
+
 }

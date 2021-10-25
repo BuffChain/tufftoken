@@ -51,6 +51,14 @@ module.exports = async () => {
     log: true,
   });
 
+  const marketTrendKeeperHelper = await deploy('MarketTrendKeeperHelper', {
+    from: deployer,
+    args: [
+    ],
+    log: true,
+  });
+
+
   transactionCount = await deployerAcct.getTransactionCount();
 
   const marketTrendAddress = getContractAddress({
@@ -87,7 +95,9 @@ module.exports = async () => {
     args: [
       contractOwner,
       uniswapPriceConsumer.address,
-      false
+      false,
+      farmTreasuryAddress,
+      marketTrendKeeperHelper.address
     ],
     log: true,
   });
