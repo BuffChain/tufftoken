@@ -31,21 +31,17 @@ contract MarketTrend is Ownable, KeeperCompatibleInterface {
         uint256 timestamp;
     }
 
-    struct TrackingPeriod {
-        uint baseTrackingPeriodStart;
-        uint baseTrackingPeriodEnd;
-        bool isActive;
-        bool isBuyBackNeeded;
-        bool isBuyBackFulfilled;
-        uint buyBackChance;
-        uint lastBuyBackChance;
-        uint lastBuyBackChoice;
-        IPriceConsumer priceConsumer;
-    }
+    uint trackingPeriodStart;
+    uint baseTrackingPeriodEnd;
+    uint buyBackChance;
+    uint lastBuyBackChance;
+    uint lastBuyBackChoice;
+    IPriceConsumer trackingPeriodPriceConsumer;
+    bool isBuyBackNeeded;
+    bool _isNegativeOrZeroPriceChange;
 
     IPriceConsumer priceConsumer;
     FarmTreasury farmTreasury;
-    TrackingPeriod[] trackingPeriods;
     PriceData[] priceDataEntries;
 
     uint daysInEpoch = 7;
@@ -55,6 +51,8 @@ contract MarketTrend is Ownable, KeeperCompatibleInterface {
     uint buyBackChanceIncrement = 10;
     uint buyBackChanceLowerLimit = 1;
     uint buyBackChanceUpperLimit = 100;
+
+    uint256 lastBuyBackTimestamp;
 
     MarketTrendKeeperHelper marketTrendKeeperHelper;
 
@@ -137,42 +135,42 @@ contract MarketTrend is Ownable, KeeperCompatibleInterface {
         return amountOfEpochsUpperLimit;
     }
 
+    function getTrackingPeriodStart() public view returns (uint256) {
+        return trackingPeriodStart;
+    }
+
+    function getLastBuyBackTimestamp() public view returns (uint256) {
+        return lastBuyBackTimestamp;
+    }
+
+    function getIsBuyBackNeeded() public view returns (bool) {
+        return isBuyBackNeeded;
+    }
+
+    function getIsNegativeOrZeroPriceChange() public view returns (bool) {
+        return _isNegativeOrZeroPriceChange;
+    }
+
     function getPseudoRandomNumber(uint _rangeStart, uint _rangeEnd) public view returns (uint) {
         uint randomNumber = uint(keccak256(abi.encodePacked(block.timestamp, block.difficulty, msg.sender))) % _rangeEnd;
         randomNumber = randomNumber + _rangeStart;
         return randomNumber;
     }
 
-    function getCurrentTrackingPeriodIndex() public onlyOwner view returns (uint256) {
-        return trackingPeriods.length - 1;
-    }
+    function createTrackingPeriod(uint _trackingPeriodStart, uint baseTrackingPeriodEnd) public onlyOwner {
 
-    function createTrackingPeriod(uint baseTrackingPeriodStart, uint baseTrackingPeriodEnd) public onlyOwner {
-        require(
-            trackingPeriods.length == 0 ||
-            !trackingPeriods[trackingPeriods.length - 1].isActive,
-            "Can only have one active tracking period."
-        );
+        delete priceDataEntries;
 
         PriceData memory priceData;
         priceData.price = getPrice();
-        priceData.timestamp = baseTrackingPeriodStart;
+        priceData.timestamp = _trackingPeriodStart;
         priceDataEntries.push(priceData);
 
-        TrackingPeriod memory trackingPeriod;
-        trackingPeriod.baseTrackingPeriodStart = baseTrackingPeriodStart;
-        trackingPeriod.baseTrackingPeriodEnd = baseTrackingPeriodEnd;
-        trackingPeriod.isActive = true;
-        trackingPeriod.priceConsumer = priceConsumer;
-        trackingPeriod.buyBackChance = buyBackChanceIncrement;
-        trackingPeriods.push(trackingPeriod);
+        trackingPeriodStart = _trackingPeriodStart;
+        baseTrackingPeriodEnd = baseTrackingPeriodEnd;
+        trackingPeriodPriceConsumer = priceConsumer;
+        buyBackChance = buyBackChanceIncrement;
 
-    }
-
-    function completeTrackingPeriod(uint256 trackingPeriodIndex) public onlyOwner {
-        require(trackingPeriods[trackingPeriodIndex].isActive, "Cannot complete an inactive tracking period.");
-        trackingPeriods[trackingPeriodIndex].isActive = false;
-        trackingPeriods[trackingPeriodIndex].isBuyBackNeeded = true;
     }
 
     function pushPriceData(uint256 currentPrice) public onlyOwner {
@@ -182,49 +180,30 @@ contract MarketTrend is Ownable, KeeperCompatibleInterface {
         priceDataEntries.push(currentPriceData);
     }
 
-    function processCurrentMarketTrend() public onlyOwner returns (bool) {
-        return processMarketTrend(block.timestamp, getPrice());
+    function processCurrentMarketTrend() public onlyOwner {
+        processMarketTrend(getPrice());
     }
 
-    function processMarketTrend(uint256 timestamp, uint256 currentPrice) public onlyOwner returns (bool) {
-
-        bool buyBackNeeded = false;
-
-        uint256 currentTrackingPeriodIndex = getCurrentTrackingPeriodIndex();
-        TrackingPeriod storage trackingPeriod = trackingPeriods[currentTrackingPeriodIndex];
+    function processMarketTrend(uint256 currentPrice) public onlyOwner {
 
         pushPriceData(currentPrice);
 
         uint256 lastEntryIndex = getPriceDataEntriesLength() - 1;
         uint256 startingEntryIndex = getStartingEntryIndex(lastEntryIndex);
 
-        if (timestamp < trackingPeriod.baseTrackingPeriodEnd || startingEntryIndex < 0) {
-            return buyBackNeeded;
-        }
-
         uint256 startingPrice = getPriceFromDataEntry(startingEntryIndex);
 
-        bool _isNegativeOrZeroPriceChange = isNegativeOrZeroPriceChange(startingPrice, currentPrice);
-
-        if (!_isNegativeOrZeroPriceChange) {
-            return buyBackNeeded;
-        }
+        _isNegativeOrZeroPriceChange = isNegativeOrZeroPriceChange(startingPrice, currentPrice);
 
         uint buyBackRandomNumber = getPseudoRandomNumber(buyBackChanceLowerLimit, buyBackChanceUpperLimit);
-        trackingPeriod.lastBuyBackChance = trackingPeriod.buyBackChance;
-        trackingPeriod.lastBuyBackChoice = buyBackRandomNumber;
+        lastBuyBackChance = buyBackChance;
+        lastBuyBackChoice = buyBackRandomNumber;
 
-        if (buyBackRandomNumber < trackingPeriod.buyBackChance) {
-            buyBackNeeded = true;
-            completeTrackingPeriod(currentTrackingPeriodIndex);
-            uint randomNumberOfEpochs = getPseudoRandomNumber(amountOfEpochsLowerLimit, amountOfEpochsUpperLimit);
-            uint baseTrackingPeriodEnd = block.timestamp + (randomNumberOfEpochs * daysInEpoch * 1 days);
-            createTrackingPeriod(block.timestamp, baseTrackingPeriodEnd);
+        if (buyBackRandomNumber < buyBackChance) {
+            isBuyBackNeeded = true;
         } else {
-            trackingPeriod.buyBackChance = trackingPeriod.buyBackChance + buyBackChanceIncrement;
+            buyBackChance = buyBackChance + buyBackChanceIncrement;
         }
-
-        return buyBackNeeded;
 
     }
 
@@ -244,10 +223,9 @@ contract MarketTrend is Ownable, KeeperCompatibleInterface {
     }
 
     function getPrice() public view onlyOwner returns (uint256) {
-        if (trackingPeriods.length > 0) {
-            uint256 currentTrackingPeriodIndex = getCurrentTrackingPeriodIndex();
-            TrackingPeriod memory trackingPeriod = trackingPeriods[currentTrackingPeriodIndex];
-            return trackingPeriod.priceConsumer.getPrice();
+//        if current trend is using a specific consumer, keep using that consumer
+        if (priceDataEntries.length > 0) {
+            return trackingPeriodPriceConsumer.getPrice();
         } else {
             return priceConsumer.getPrice();
         }
@@ -257,28 +235,8 @@ contract MarketTrend is Ownable, KeeperCompatibleInterface {
         return endPrice <= startPrice;
     }
 
-    function anyBuyBacksRequired() public view onlyOwner returns (bool) {
-        bool required = false;
-        for (uint256 trackingPeriod = 0; trackingPeriod < trackingPeriods.length; trackingPeriod++) {
-            if (trackingPeriods[trackingPeriod].isBuyBackNeeded && !getIsBuyBackFulfilled(trackingPeriod)) {
-                required = true;
-                break;
-            }
-        }
-        return required;
-    }
-
-    function getIsBuyBackFulfilled(uint256 trackingPeriod) public view onlyOwner returns (bool) {
-        return trackingPeriods[trackingPeriod].isBuyBackFulfilled;
-    }
-
-    function setIsBuyBackFulfilled(uint256 trackingPeriod, bool fulfilled) public onlyOwner {
-        trackingPeriods[trackingPeriod].isBuyBackFulfilled = fulfilled;
-    }
-
-    function getLastBuyBackChoiceResults(uint256 trackingPeriodIndex) public view onlyOwner returns (uint, uint) {
-        TrackingPeriod memory trackingPeriod = trackingPeriods[trackingPeriodIndex];
-        return (trackingPeriod.lastBuyBackChance, trackingPeriod.lastBuyBackChoice);
+    function getLastBuyBackChoiceResults() public view onlyOwner returns (uint, uint) {
+        return (lastBuyBackChance, lastBuyBackChoice);
     }
 
     function checkUpkeep(bytes calldata /* checkData */) external view override returns (bool needed, bytes memory /* performData */) {
@@ -288,13 +246,20 @@ contract MarketTrend is Ownable, KeeperCompatibleInterface {
     function performUpkeep(bytes calldata /* performData */) external override {
         if (marketTrendKeeperHelper.upkeepNeeded(lastTimeStamp, interval)) {
 
-            uint256 currentTrackingPeriodIndex = getCurrentTrackingPeriodIndex();
+            processCurrentMarketTrend();
 
-            bool buyBackNeeded = processCurrentMarketTrend();
+            if (_isNegativeOrZeroPriceChange) {
+                farmTreasury.addAccruedInterestToBuyBackPool();
+                _isNegativeOrZeroPriceChange = false;
+            }
 
-            if (buyBackNeeded) {
+            if (isBuyBackNeeded) {
                 farmTreasury.doBuyBack();
-                setIsBuyBackFulfilled(currentTrackingPeriodIndex, true);
+                uint randomNumberOfEpochs = getPseudoRandomNumber(amountOfEpochsLowerLimit, amountOfEpochsUpperLimit);
+                uint _baseTrackingPeriodEnd = block.timestamp + (randomNumberOfEpochs * daysInEpoch * 1 days);
+                createTrackingPeriod(block.timestamp, _baseTrackingPeriodEnd);
+                lastBuyBackTimestamp = block.timestamp;
+                isBuyBackNeeded = false;
             }
 
             //        1 day give or take 15 minutes
