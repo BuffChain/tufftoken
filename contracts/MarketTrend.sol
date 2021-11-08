@@ -199,9 +199,9 @@ contract MarketTrend is Ownable, KeeperCompatibleInterface {
         lastBuyBackChance = buyBackChance;
         lastBuyBackChoice = buyBackRandomNumber;
 
-        if (buyBackRandomNumber < buyBackChance) {
+        if (block.timestamp >= baseTrackingPeriodEnd && _isNegativeOrZeroPriceChange && buyBackRandomNumber < buyBackChance) {
             isBuyBackNeeded = true;
-        } else {
+        } else if (block.timestamp >= baseTrackingPeriodEnd && _isNegativeOrZeroPriceChange) {
             buyBackChance = buyBackChance + buyBackChanceIncrement;
         }
 
