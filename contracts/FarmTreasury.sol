@@ -1,19 +1,13 @@
 // SPDX-License-Identifier: agpl-3.0
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@openzeppelin/contracts/utils/Context.sol";
 
-contract FarmTreasury is Context, Ownable  {
+contract FarmTreasury is Context {
 
     address aaveLPManagerAddr;
 
-    constructor(address initialOwner, address _aaveLPManagerAddr) {
-        transferOwnership(initialOwner);
-
-        aaveLPManagerAddr = _aaveLPManagerAddr;
-    }
-
-    function setAaveLPManager(address _aaveLPManagerAddr) public onlyOwner {
+    function setAaveLPManager(address _aaveLPManagerAddr) public {
         aaveLPManagerAddr = _aaveLPManagerAddr;
     }
 

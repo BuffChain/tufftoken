@@ -5,11 +5,10 @@ import "@openzeppelin/contracts/utils/Context.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
 
 import { FarmTreasury } from  "./FarmTreasury.sol";
 
-contract TuffToken is Context, IERC20, Ownable {
+contract TuffToken is Context, IERC20 {
 
     using SafeMath for uint256;
     using Address for address;
@@ -26,27 +25,21 @@ contract TuffToken is Context, IERC20, Ownable {
 
     FarmTreasury farmTreasury;
 
-    constructor(address initialOwner, address payable _farmTreasuryAddr) {
-        transferOwnership(initialOwner);
-        balances[owner()] = _totalSupply;
-        emit Transfer(address(0), owner(), _totalSupply);
-
+    function postDeploy(address initialOwner) public {
         //exclude owner and this contract from fee
-        _isExcludedFromFee[owner()] = true;
+        _isExcludedFromFee[initialOwner] = true;
         _isExcludedFromFee[address(this)] = true;
+    }
 
+    function setFarmTreasury(address payable _farmTreasuryAddr) public {
         farmTreasury = FarmTreasury(_farmTreasuryAddr);
     }
 
-    function setFarmTreasury(address payable _farmTreasuryAddr) public onlyOwner {
-        farmTreasury = FarmTreasury(_farmTreasuryAddr);
-    }
-
-    function getFarmTreasuryAddr() public view onlyOwner returns (address) {
+    function getFarmTreasuryAddr() public view returns (address) {
         return address(farmTreasury);
     }
 
-    function setFarmFee(uint256 _farmFee) public onlyOwner {
+    function setFarmFee(uint256 _farmFee) public {
         farmFee = _farmFee;
     }
 
@@ -88,11 +81,11 @@ contract TuffToken is Context, IERC20, Ownable {
         return true;
     }
 
-    function excludeFromFee(address account) public onlyOwner {
+    function excludeFromFee(address account) public {
         _isExcludedFromFee[account] = true;
     }
 
-    function includeInFee(address account) public onlyOwner {
+    function includeInFee(address account) public {
         _isExcludedFromFee[account] = false;
     }
 
