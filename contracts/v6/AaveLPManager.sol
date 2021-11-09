@@ -15,21 +15,20 @@ contract AaveLPManager is Context {
         _;
     }
 
-    //TODO: Create governance around this
     address[] private _supportedTokens;
 
-    //
-    // Aave ABI Contract addresses https://docs.aave.com/developers/deployed-contracts/deployed-contracts
-    //
-    //TODO: Create governance around this
+    //Aave ABI Contract addresses https://docs.aave.com/developers/deployed-contracts/deployed-contracts
     address private _lpProviderAddr;
     address private _lpAddr;
 
-    //Basically a constructor, but since the diamond standard doesn't support constructors we imitate it with a
-    // one-time only function. This is called immediately after deployment
+    //Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
+    // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
     function initAaveLPManager() public {
+        require(isAaveInitialized() == 0, 'TUFF: AaveLPManager: ALREADY_INITIALIZED');
+
         _lpProviderAddr = address(0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5);
         _supportedTokens.push(address(0x6B175474E89094C44Da98b954EedeAC495271d0F)); //DAI
+
         _initialized = 1;
     }
 
@@ -41,19 +40,19 @@ contract AaveLPManager is Context {
         return LendingPoolAddressesProvider(_lpProviderAddr).getLendingPool();
     }
 
-    function depositToAave(address erc20Token, uint256 amount, address onBehalfOf) public payable initializerLock {
+    //TODO: Need to make sure this is locked down to only owner and approved callers (eg chainlink)
+    function depositToAave(address erc20TokenAddr, uint256 amount) public initializerLock {
         //TODO: Make address to bool mapping
         bool _isSupportedToken = false;
         for (uint256 i = 0; i < _supportedTokens.length; i++) {
-            if (_supportedTokens[i] == erc20Token) {
+            if (_supportedTokens[i] == erc20TokenAddr) {
                 _isSupportedToken = true;
                 break;
             }
         }
-        require(_isSupportedToken, "TUFF: This token is not currently supported");
+        require(_isSupportedToken, "TUFF: AaveLPManager: This token is not currently supported");
 
-        LendingPool(getAaveLPAddr()).deposit(erc20Token, amount, onBehalfOf, 0);
+        IERC20(erc20TokenAddr).approve(getAaveLPAddr(), amount);
+        LendingPool(getAaveLPAddr()).deposit(erc20TokenAddr, amount, address(this), 0);
     }
-
-    receive() external payable initializerLock {}
 }
