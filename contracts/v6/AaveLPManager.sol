@@ -6,6 +6,7 @@ import { LendingPool } from "@aave/protocol-v2/contracts/protocol/lendingpool/Le
 import { LendingPoolAddressesProvider } from "@aave/protocol-v2/contracts/protocol/configuration/LendingPoolAddressesProvider.sol";
 import { IERC20 } from "@openzeppelin/contracts-v6/token/ERC20/IERC20.sol";
 
+import { console } from "hardhat/console.sol";
 
 contract AaveLPManager is Context {
     bool private _isAaveInitialized = false;
@@ -24,6 +25,7 @@ contract AaveLPManager is Context {
     //Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
     // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
     function initAaveLPManager() public {
+        console.log("_isAaveInitialized = %s", _isAaveInitialized);
         require(_isAaveInitialized == false, 'TUFF: AaveLPManager: ALREADY_INITIALIZED');
 
         _lpProviderAddr = address(0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5);

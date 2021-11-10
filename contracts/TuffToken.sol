@@ -7,10 +7,10 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
 contract TuffToken is Context, IERC20 {
-    uint256 private _isTuffTokenInitialized;
+    bool private _isTuffTokenInitialized = false;
 
     modifier tuffTokenInitializerLock() {
-        require(isTuffTokenInitialized() == 1, 'TUFF: UNINITIALIZED');
+        require(isTuffTokenInitialized() == true, 'TUFF: UNINITIALIZED');
         _;
     }
 
@@ -30,7 +30,7 @@ contract TuffToken is Context, IERC20 {
     //Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
     // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
     function initTuffToken(address initialOwner) public {
-        require(isTuffTokenInitialized() == 0, 'TUFF: ALREADY_INITIALIZED');
+        require(isTuffTokenInitialized() == false, 'TUFF: ALREADY_INITIALIZED');
 
         name = "TuffToken";
         symbol = "TUFF";
@@ -42,10 +42,10 @@ contract TuffToken is Context, IERC20 {
         _isExcludedFromFee[initialOwner] = true;
         _isExcludedFromFee[address(this)] = true;
 
-        _isTuffTokenInitialized = 1;
+        _isTuffTokenInitialized = true;
     }
 
-    function isTuffTokenInitialized() public view returns (uint256) {
+    function isTuffTokenInitialized() public view returns (bool) {
         return _isTuffTokenInitialized;
     }
 
