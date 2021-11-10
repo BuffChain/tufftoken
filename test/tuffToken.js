@@ -10,9 +10,7 @@ describe("TuffToken", function () {
   let owner;
   let accounts;
 
-  let aaveLPManager;
-  let farmTreasury;
-  let tuffToken;
+  let tuffTokenDiamond;
 
   before(async function () {
     const { contractOwner } = await hre.getNamedAccounts();
@@ -23,19 +21,17 @@ describe("TuffToken", function () {
   });
 
   beforeEach(async function () {
-    const { AaveLPManager, FarmTreasury, TuffToken } = await hre.deployments.fixture();
-    aaveLPManager = await hre.ethers.getContractAt(AaveLPManager.abi, AaveLPManager.address, owner);
-    farmTreasury = await hre.ethers.getContractAt(FarmTreasury.abi, FarmTreasury.address, owner);
-    tuffToken = await hre.ethers.getContractAt(TuffToken.abi, TuffToken.address, owner);
-  });
-
-  it('should get FarmTreasury address', async () => {
-    const address = await tuffToken.getFarmTreasuryAddr();
-    expect(address).to.equal(farmTreasury.address, "get FarmTreasury address should be equal to FarmTreasury address");
+    const { TuffTokenDiamond } = await hre.deployments.fixture();
+    tuffTokenDiamond = await hre.ethers.getContractAt(TuffTokenDiamond.abi, TuffTokenDiamond.address, owner);
   });
 
   it('should calculate farm fee amount with take fee true', async () => {
-    const feeAmount = await tuffToken.calculateFarmFee(100, true);
+    const farmFee = await tuffTokenDiamond.getFarmFee();
+    console.log("------")
+    console.log(farmFee)
+    console.log("------")
+
+    const feeAmount = await tuffTokenDiamond.calculateFarmFee(100, true);
     expect(feeAmount).to.equal(10, "incorrect farm fee amount");
   });
 
