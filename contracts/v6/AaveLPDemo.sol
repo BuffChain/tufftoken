@@ -8,11 +8,11 @@ import { IERC20 } from "@openzeppelin/contracts-v6/token/ERC20/IERC20.sol";
 
 import { console } from "hardhat/console.sol";
 
-contract AaveLPManager is Context {
-    bool private _isAaveInit = false;
+contract AaveLPDemo is Context {
+    bool private _aaveNeedsInit = true;
 
     modifier aaveInitLock() {
-        require(isAaveInit() == true, 'TUFF: AaveLPManager: UNINITIALIZED');
+        require(isAaveDemoInit() == true, 'TUFF: AaveLPDemo: UNINITIALIZED');
         _;
     }
 
@@ -24,27 +24,26 @@ contract AaveLPManager is Context {
 
     //Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
     // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
-    function initAaveLPManager() public {
-        console.log("Aave starting initialization [%s]", isAaveInit());
-        require(isAaveInit() == false, 'TUFF: AaveLPManager: ALREADY_INITIALIZED');
+    function initAaveLPDemo() public {
+        console.log("AaveDemo: default value is %s", _aaveNeedsInit);
+        require(isAaveDemoInit() == false, 'TUFF: AaveLPDemo: ALREADY_INITIALIZED');
 
         _lpProviderAddr = address(0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5);
         _supportedTokens.push(address(0x6B175474E89094C44Da98b954EedeAC495271d0F)); //DAI
 
-        _isAaveInit = true;
-        console.log("Aave completed initialization [%s]", isAaveInit());
+        _aaveNeedsInit = false;
     }
 
-    function isAaveInit() public view returns (bool) {
-        return _isAaveInit;
+    function isAaveDemoInit() public view returns (bool) {
+        return !_aaveNeedsInit;
     }
 
-    function getAaveLPAddr() public view aaveInitLock returns (address) {
+    function getAaveLPDemoAddr() public view aaveInitLock returns (address) {
         return LendingPoolAddressesProvider(_lpProviderAddr).getLendingPool();
     }
 
     //TODO: Need to make sure this is locked down to only owner and approved callers (eg chainlink)
-    function depositToAave(address erc20TokenAddr, uint256 amount) public aaveInitLock {
+    function depositToAaveDemo(address erc20TokenAddr, uint256 amount) public aaveInitLock {
         //TODO: Make address to bool mapping
         bool _isSupportedToken = false;
         for (uint256 i = 0; i < _supportedTokens.length; i++) {
@@ -55,7 +54,7 @@ contract AaveLPManager is Context {
         }
         require(_isSupportedToken, "TUFF: AaveLPManager: This token is not currently supported");
 
-        IERC20(erc20TokenAddr).approve(getAaveLPAddr(), amount);
-        LendingPool(getAaveLPAddr()).deposit(erc20TokenAddr, amount, address(this), 0);
+        IERC20(erc20TokenAddr).approve(getAaveLPDemoAddr(), amount);
+        LendingPool(getAaveLPDemoAddr()).deposit(erc20TokenAddr, amount, address(this), 0);
     }
 }

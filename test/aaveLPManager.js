@@ -34,8 +34,8 @@ describe('AaveLPManager', function () {
     });
 
     it('should be initialized', async () => {
-        const isAaveInitialized = await tuffTokenDiamond.isAaveInitialized();
-        expect(isAaveInitialized).to.be.true;
+        const isAaveInit = await tuffTokenDiamond.isAaveInit();
+        expect(isAaveInit).to.be.true;
     });
 
     it('should set pool address correctly', async () => {
