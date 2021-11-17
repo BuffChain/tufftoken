@@ -4,7 +4,7 @@
   "description": "TuffToken Smart Contract",
   "scripts": {
     "compile": "hardhat compile",
-    "test": "npm run compile && hardhat test --deploy-fixture",
+    "test": "hardhat test --deploy-fixture",
     "test verbose": "npm run test -- --verbose",
     "deploy kovan": "TODO: https://github.com/wighawag/hardhat-deploy/tree/master#how-to-deploy-contracts",
     "deploy rinkeby": "TODO: https://github.com/wighawag/hardhat-deploy/tree/master#how-to-deploy-contracts",
@@ -50,7 +50,7 @@
     "ethereum-waffle": "^3.4.0",
     "ethers": "^5.5.1",
     "hardhat": "^2.6.8",
-    "hardhat-deploy": "^0.9.5",
+    "hardhat-deploy": "github:BuffChain/hardhat-deploy#feature/0.8_diamond_version",
     "hardhat-deploy-ethers": "^0.3.0-beta.11",
     "web3": "^1.6.0"
   }
