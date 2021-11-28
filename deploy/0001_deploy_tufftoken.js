@@ -9,57 +9,34 @@ module.exports = async () => {
   console.log(`Deployer address [${deployer}]`)
   console.log(`Contract owner address [${contractOwner}]`)
 
-  await deployments.diamond.deploy('TuffTokenDiamond', {
+  const tuffToken = await deployments.deploy({
+    name: 'TuffToken',
+    from: deployer,
+    log: true
+  });
+  let tuffTokenContract = await hre.ethers.getContractAt(tuffToken.abi, tuffToken.address, contractOwner);
+  console.log(`TuffToken address [${await tuffTokenContract.address}]`);
+
+  const aaveLPManager = await deployments.deploy({
+    name: 'AaveLPManager',
+    from: deployer,
+    log: true
+  });
+  let aaveLPManagerContract = await hre.ethers.getContractAt(aaveLPManager.abi, aaveLPManager.address, contractOwner);
+  console.log(`AaveLPManager address [${await aaveLPManagerContract.address}]`);
+
+  let tuffTokenDiamond = await deployments.diamond.deploy({
+    name: 'TuffTokenDiamond',
     from: deployer,
     owner: contractOwner,
-    facets: ['DiamondBase'],
-    execute: {
-      methodName: 'initBase',
-      args: [],
-    }
+    facets: [tuffToken, aaveLPManager],
+    log: true
   });
+  let tuffTokenDiamondContract = await hre.ethers.getContractAt(tuffTokenDiamond.abi, tuffTokenDiamond.address, contractOwner);
+  console.log(`TuffTokenDiamond address [${await tuffTokenDiamondContract.address}]`);
 
-  let tuffTokenDiamondDeployment = await deployments.diamond.deploy('TuffTokenDiamond', {
-    from: contractOwner,
-    owner: contractOwner,
-    facets: ['DiamondBase', 'TuffToken'],
-    execute: {
-      methodName: 'initTuffToken',
-      args: [contractOwner],
-    },
-  });
-
-  // let tuffTokenDiamondContract = await hre.ethers.getContractAt(tuffTokenDiamondDeployment.abi, tuffTokenDiamondDeployment.address, contractOwner);
-  // const isTuffTokenInitialized = await tuffTokenDiamondContract.isTuffTokenInitialized();
-  // console.log(`tuffTokenDiamondContract.isTuffTokenInitialized=${isTuffTokenInitialized}`)
-
-  //This doesn't work as the aave facet has not been deploy yet, thus it can't be initialized!
-  // const isAaveInitialized = await tuffTokenDiamondContract.isAaveInitialized();
-  // console.log(`tuffTokenDiamondContract.isAaveInitialized=${isAaveInitialized}`)
-
-  tuffTokenDiamondDeployment = await deployments.diamond.deploy('TuffTokenDiamond', {
-    from: contractOwner,
-    owner: contractOwner,
-    facets: ['DiamondBase', 'TuffToken', 'AaveLPManager'],
-    execute: {
-      methodName: 'initAaveLPManager',
-      args: [],
-    },
-  });
-
-  // tuffTokenDiamondContract = await hre.ethers.getContractAt(tuffTokenDiamondDeployment.abi, tuffTokenDiamondDeployment.address, contractOwner);
-  // const isAaveInit = await tuffTokenDiamondContract.isAaveInit();
-  // console.log(`tuffTokenDiamondContract.isAaveInit=${isAaveInit}`);
-
-  // tuffTokenDiamondDeployment = await deployments.diamond.deploy('TuffTokenDiamond', {
-  //   from: contractOwner,
-  //   owner: contractOwner,
-  //   facets: ['DiamondBase', 'TuffToken', 'AaveLPManager', 'AaveLPDemo'],
-  //   execute: {
-  //     methodName: 'initAaveLPDemo',
-  //     args: [],
-  //   },
-  // });
+  await tuffTokenDiamondContract.initAaveLPManager();
+  await tuffTokenDiamondContract.initTuffToken(contractOwner);
 };
 
 module.exports.tags = ['v0001'];

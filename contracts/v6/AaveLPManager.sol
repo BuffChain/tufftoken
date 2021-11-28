@@ -6,49 +6,46 @@ import { LendingPool } from "@aave/protocol-v2/contracts/protocol/lendingpool/Le
 import { LendingPoolAddressesProvider } from "@aave/protocol-v2/contracts/protocol/configuration/LendingPoolAddressesProvider.sol";
 import { IERC20 } from "@openzeppelin/contracts-v6/token/ERC20/IERC20.sol";
 
-import { console } from "hardhat/console.sol";
+import { AaveLPManagerLib } from "./AaveLPManagerLib.sol";
 
 contract AaveLPManager is Context {
-    bool private _isAaveInit = false;
-
     modifier aaveInitLock() {
-        require(isAaveInit() == true, 'TUFF: AaveLPManager: UNINITIALIZED');
+        require(isAaveInit(), 'TUFF: AaveLPManager: UNINITIALIZED');
         _;
     }
-
-    address[] private _supportedTokens;
-
-    //Aave ABI Contract addresses https://docs.aave.com/developers/deployed-contracts/deployed-contracts
-    address private _lpProviderAddr;
-    address private _lpAddr;
 
     //Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
     // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
     function initAaveLPManager() public {
-        console.log("Aave starting initialization [%s]", isAaveInit());
-        require(isAaveInit() == false, 'TUFF: AaveLPManager: ALREADY_INITIALIZED');
+        require(!isAaveInit(), 'TUFF: AaveLPManager: ALREADY_INITIALIZED');
 
-        _lpProviderAddr = address(0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5);
-        _supportedTokens.push(address(0x6B175474E89094C44Da98b954EedeAC495271d0F)); //DAI
+        AaveLPManagerLib.AaveLPManagerStruct storage ss = AaveLPManagerLib.aaveLPManagerStorage();
 
-        _isAaveInit = true;
-        console.log("Aave completed initialization [%s]", isAaveInit());
+        //Aave ABI Contract addresses https://docs.aave.com/developers/deployed-contracts/deployed-contracts
+        ss.lpProviderAddr = address(0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5);
+        ss.supportedTokens.push(address(0x6B175474E89094C44Da98b954EedeAC495271d0F)); //DAI
+
+        ss.isInit = true;
     }
 
     function isAaveInit() public view returns (bool) {
-        return _isAaveInit;
+        AaveLPManagerLib.AaveLPManagerStruct storage ss = AaveLPManagerLib.aaveLPManagerStorage();
+        return ss.isInit;
     }
 
     function getAaveLPAddr() public view aaveInitLock returns (address) {
-        return LendingPoolAddressesProvider(_lpProviderAddr).getLendingPool();
+        AaveLPManagerLib.AaveLPManagerStruct storage ss = AaveLPManagerLib.aaveLPManagerStorage();
+        return LendingPoolAddressesProvider(ss.lpProviderAddr).getLendingPool();
     }
 
     //TODO: Need to make sure this is locked down to only owner and approved callers (eg chainlink)
     function depositToAave(address erc20TokenAddr, uint256 amount) public aaveInitLock {
+        AaveLPManagerLib.AaveLPManagerStruct storage ss = AaveLPManagerLib.aaveLPManagerStorage();
+
         //TODO: Make address to bool mapping
         bool _isSupportedToken = false;
-        for (uint256 i = 0; i < _supportedTokens.length; i++) {
-            if (_supportedTokens[i] == erc20TokenAddr) {
+        for (uint256 i = 0; i < ss.supportedTokens.length; i++) {
+            if (ss.supportedTokens[i] == erc20TokenAddr) {
                 _isSupportedToken = true;
                 break;
             }

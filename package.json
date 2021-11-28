@@ -3,6 +3,7 @@
   "version": "1.1.0",
   "description": "TuffToken Smart Contract",
   "scripts": {
+    "clean": "hardhat clean",
     "compile": "hardhat compile",
     "test": "hardhat test --deploy-fixture",
     "test verbose": "npm run test -- --verbose",
@@ -50,7 +51,7 @@
     "ethereum-waffle": "^3.4.0",
     "ethers": "^5.5.1",
     "hardhat": "^2.6.8",
-    "hardhat-deploy": "github:BuffChain/hardhat-deploy#feature/0.8_diamond_version",
+    "hardhat-deploy": "github:BuffChain/hardhat-deploy#feature/support_facet_deployments_by_artifact",
     "hardhat-deploy-ethers": "^0.3.0-beta.11",
     "web3": "^1.6.0"
   }
