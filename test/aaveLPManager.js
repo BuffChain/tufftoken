@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: agpl-3.0
 
-const { expect } = require("chai");
+const {expect} = require("chai");
 const {
     BN,           // Big Number support
     constants,    // Common constants, like the zero address and largest integers
@@ -19,15 +19,15 @@ describe('AaveLPManager', function () {
     let tuffTokenDiamond;
 
     before(async function () {
-        const { contractOwner } = await hre.getNamedAccounts();
+        const {contractOwner} = await hre.getNamedAccounts();
         owner = await hre.ethers.getSigner(contractOwner);
 
         //Per `hardhat.config.js`, the 0 and 1 index accounts are named accounts. They are reserved for deployment uses
-        [,, ...accounts] = await hre.ethers.getSigners();
+        [, , ...accounts] = await hre.ethers.getSigners();
     });
 
     beforeEach(async function () {
-        const { TuffTokenDiamond } = await hre.deployments.fixture();
+        const {TuffTokenDiamond} = await hre.deployments.fixture();
         tuffTokenDiamond = await hre.ethers.getContractAt(TuffTokenDiamond.abi, TuffTokenDiamond.address, owner);
 
         await utils.sendTokensToAddress(accounts.at(-1), tuffTokenDiamond.address);

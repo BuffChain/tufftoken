@@ -9,27 +9,10 @@ module.exports = async () => {
   console.log(`Deployer address [${deployer}]`)
   console.log(`Contract owner address [${contractOwner}]`)
 
-  const tuffToken = await deployments.deploy({
-    name: 'TuffToken',
-    from: deployer,
-    log: true
-  });
-  let tuffTokenContract = await hre.ethers.getContractAt(tuffToken.abi, tuffToken.address, contractOwner);
-  console.log(`TuffToken address [${await tuffTokenContract.address}]`);
-
-  const aaveLPManager = await deployments.deploy({
-    name: 'AaveLPManager',
-    from: deployer,
-    log: true
-  });
-  let aaveLPManagerContract = await hre.ethers.getContractAt(aaveLPManager.abi, aaveLPManager.address, contractOwner);
-  console.log(`AaveLPManager address [${await aaveLPManagerContract.address}]`);
-
-  let tuffTokenDiamond = await deployments.diamond.deploy({
-    name: 'TuffTokenDiamond',
+  let tuffTokenDiamond = await deployments.diamond.deploy('TuffTokenDiamond',{
     from: deployer,
     owner: contractOwner,
-    facets: [tuffToken, aaveLPManager],
+    facets: ["TuffToken", "AaveLPManager"],
     log: true
   });
   let tuffTokenDiamondContract = await hre.ethers.getContractAt(tuffTokenDiamond.abi, tuffTokenDiamond.address, contractOwner);
