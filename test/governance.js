@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: agpl-3.0
 
-const { expect } = require("chai");
+const {expect} = require("chai");
 const hre = require("hardhat");
 
 describe("Governance", function () {
@@ -19,15 +19,15 @@ describe("Governance", function () {
     const expectedElectionEnd = currentTimestamp + 60000;
 
     before(async function () {
-        const { contractOwner } = await hre.getNamedAccounts();
+        const {contractOwner} = await hre.getNamedAccounts();
         owner = await hre.ethers.getSigner(contractOwner);
 
         //Per `hardhat.config.js`, the 0 and 1 index accounts are named accounts. They are reserved for deployment uses
-        [,, ...accounts] = await hre.ethers.getSigners();
+        [, , ...accounts] = await hre.ethers.getSigners();
     });
 
     beforeEach(async function () {
-        const { TuffToken, Governance } = await hre.deployments.fixture();
+        const {TuffToken, Governance} = await hre.deployments.fixture();
         tuffToken = await hre.ethers.getContractAt(TuffToken.abi, TuffToken.address, owner);
         governance = await hre.ethers.getContractAt(Governance.abi, Governance.address, owner);
 

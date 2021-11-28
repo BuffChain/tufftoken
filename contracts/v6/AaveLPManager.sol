@@ -10,14 +10,14 @@ import { AaveLPManagerLib } from "./AaveLPManagerLib.sol";
 
 contract AaveLPManager is Context {
     modifier aaveInitLock() {
-        require(isAaveInit(), 'TUFF: AaveLPManager: UNINITIALIZED');
+        require(isAaveInit(), 'Tuff.AaveLPManager: UNINITIALIZED');
         _;
     }
 
     //Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
     // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
     function initAaveLPManager() public {
-        require(!isAaveInit(), 'TUFF: AaveLPManager: ALREADY_INITIALIZED');
+        require(!isAaveInit(), 'Tuff.AaveLPManager: ALREADY_INITIALIZED');
 
         AaveLPManagerLib.AaveLPManagerStruct storage ss = AaveLPManagerLib.aaveLPManagerStorage();
 

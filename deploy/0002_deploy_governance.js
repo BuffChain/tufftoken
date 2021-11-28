@@ -8,11 +8,11 @@ module.exports = async () => {
   const { deployer, contractOwner } = await getNamedAccounts();
   const tuffToken = await hre.ethers.getContract('TuffToken', deployer);
 
-  const governance = await deploy('Governance', {
-    from: deployer,
-    args: [contractOwner, tuffToken.address],
-    log: true,
-  });
+  // const governance = await deploy('Governance', {
+  //   from: deployer,
+  //   args: [contractOwner, tuffToken.address],
+  //   log: true,
+  // });
 
 };
 

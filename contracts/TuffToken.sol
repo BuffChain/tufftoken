@@ -6,21 +6,22 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
-import { TuffTokenLib } from  "./TuffTokenLib.sol";
+import { TuffTokenLib } from "./TuffTokenLib.sol";
 
 contract TuffToken is Context {
-    modifier tuffTokenInitializerLock() {
-        require(isTuffTokenInitialized(), 'TUFF: UNINITIALIZED');
+    modifier tuffTokenInitLock() {
+        require(isTuffTokenInit(), 'Tuff: UNINITIALIZED');
         _;
     }
 
+    //TODO: Is this needed?
     using SafeMath for uint256;
     using Address for address;
 
     //Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
     // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
     function initTuffToken(address initialOwner) public {
-        require(!isTuffTokenInitialized(), 'TUFF: ALREADY_INITIALIZED');
+        require(!isTuffTokenInit(), 'Tuff: ALREADY_INITIALIZED');
 
         TuffTokenLib.TuffTokenStruct storage ss = TuffTokenLib.tuffTokenStorage();
 
@@ -33,7 +34,7 @@ contract TuffToken is Context {
         ss.isInit = true;
     }
 
-    function isTuffTokenInitialized() public view returns (bool) {
+    function isTuffTokenInit() public view returns (bool) {
         TuffTokenLib.TuffTokenStruct storage ss = TuffTokenLib.tuffTokenStorage();
         return ss.isInit;
     }

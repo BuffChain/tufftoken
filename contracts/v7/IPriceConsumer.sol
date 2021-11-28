@@ -3,11 +3,6 @@ pragma solidity >=0.7.0;
 
 interface IPriceConsumer {
 
-    function getPrice()
-    external
-    view
-    returns (
-        uint256
-    );
+    function getPrice() external view returns (uint256);
 
 }

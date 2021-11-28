@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: agpl-3.0
 
-const { expect } = require("chai");
+const {expect} = require("chai");
 const hre = require("hardhat");
 
 describe("TuffToken", function () {
