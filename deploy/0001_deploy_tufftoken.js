@@ -21,7 +21,8 @@ module.exports = async () => {
         owner: contractOwner,
         facets: [
             "TuffToken", "AaveLPManager",
-            // "UniswapPoolDeployer", "UniswapPriceConsumer", "ChainLinkPriceConsumer",
+            "UniswapPoolDeployer", "UniswapPriceConsumer",
+            "ChainLinkPriceConsumer",
             // "MarketTrend"
         ],
         log: true

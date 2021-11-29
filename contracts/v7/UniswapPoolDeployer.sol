@@ -27,27 +27,27 @@ contract UniswapPoolDeployer {
 
         ss.factoryAddr = address(0x1F98431c8aD98523631AE4a59f267346ea31F984);
 
-        setPool(_tokenA, _tokenB, _fee);
+//        setPool(_tokenA, _tokenB, _fee);
     }
 
-    function setPool(address _tokenA, address _tokenB, uint24 _fee) public {
-        UniswapPoolDeployerLib.StateStorage storage ss = UniswapPoolDeployerLib.getState();
+//    function setPool(address _tokenA, address _tokenB, uint24 _fee) public {
+//        UniswapPoolDeployerLib.StateStorage storage ss = UniswapPoolDeployerLib.getState();
+//
+//        address _poolAddress = getPoolAddress(_tokenA, _tokenB, _fee);
+//        if (_poolAddress == address(0)) {
+//            IUniswapV3Factory(ss.factoryAddr).createPool(_tokenA, _tokenB, _fee);
+//
+//            //TODO: what is the purpose of _poolAddress here? Is this supposed to be a class variable?
+//            _poolAddress = getPoolAddress(_tokenA, _tokenB, _fee);
+//        }
+//
+//        ss.tokenA = _tokenA;
+//        ss.tokenB = _tokenB;
+//        ss.fee = _fee;
+//    }
 
-        address _poolAddress = getPoolAddress(_tokenA, _tokenB, _fee);
-        if (_poolAddress == address(0)) {
-            IUniswapV3Factory(ss.factoryAddr).createPool(_tokenA, _tokenB, _fee);
-
-            //TODO: what is the purpose of _poolAddress here? Is this supposed to be a class variable?
-            _poolAddress = getPoolAddress(_tokenA, _tokenB, _fee);
-        }
-
-        ss.tokenA = _tokenA;
-        ss.tokenB = _tokenB;
-        ss.fee = _fee;
-    }
-
-    function getPoolAddress(address _tokenA, address _tokenB, uint24 _fee) public view returns (address) {
-        UniswapPoolDeployerLib.StateStorage storage ss = UniswapPoolDeployerLib.getState();
-        return IUniswapV3Factory(ss.factoryAddr).getPool(_tokenA, _tokenB, _fee);
-    }
+//    function getPoolAddress(address _tokenA, address _tokenB, uint24 _fee) public view returns (address) {
+//        UniswapPoolDeployerLib.StateStorage storage ss = UniswapPoolDeployerLib.getState();
+//        return IUniswapV3Factory(ss.factoryAddr).getPool(_tokenA, _tokenB, _fee);
+//    }
 }

@@ -3,7 +3,7 @@ pragma solidity ^0.6.0;
 
 library AaveLPManagerLib {
     //IMPORTANT: You must increment this string if you add a new variable to AaveLPManagerStruct that is not at the end
-    bytes32 constant AaveLPManagerLib_Position = keccak256("io.buffchain.tufftoken.aavelpmanager.1");
+    bytes32 constant AaveLPManagerLib_Position = keccak256("io.BuffChain.TuffToken.AaveLPManagerLib.1");
 
     struct AaveLPManagerStruct {
         bool isInit;

@@ -8,14 +8,14 @@ import "./IPriceConsumer.sol";
 
 import { UniswapPriceConsumerLib } from "./UniswapPriceConsumerLib.sol";
 
-contract UniswapPriceConsumer is Ownable, IPriceConsumer {
+contract UniswapPriceConsumer is IPriceConsumer {
     modifier uniswapPriceConsumerInitLock() {
         require(isUniswapPriceConsumerInit(), 'Tuff.UniswapPriceConsumer: UNINITIALIZED');
         _;
     }
 
     function isUniswapPriceConsumerInit() public view returns (bool) {
-        UniswapPriceConsumerLib.UniswapPriceConsumerStruct storage ss = UniswapPriceConsumerLib.uniswapPriceConsumerStorage();
+        UniswapPriceConsumerLib.StateStorage storage ss = UniswapPriceConsumerLib.getState();
         return ss.isInit;
     }
 
@@ -24,7 +24,7 @@ contract UniswapPriceConsumer is Ownable, IPriceConsumer {
     function initUniswapPoolDeployer(address _tokenA, address _tokenB, uint24 _fee, address _factoryAddress) public {
         require(!isUniswapPriceConsumerInit(), 'Tuff.UniswapPriceConsumer: ALREADY_INITIALIZED');
 
-        UniswapPriceConsumerLib.UniswapPriceConsumerStruct storage ss = UniswapPriceConsumerLib.uniswapPriceConsumerStorage();
+        UniswapPriceConsumerLib.StateStorage storage ss = UniswapPriceConsumerLib.getState();
 
         ss.factoryAddr = _factoryAddress;
         ss.tokenA = _tokenA;
@@ -32,13 +32,13 @@ contract UniswapPriceConsumer is Ownable, IPriceConsumer {
         ss.fee = _fee;
     }
 
-    function getPoolAddress(address _tokenA, address _tokenB, uint24 _fee) public view onlyOwner returns (address) {
-        UniswapPriceConsumerLib.UniswapPriceConsumerStruct storage ss = UniswapPriceConsumerLib.uniswapPriceConsumerStorage();
+    function getPoolAddress(address _tokenA, address _tokenB, uint24 _fee) public view uniswapPriceConsumerInitLock returns (address) {
+        UniswapPriceConsumerLib.StateStorage storage ss = UniswapPriceConsumerLib.getState();
         return IUniswapV3Factory(ss.factoryAddr).getPool(_tokenA, _tokenB, _fee);
     }
 
-    function getQuote(uint32 period) public view onlyOwner returns (uint256 quoteAmount) {
-        UniswapPriceConsumerLib.UniswapPriceConsumerStruct storage ss = UniswapPriceConsumerLib.uniswapPriceConsumerStorage();
+    function getQuote(uint32 period) public view uniswapPriceConsumerInitLock returns (uint256 quoteAmount) {
+        UniswapPriceConsumerLib.StateStorage storage ss = UniswapPriceConsumerLib.getState();
 
         address _poolAddress = getPoolAddress(ss.tokenA, ss.tokenB, ss.fee);
 
@@ -50,7 +50,7 @@ contract UniswapPriceConsumer is Ownable, IPriceConsumer {
         return _quoteAmount;
     }
 
-    function getPrice() public override view onlyOwner returns (uint256) {
+    function getPrice() external view override uniswapPriceConsumerInitLock returns (uint256) {
         return getQuote(3600);
     }
 }

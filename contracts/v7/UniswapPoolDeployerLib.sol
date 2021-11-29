@@ -4,7 +4,7 @@ pragma solidity >=0.7.0 <0.8.0;
 library UniswapPoolDeployerLib {
 
     //IMPORTANT: You must increment this string if you add a new variable to UniswapPoolDeployerStruct that is not at the end
-    string constant NAMESPACE = "io.buffchain.tufftoken.uniswappooldeployer.1";
+    string constant NAMESPACE = "io.BuffChain.TuffToken.UniswapPoolDeployerLib.1";
     bytes32 constant POSITION = keccak256(bytes(NAMESPACE));
 
     struct StateStorage {

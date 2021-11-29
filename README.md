@@ -52,10 +52,13 @@ goes over several options and their pros and cons. This project uses the diamond
 more about [here](https://dev.to/mudgen/how-diamond-storage-works-90e) and [here](https://eips.ethereum.org/EIPS/eip-2535#facets-state-variables-and-diamond-storage). 
 There are a few additional quirks I would like to call out:
 - There are some key differences with inline assembly between solidity version
+- All first-party contract function names must be unique. This means no interfaces
 - The key feature to support diamond storage was released in solidity v0.6.4. Thus, all contracts must compile with 
 versions higher than that
 - You can mix and match different storage solutions, but that should only be a last resort. It is untested
 - //TODO: Public vs private within diamond storage?
+- //TODO: Contract ownership?
+- //TODO: Use address(this) everywhere since the state and storage are based in the diamond contract, and facets are just used for their logic?
 
 ## License
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
