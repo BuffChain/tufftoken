@@ -1,13 +1,11 @@
 // SPDX-License-Identifier: agpl-3.0
-pragma solidity ^0.8.0;
+pragma solidity >=0.7.0;
 
-import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
-import "@openzeppelin/contracts/access/Ownable.sol";
+import "@chainlink/contracts/src/v0.7/interfaces/AggregatorV3Interface.sol";
 
-import "./v7/IPriceConsumer.sol";
 import {ChainLinkPriceConsumerLib} from "./ChainLinkPriceConsumerLib.sol";
 
-contract ChainLinkPriceConsumer is IPriceConsumer {
+contract ChainLinkPriceConsumer {
     modifier initChainLinkPriceConsumerLock() {
         require(isChainLinkPriceConsumerInit(), string(abi.encodePacked(ChainLinkPriceConsumerLib.NAMESPACE, ": ", "UNINITIALIZED")));
         _;
@@ -39,7 +37,7 @@ contract ChainLinkPriceConsumer is IPriceConsumer {
         return ss.priceFeed.latestRoundData();
     }
 
-    function getPrice() external view override initChainLinkPriceConsumerLock returns (uint256) {
+    function getChainLinkPrice() external view initChainLinkPriceConsumerLock returns (uint256) {
         (,int price,,,) = getLatestRoundData();
         return uint256(price);
     }

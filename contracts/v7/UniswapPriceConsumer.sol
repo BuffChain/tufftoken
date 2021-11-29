@@ -1,14 +1,12 @@
 // SPDX-License-Identifier: agpl-3.0
-pragma solidity >=0.7.0 <0.8.0;
+pragma solidity >=0.7.0;
 
-import "@openzeppelin/contracts-v6/access/Ownable.sol";
 import "@uniswap/v3-periphery/contracts/libraries/OracleLibrary.sol";
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
-import "./IPriceConsumer.sol";
 
-import { UniswapPriceConsumerLib } from "./UniswapPriceConsumerLib.sol";
+import {UniswapPriceConsumerLib} from "./UniswapPriceConsumerLib.sol";
 
-contract UniswapPriceConsumer is IPriceConsumer {
+contract UniswapPriceConsumer {
     modifier uniswapPriceConsumerInitLock() {
         require(isUniswapPriceConsumerInit(), 'Tuff.UniswapPriceConsumer: UNINITIALIZED');
         _;
@@ -50,7 +48,7 @@ contract UniswapPriceConsumer is IPriceConsumer {
         return _quoteAmount;
     }
 
-    function getPrice() external view override uniswapPriceConsumerInitLock returns (uint256) {
+    function getUniswapPrice() external view uniswapPriceConsumerInitLock returns (uint256) {
         return getQuote(3600);
     }
 }

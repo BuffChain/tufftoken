@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: agpl-3.0
-pragma solidity ^0.8.0;
+pragma solidity >=0.7.0;
+pragma abicoder v2;
 
 import {MarketTrendLib} from "./MarketTrendLib.sol";
-import "./v7/IPriceConsumer.sol";
+
+import {ChainLinkPriceConsumer} from "./ChainLinkPriceConsumer.sol";
+import {UniswapPriceConsumer} from "./UniswapPriceConsumer.sol";
 
 /*
 can buy back when
@@ -216,23 +219,21 @@ contract MarketTrend {
 
             //TODO: Why memory, when above you used storage?
             MarketTrendLib.TrackingPeriod memory trackingPeriod = ss.trackingPeriods[currentTrackingPeriodIndex];
-            return IPriceConsumer(trackingPeriod.priceConsumer.addr).getPrice();
+            return getPriceFromPriceConsumer(trackingPeriod.priceConsumer);
         } else {
-            return IPriceConsumer(ss.priceConsumer.addr).getPrice();
+            return getPriceFromPriceConsumer(ss.priceConsumer);
         }
     }
 
-//    function getPriceFromPriceConsumer(MarketTrendLib.PriceConsumer priceConsumer) public view initMarketTrendLock returns (uint256) {
-//        MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
-//
-//        if (priceConsumer.clazz == MarketTrendLib.PriceConsumerClazz.CHAINLINK) {
-//            return ChainLinkPriceConsumer(priceConsumer.addr).getChainLinkPrice();
-//        } else if (priceConsumer.clazz == MarketTrendLib.PriceConsumerClazz.UNISWAP) {
-//            return UniswapPriceConsumer(priceConsumer.addr).getUniswapPrice();
-//        } else {
-//            revert("A valid price consumer class was not provided");
-//        }
-//    }
+    function getPriceFromPriceConsumer(MarketTrendLib.PriceConsumer memory priceConsumer) public view initMarketTrendLock returns (uint256) {
+        if (priceConsumer.clazz == MarketTrendLib.PriceConsumerClazz.CHAINLINK) {
+            return ChainLinkPriceConsumer(priceConsumer.addr).getChainLinkPrice();
+        } else if (priceConsumer.clazz == MarketTrendLib.PriceConsumerClazz.UNISWAP) {
+            return UniswapPriceConsumer(priceConsumer.addr).getUniswapPrice();
+        } else {
+            revert("A valid price consumer class was not provided");
+        }
+    }
 
     function anyBuyBacksRequired() public view initMarketTrendLock returns (bool) {
         MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();

@@ -1,7 +1,5 @@
 // SPDX-License-Identifier: agpl-3.0
-pragma solidity ^0.8.0;
-
-import "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
+pragma solidity >=0.7.0;
 
 library MarketTrendLib {
 
@@ -56,4 +54,18 @@ library MarketTrendLib {
             stateStorage.slot := position
         }
     }
+
+//    function getPriceFromPriceConsumer(PriceConsumer memory priceConsumer) internal view returns (uint256) {
+//        return IPriceConsumer(priceConsumer.addr).getPrice();
+//    }
+
+//    function getPriceFromPriceConsumer(MarketTrendLib.PriceConsumer priceConsumer) public view returns (uint256) {
+//        if (priceConsumer.clazz == MarketTrendLib.PriceConsumerClazz.CHAINLINK) {
+//            return ChainLinkPriceConsumer(priceConsumer.addr).getChainLinkPrice();
+//        } else if (priceConsumer.clazz == MarketTrendLib.PriceConsumerClazz.UNISWAP) {
+//            return UniswapPriceConsumer(priceConsumer.addr).getUniswapPrice();
+//        } else {
+//            revert("A valid price consumer class was not provided");
+//        }
+//    }
 }
