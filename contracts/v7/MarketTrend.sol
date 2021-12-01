@@ -20,7 +20,6 @@ Ex: buy back happens on day x, epoch = 7 days, base market trend period = 4 epoc
 	- case 4: current day = x + 4 epochs and 1 days, price change from current day - 7 days ago is -, chance = 20%, choice = 19  => buy back;
 */
 contract MarketTrend {
-
     modifier initMarketTrendLock() {
         require(isMarketTrendInit(), string(abi.encodePacked(MarketTrendLib.NAMESPACE, ": ", "UNINITIALIZED")));
         _;
@@ -33,7 +32,7 @@ contract MarketTrend {
 
     //Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
     // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
-    function initMarketTrend(address priceConsumerAddr, MarketTrendLib.PriceConsumer calldata priceConsumer, bool createInitialTrackingPeriod) public {
+    function initMarketTrend(MarketTrendLib.PriceConsumer priceConsumer, bool createInitialTrackingPeriod) public {
         require(!isMarketTrendInit(), string(abi.encodePacked(MarketTrendLib.NAMESPACE, ": ", "ALREADY_INITIALIZED")));
 
         MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
@@ -44,7 +43,6 @@ contract MarketTrend {
         ss.buyBackChanceLowerLimit = 1;
         ss.buyBackChanceUpperLimit = 100;
 
-        ss.priceConsumerAddr = priceConsumerAddr;
         ss.priceConsumer = priceConsumer;
 
         if (createInitialTrackingPeriod) {
@@ -57,19 +55,12 @@ contract MarketTrend {
     }
 
     //This will only take effect on next tracking period
-    function setPriceConsumer(address priceConsumerAddr, MarketTrendLib.PriceConsumer calldata priceConsumer) public initMarketTrendLock {
+    function setPriceConsumer(MarketTrendLib.PriceConsumer priceConsumer) public initMarketTrendLock {
         MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
-
-        ss.priceConsumerAddr = priceConsumerAddr;
         ss.priceConsumer = priceConsumer;
     }
 
-    function getPriceConsumerAddr() public initMarketTrendLock view returns (address) {
-        MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
-        return ss.priceConsumerAddr;
-    }
-
-    function getPriceConsumer() public initMarketTrendLock view returns (MarketTrendLib.PriceConsumer memory) {
+    function getPriceConsumer() public initMarketTrendLock view returns (MarketTrendLib.PriceConsumer) {
         MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
         return ss.priceConsumer;
     }
@@ -177,7 +168,7 @@ contract MarketTrend {
         }
 
         uint256 startingPrice = getPriceFromDataEntry(startingEntryIndex);
-        if (!(currentPrice <= startingPrice)) {
+        if (!isNegativeOrZeroPriceChange(startingPrice, currentPrice)) {
             //TODO: comment: Not a bull trend, no need to continue processing the market trend
             return;
         }
@@ -194,6 +185,10 @@ contract MarketTrend {
         } else {
             trackingPeriod.buyBackChance = trackingPeriod.buyBackChance + ss.buyBackChanceIncrement;
         }
+    }
+
+    function isNegativeOrZeroPriceChange(uint256 oldPrice, uint256 newPrice) public pure returns (bool){
+        return oldPrice >= newPrice;
     }
 
     function getPriceDataEntriesLength() public view initMarketTrendLock returns (uint256) {
@@ -225,11 +220,11 @@ contract MarketTrend {
         }
     }
 
-    function getPriceFromPriceConsumer(MarketTrendLib.PriceConsumer memory priceConsumer) public view initMarketTrendLock returns (uint256) {
-        if (priceConsumer.clazz == MarketTrendLib.PriceConsumerClazz.CHAINLINK) {
-            return ChainLinkPriceConsumer(priceConsumer.addr).getChainLinkPrice();
-        } else if (priceConsumer.clazz == MarketTrendLib.PriceConsumerClazz.UNISWAP) {
-            return UniswapPriceConsumer(priceConsumer.addr).getUniswapPrice();
+    function getPriceFromPriceConsumer(MarketTrendLib.PriceConsumer priceConsumer) public view initMarketTrendLock returns (uint256) {
+        if (priceConsumer == MarketTrendLib.PriceConsumer.CHAINLINK) {
+            return ChainLinkPriceConsumer(address(this)).getChainLinkPrice();
+        } else if (priceConsumer == MarketTrendLib.PriceConsumer.UNISWAP) {
+            return UniswapPriceConsumer(address(this)).getUniswapPrice();
         } else {
             revert("A valid price consumer class was not provided");
         }
@@ -247,6 +242,11 @@ contract MarketTrend {
             }
         }
         return required;
+    }
+
+    function getIsBuyBackFulfilled(uint256 trackingPeriod) public view initMarketTrendLock returns (bool) {
+        MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
+        return ss.trackingPeriods[trackingPeriod].isBuyBackFulfilled;
     }
 
     function setIsBuyBackFulfilled(uint256 trackingPeriod, bool fulfilled) public initMarketTrendLock {

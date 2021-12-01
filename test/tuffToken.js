@@ -24,95 +24,90 @@ describe("TuffToken", function () {
     });
 
     it('should calculate farm fee amount with take fee true', async () => {
-        const farmFee = await tuffTokenDiamond.getFarmFee();
-        console.log("------")
-        console.log(farmFee)
-        console.log("------")
-
         const feeAmount = await tuffTokenDiamond.calculateFarmFee(100, true);
         expect(feeAmount).to.equal(10, "incorrect farm fee amount");
     });
 
     it('should calculate farm fee amount with take fee false', async () => {
-        const feeAmount = await tuffToken.calculateFarmFee(100, false);
+        const feeAmount = await tuffTokenDiamond.calculateFarmFee(100, false);
         expect(feeAmount).to.equal(0, "incorrect farm fee amount");
     });
 
     it('should exclude from fees', async () => {
-        await tuffToken.excludeFromFee(accounts[0].address);
-        expect(await tuffToken.isExcludedFromFee(accounts[0].address)).to.equal(true, "account should be excluded from fee");
+        await tuffTokenDiamond.excludeFromFee(accounts[0].address);
+        expect(await tuffTokenDiamond.isExcludedFromFee(accounts[0].address)).to.equal(true, "account should be excluded from fee");
     });
 
     it('should include in fees', async () => {
-        await tuffToken.includeInFee(accounts[0].address);
-        expect(await tuffToken.isExcludedFromFee(accounts[0].address)).to.equal(false, "account should be included in fee");
+        await tuffTokenDiamond.includeInFee(accounts[0].address);
+        expect(await tuffTokenDiamond.isExcludedFromFee(accounts[0].address)).to.equal(false, "account should be included in fee");
     });
 
     it('should get name', async () => {
-        const name = await tuffToken.name();
+        const name = await tuffTokenDiamond.name();
         expect(name).to.equal("TuffToken", "incorrect name");
     });
 
     it('should get symbol', async () => {
-        const symbol = await tuffToken.symbol();
+        const symbol = await tuffTokenDiamond.symbol();
         expect(symbol).to.equal("TUFF", "incorrect symbol");
     });
 
     it('should get decimals', async () => {
-        const decimals = (await tuffToken.decimals());
+        const decimals = (await tuffTokenDiamond.decimals());
         expect(decimals).to.equal(9, "incorrect decimals");
     });
 
     it('should get totalSupply', async () => {
-        const totalSupply = parseFloat(await tuffToken.totalSupply());
+        const totalSupply = parseFloat(await tuffTokenDiamond.totalSupply());
         expect(totalSupply).to.equal(1000000000 * 10 ** 9, "incorrect totalSupply");
     });
 
     it('should have TuffToken in the owner account', async () => {
-        const balance = parseFloat(await tuffToken.balanceOf(owner.address));
+        const balance = parseFloat(await tuffTokenDiamond.balanceOf(owner.address));
         expect(balance).to.equal(1000000000 * 10 ** 9, "tokens weren't in the owner account");
     });
 
     it('should initialize and get allowance', async () => {
-        const startingAllowance = parseFloat(await tuffToken.allowance(owner.address, accounts[0].address));
+        const startingAllowance = parseFloat(await tuffTokenDiamond.allowance(owner.address, accounts[0].address));
         expect(startingAllowance).to.equal(0, "incorrect starting allowance");
 
-        const approved = Boolean(await tuffToken.approve(accounts[0].address, 100));
+        const approved = Boolean(await tuffTokenDiamond.approve(accounts[0].address, 100));
         expect(approved).to.equal(true, "should be approved");
 
-        const endingAllowance = parseFloat(await tuffToken.allowance(owner.address, accounts[0].address));
+        const endingAllowance = parseFloat(await tuffTokenDiamond.allowance(owner.address, accounts[0].address));
         expect(endingAllowance).to.equal(100, "incorrect ending allowance");
     });
 
     it('should change allowance', async () => {
-        const startingAllowance = parseFloat(await tuffToken.allowance(owner.address, accounts[1].address));
+        const startingAllowance = parseFloat(await tuffTokenDiamond.allowance(owner.address, accounts[1].address));
         expect(startingAllowance).to.equal(0, "incorrect starting allowance");
 
-        let approved = Boolean(await tuffToken.increaseAllowance(accounts[1].address, 100));
+        let approved = Boolean(await tuffTokenDiamond.increaseAllowance(accounts[1].address, 100));
         expect(approved).to.equal(true, "should be approved");
 
-        const allowance = parseFloat(await tuffToken.allowance(owner.address, accounts[1].address));
+        const allowance = parseFloat(await tuffTokenDiamond.allowance(owner.address, accounts[1].address));
         expect(allowance).to.equal(100, "incorrect allowance");
 
-        approved = Boolean(await tuffToken.decreaseAllowance(accounts[1].address, 100));
+        approved = Boolean(await tuffTokenDiamond.decreaseAllowance(accounts[1].address, 100));
         expect(approved).to.equal(true, "should be approved");
 
-        const endingAllowance = parseFloat(await tuffToken.allowance(owner.address, accounts[1].address));
+        const endingAllowance = parseFloat(await tuffTokenDiamond.allowance(owner.address, accounts[1].address));
         expect(endingAllowance).to.equal(0, "incorrect allowance");
     });
 
     it('should get fee exclusion', async () => {
-        let isExcluded = await tuffToken.isExcludedFromFee(accounts[2].address);
+        let isExcluded = await tuffTokenDiamond.isExcludedFromFee(accounts[2].address);
         expect(isExcluded).to.equal(false, "should be included");
 
-        await tuffToken.excludeFromFee(accounts[2].address)
+        await tuffTokenDiamond.excludeFromFee(accounts[2].address)
 
-        isExcluded = await tuffToken.isExcludedFromFee(accounts[2].address);
+        isExcluded = await tuffTokenDiamond.isExcludedFromFee(accounts[2].address);
         expect(isExcluded).to.equal(true, "should be excluded");
 
-        await tuffToken.includeInFee(accounts[2].address);
+        await tuffTokenDiamond.includeInFee(accounts[2].address);
 
-        isExcluded = await tuffToken.isExcludedFromFee(accounts[2].address);
+        isExcluded = await tuffTokenDiamond.isExcludedFromFee(accounts[2].address);
         expect(isExcluded).to.equal(false, "should be included");
     });
 
@@ -121,31 +116,31 @@ describe("TuffToken", function () {
         const sender = owner.address;
         const receiver = accounts[0].address;
 
-        let isSenderExcludedFromFees = await tuffToken.isExcludedFromFee(sender);
+        let isSenderExcludedFromFees = await tuffTokenDiamond.isExcludedFromFee(sender);
         if (!isSenderExcludedFromFees) {
-            await tuffToken.excludeFromFee(sender);
-            isSenderExcludedFromFees = await tuffToken.isExcludedFromFee(sender);
+            await tuffTokenDiamond.excludeFromFee(sender);
+            isSenderExcludedFromFees = await tuffTokenDiamond.isExcludedFromFee(sender);
         }
         expect(isSenderExcludedFromFees).to.equal(true, "account should be excluded from fee");
 
-        let isReceiverExcludedFromFees = await tuffToken.isExcludedFromFee(receiver);
+        let isReceiverExcludedFromFees = await tuffTokenDiamond.isExcludedFromFee(receiver);
         if (!isReceiverExcludedFromFees) {
-            await tuffToken.excludeFromFee(receiver);
-            isReceiverExcludedFromFees = await tuffToken.isExcludedFromFee(receiver);
+            await tuffTokenDiamond.excludeFromFee(receiver);
+            isReceiverExcludedFromFees = await tuffTokenDiamond.isExcludedFromFee(receiver);
         }
         expect(isReceiverExcludedFromFees).to.equal(true, "account should be excluded from fee");
 
         // Get initial balances of first and second account.
-        const senderStartingBalance = parseFloat(await tuffToken.balanceOf(sender));
-        const receiverStartingBalance = parseFloat(await tuffToken.balanceOf(receiver));
+        const senderStartingBalance = parseFloat(await tuffTokenDiamond.balanceOf(sender));
+        const receiverStartingBalance = parseFloat(await tuffTokenDiamond.balanceOf(receiver));
 
         // Make transaction from first account to second.
         const amount = 10000000;
-        await tuffToken.transfer(receiver, amount, {from: sender});
+        await tuffTokenDiamond.transfer(receiver, amount, {from: sender});
 
         // Get balances of first and second account after the transactions.
-        const senderEndingBalance = parseFloat(await tuffToken.balanceOf(sender));
-        const receiverEndingBalance = parseFloat(await tuffToken.balanceOf(receiver));
+        const senderEndingBalance = parseFloat(await tuffTokenDiamond.balanceOf(sender));
+        const receiverEndingBalance = parseFloat(await tuffTokenDiamond.balanceOf(receiver));
 
 
         expect(senderEndingBalance).to.equal(senderStartingBalance - amount, "Amount wasn't correctly taken from the sender");
@@ -157,31 +152,31 @@ describe("TuffToken", function () {
         const sender = owner.address;
         const receiver = accounts[0].address;
 
-        let isSenderExcludedFromFees = await tuffToken.isExcludedFromFee(sender);
+        let isSenderExcludedFromFees = await tuffTokenDiamond.isExcludedFromFee(sender);
         if (!isSenderExcludedFromFees) {
-            await tuffToken.excludeFromFee(sender);
-            isSenderExcludedFromFees = await tuffToken.isExcludedFromFee(sender);
+            await tuffTokenDiamond.excludeFromFee(sender);
+            isSenderExcludedFromFees = await tuffTokenDiamond.isExcludedFromFee(sender);
         }
         expect(isSenderExcludedFromFees).to.equal(true, "account should be excluded from fee");
 
-        let isReceiverExcludedFromFees = await tuffToken.isExcludedFromFee(receiver);
+        let isReceiverExcludedFromFees = await tuffTokenDiamond.isExcludedFromFee(receiver);
         if (isReceiverExcludedFromFees) {
-            await tuffToken.includeInFee(receiver);
-            isReceiverExcludedFromFees = await tuffToken.isExcludedFromFee(receiver);
+            await tuffTokenDiamond.includeInFee(receiver);
+            isReceiverExcludedFromFees = await tuffTokenDiamond.isExcludedFromFee(receiver);
         }
         expect(isReceiverExcludedFromFees).to.equal(false, "account should not be excluded from fee");
 
         // Get initial balances of first and second account.
-        const senderStartingBalance = parseFloat(await tuffToken.balanceOf(sender));
-        const receiverStartingBalance = parseFloat(await tuffToken.balanceOf(receiver));
+        const senderStartingBalance = parseFloat(await tuffTokenDiamond.balanceOf(sender));
+        const receiverStartingBalance = parseFloat(await tuffTokenDiamond.balanceOf(receiver));
 
         // Make transaction from first account to second.
         const amount = 10000000;
-        await tuffToken.transfer(receiver, amount, {from: sender});
+        await tuffTokenDiamond.transfer(receiver, amount, {from: sender});
 
         // Get balances of first and second account after the transactions.
-        const senderEndingBalance = parseFloat(await tuffToken.balanceOf(sender));
-        const receiverEndingBalance = parseFloat(await tuffToken.balanceOf(receiver));
+        const senderEndingBalance = parseFloat(await tuffTokenDiamond.balanceOf(sender));
+        const receiverEndingBalance = parseFloat(await tuffTokenDiamond.balanceOf(receiver));
 
         expect(senderEndingBalance).to.equal(senderStartingBalance - amount, "Amount wasn't correctly taken from the sender");
         expect(receiverEndingBalance).to.equal(receiverStartingBalance + amount, "Amount wasn't correctly sent to the receiver");
@@ -192,31 +187,31 @@ describe("TuffToken", function () {
         const sender = owner.address;
         const receiver = accounts[0].address;
 
-        let isSenderExcludedFromFees = await tuffToken.isExcludedFromFee(sender);
+        let isSenderExcludedFromFees = await tuffTokenDiamond.isExcludedFromFee(sender);
         if (isSenderExcludedFromFees) {
-            await tuffToken.includeInFee(sender);
-            isSenderExcludedFromFees = await tuffToken.isExcludedFromFee(sender);
+            await tuffTokenDiamond.includeInFee(sender);
+            isSenderExcludedFromFees = await tuffTokenDiamond.isExcludedFromFee(sender);
         }
         expect(isSenderExcludedFromFees).to.equal(false, "account should not be excluded from fee");
 
-        let isReceiverExcludedFromFees = await tuffToken.isExcludedFromFee(receiver);
+        let isReceiverExcludedFromFees = await tuffTokenDiamond.isExcludedFromFee(receiver);
         if (!isReceiverExcludedFromFees) {
-            await tuffToken.excludeFromFee(receiver);
-            isReceiverExcludedFromFees = await tuffToken.isExcludedFromFee(receiver);
+            await tuffTokenDiamond.excludeFromFee(receiver);
+            isReceiverExcludedFromFees = await tuffTokenDiamond.isExcludedFromFee(receiver);
         }
         expect(isReceiverExcludedFromFees).to.equal(true, "account should be excluded from fee");
 
         // Get initial balances of first and second account.
-        const senderStartingBalance = parseFloat(await tuffToken.balanceOf(sender));
-        const receiverStartingBalance = parseFloat(await tuffToken.balanceOf(receiver));
+        const senderStartingBalance = parseFloat(await tuffTokenDiamond.balanceOf(sender));
+        const receiverStartingBalance = parseFloat(await tuffTokenDiamond.balanceOf(receiver));
 
         // Make transaction from first account to second.
         const amount = 10000000;
-        await tuffToken.transfer(receiver, amount, {from: sender});
+        await tuffTokenDiamond.transfer(receiver, amount, {from: sender});
 
         // Get balances of first and second account after the transactions.
-        const senderEndingBalance = parseFloat(await tuffToken.balanceOf(sender));
-        const receiverEndingBalance = parseFloat(await tuffToken.balanceOf(receiver));
+        const senderEndingBalance = parseFloat(await tuffTokenDiamond.balanceOf(sender));
+        const receiverEndingBalance = parseFloat(await tuffTokenDiamond.balanceOf(receiver));
 
 
         expect(senderEndingBalance).to.equal(senderStartingBalance - amount, "Amount wasn't correctly taken from the sender");
@@ -228,35 +223,33 @@ describe("TuffToken", function () {
 
         // Setup sender account
         const sender = accounts[0];
-        await tuffToken.includeInFee(sender.address);
-        expect(await tuffToken.isExcludedFromFee(sender.address)).to.equal(false, "account should not be excluded from fee");
+        await tuffTokenDiamond.includeInFee(sender.address);
+        expect(await tuffTokenDiamond.isExcludedFromFee(sender.address)).to.equal(false, "account should not be excluded from fee");
         // Give sender account tokens to send
-        await tuffToken.transfer(sender.address, amount);
-        const senderStartingBalance = parseFloat(await tuffToken.balanceOf(sender.address));
+        await tuffTokenDiamond.transfer(sender.address, amount);
+        const senderStartingBalance = parseFloat(await tuffTokenDiamond.balanceOf(sender.address));
         expect(senderStartingBalance).to.equal(amount);
 
         // Setup receiver account
         const receiver = accounts[1];
-        await tuffToken.includeInFee(receiver.address);
-        expect(await tuffToken.isExcludedFromFee(receiver.address)).to.equal(false, "account should not be excluded from fee");
-        const receiverStartingBalance = parseFloat(await tuffToken.balanceOf(receiver.address));
+        await tuffTokenDiamond.includeInFee(receiver.address);
+        expect(await tuffTokenDiamond.isExcludedFromFee(receiver.address)).to.equal(false, "account should not be excluded from fee");
+        const receiverStartingBalance = parseFloat(await tuffTokenDiamond.balanceOf(receiver.address));
         expect(receiverStartingBalance).to.equal(0);
 
         // Make transaction from first account to second
-        await tuffToken.connect(sender).transfer(receiver.address, amount);
+        await tuffTokenDiamond.connect(sender).transfer(receiver.address, amount);
 
         // Get ending balances after transaction
-        const senderEndingBalance = parseFloat(await tuffToken.balanceOf(sender.address));
-        const receiverEndingBalance = parseFloat(await tuffToken.balanceOf(receiver.address));
-        const farmTreasuryEndingBalance = parseFloat(await tuffToken.balanceOf(farmTreasury.address));
+        const senderEndingBalance = parseFloat(await tuffTokenDiamond.balanceOf(sender.address));
+        const receiverEndingBalance = parseFloat(await tuffTokenDiamond.balanceOf(receiver.address));
 
         // Get fees
-        const farmFeeAmount = await tuffToken.calculateFarmFee(amount, true);
+        const farmFeeAmount = await tuffTokenDiamond.calculateFarmFee(amount, true);
 
         // Then determine if fees were properly taken
         expect(senderEndingBalance).to.equal(senderStartingBalance - amount, "Amount wasn't correctly taken from the sender");
         expect(receiverEndingBalance).to.equal(receiverStartingBalance + amount - farmFeeAmount, "Amount wasn't correctly sent to the receiver");
-        expect(farmTreasuryEndingBalance).to.equal(farmFeeAmount, "Amount wasn't correctly sent to Farm Treasury");
     });
 
     it('should send token correctly on behalf of other account', async () => {
@@ -264,32 +257,30 @@ describe("TuffToken", function () {
 
         // Setup sender account
         const sender = owner.address;
-        await tuffToken.includeInFee(sender);
-        expect(await tuffToken.isExcludedFromFee(sender)).to.equal(false, "account should not be excluded from fee");
-        const senderStartingBalance = parseFloat(await tuffToken.balanceOf(sender));
+        await tuffTokenDiamond.includeInFee(sender);
+        expect(await tuffTokenDiamond.isExcludedFromFee(sender)).to.equal(false, "account should not be excluded from fee");
+        const senderStartingBalance = parseFloat(await tuffTokenDiamond.balanceOf(sender));
 
         // Setup receiver account
         const receiver = accounts[0].address;
-        await tuffToken.includeInFee(receiver);
-        expect(await tuffToken.isExcludedFromFee(receiver)).to.equal(false, "account should not be excluded from fee");
-        const receiverStartingBalance = parseFloat(await tuffToken.balanceOf(receiver));
+        await tuffTokenDiamond.includeInFee(receiver);
+        expect(await tuffTokenDiamond.isExcludedFromFee(receiver)).to.equal(false, "account should not be excluded from fee");
+        const receiverStartingBalance = parseFloat(await tuffTokenDiamond.balanceOf(receiver));
         expect(receiverStartingBalance).to.equal(0);
 
         // Send tokens on behalf of the sender
-        await tuffToken.increaseAllowance(sender, amount);
-        await tuffToken.transferFrom(sender, receiver, amount);
+        await tuffTokenDiamond.increaseAllowance(sender, amount);
+        await tuffTokenDiamond.transferFrom(sender, receiver, amount);
 
         // Get ending balances after transaction
-        const senderEndingBalance = parseFloat(await tuffToken.balanceOf(sender));
-        const receiverEndingBalance = parseFloat(await tuffToken.balanceOf(receiver));
-        const farmTreasuryEndingBalance = parseFloat(await tuffToken.balanceOf(farmTreasury.address));
+        const senderEndingBalance = parseFloat(await tuffTokenDiamond.balanceOf(sender));
+        const receiverEndingBalance = parseFloat(await tuffTokenDiamond.balanceOf(receiver));
 
         // Get fees
-        const farmFeeAmount = await tuffToken.calculateFarmFee(amount, true);
+        const farmFeeAmount = await tuffTokenDiamond.calculateFarmFee(amount, true);
 
         // Then determine if fees were properly taken
         expect(senderEndingBalance).to.equal(senderStartingBalance - amount, "Amount wasn't correctly taken from the sender");
         expect(receiverEndingBalance).to.equal(receiverStartingBalance + amount - farmFeeAmount, "Amount wasn't correctly sent to the receiver");
-        expect(farmTreasuryEndingBalance).to.equal(farmFeeAmount, "Amount wasn't correctly sent to Farm Treasury");
     });
 });

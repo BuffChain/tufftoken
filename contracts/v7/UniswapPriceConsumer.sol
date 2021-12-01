@@ -19,7 +19,7 @@ contract UniswapPriceConsumer {
 
     //Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
     // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
-    function initUniswapPoolDeployer(address _tokenA, address _tokenB, uint24 _fee, address _factoryAddress) public {
+    function initUniswapPriceConsumer(address _tokenA, address _tokenB, uint24 _fee, address _factoryAddress) public {
         require(!isUniswapPriceConsumerInit(), 'Tuff.UniswapPriceConsumer: ALREADY_INITIALIZED');
 
         UniswapPriceConsumerLib.StateStorage storage ss = UniswapPriceConsumerLib.getState();
@@ -28,6 +28,8 @@ contract UniswapPriceConsumer {
         ss.tokenA = _tokenA;
         ss.tokenB = _tokenB;
         ss.fee = _fee;
+
+        ss.isInit = true;
     }
 
     function getPoolAddress(address _tokenA, address _tokenB, uint24 _fee) public view uniswapPriceConsumerInitLock returns (address) {

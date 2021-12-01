@@ -7,12 +7,8 @@ library MarketTrendLib {
     string constant NAMESPACE = "io.BuffChain.TuffToken.MarketTrendLib.1";
     bytes32 constant POSITION = keccak256(bytes(NAMESPACE));
 
-    enum PriceConsumerClazz {CHAINLINK, UNISWAP}
-
-    struct PriceConsumer {
-        address addr;
-        PriceConsumerClazz clazz;
-    }
+    //Make sure to update the `./test/utils` to add any additional PriceConsumer enums there as well
+    enum PriceConsumer {CHAINLINK, UNISWAP}
 
     struct PriceData {
         uint256 price;
@@ -33,7 +29,6 @@ library MarketTrendLib {
 
     struct StateStorage {
         bool isInit;
-        address priceConsumerAddr;
         PriceConsumer priceConsumer;
         TrackingPeriod[] trackingPeriods;
         PriceData[] priceDataEntries;
@@ -54,18 +49,4 @@ library MarketTrendLib {
             stateStorage.slot := position
         }
     }
-
-//    function getPriceFromPriceConsumer(PriceConsumer memory priceConsumer) internal view returns (uint256) {
-//        return IPriceConsumer(priceConsumer.addr).getPrice();
-//    }
-
-//    function getPriceFromPriceConsumer(MarketTrendLib.PriceConsumer priceConsumer) public view returns (uint256) {
-//        if (priceConsumer.clazz == MarketTrendLib.PriceConsumerClazz.CHAINLINK) {
-//            return ChainLinkPriceConsumer(priceConsumer.addr).getChainLinkPrice();
-//        } else if (priceConsumer.clazz == MarketTrendLib.PriceConsumerClazz.UNISWAP) {
-//            return UniswapPriceConsumer(priceConsumer.addr).getUniswapPrice();
-//        } else {
-//            revert("A valid price consumer class was not provided");
-//        }
-//    }
 }
