@@ -39,7 +39,7 @@ module.exports = async () => {
     await tuffTokenDiamondContract.initTuffToken(contractOwner);
     await tuffTokenDiamondContract.initAaveLPManager();
     // await tuffTokenDiamondContract.initUniswapPoolDeployer(WETH9_ADDRESS, DAI_ADDRESS, UNISWAP_POOL_BASE_FEE);
-    // await tuffTokenDiamondContract.initUniswapPriceConsumer(WETH9_ADDRESS, DAI_ADDRESS, UNISWAP_POOL_BASE_FEE, UNISWAP_FACTORY_ADDRESS);
+    await tuffTokenDiamondContract.initUniswapPriceConsumer(WETH9_ADDRESS, DAI_ADDRESS, UNISWAP_POOL_BASE_FEE, UNISWAP_FACTORY_ADDRESS);
     await tuffTokenDiamondContract.initChainLinkPriceConsumer(CHAINLINK_TOTAL_MARKETCAP_USD_AGGREGATOR_ADDRESS);
     await tuffTokenDiamondContract.initMarketTrend(CHAINLINK_PRICE_CONSUMER_ENUM, false);
     await tuffTokenDiamondContract.initGovernance();
