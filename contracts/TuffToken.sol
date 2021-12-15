@@ -35,9 +35,6 @@ contract TuffToken is Context, IERC20 {
         ss.balances[initialOwner] = ss.totalSupply;
         ss.isExcludedFromFee[initialOwner] = true;
 
-        ss.totalSupplyForRedemption = totalSupply;
-        ss.contractExpiration = block.timestamp + (6 * 365 days);
-
         ss.isInit = true;
     }
 
@@ -89,11 +86,6 @@ contract TuffToken is Context, IERC20 {
     function allowance(address owner, address spender) public view override tuffTokenInitLock returns (uint256) {
         TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
         return ss.allowances[owner][spender];
-    }
-
-    function totalSupplyForRedemption() external view returns (uint256) {
-        TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
-        return ss.totalSupplyForRedemption;
     }
 
     function approve(address spender, uint256 amount) public override tuffTokenInitLock returns (bool) {
@@ -185,7 +177,7 @@ contract TuffToken is Context, IERC20 {
         emit Transfer(from, address(this), farmFeeAmount);
     }
 
-    function burn(address account, uint256 amount) public onlyOwner {
+    function burn(address account, uint256 amount) public tuffTokenInitLock {
         require(account != address(0), "ERC20: burn from the zero address");
 
         TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();

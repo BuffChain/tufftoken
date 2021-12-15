@@ -3,16 +3,12 @@
 //
 //contract TokenRedemption {
 //
-//    using SafeMath for uint256;
-//
 //    receive() external payable {}
 //
 //    TuffToken tuffToken;
 //    mapping(address => bool) ownersRedeemed;
 //    uint256 startingEthBalance;
 //    bool isTreasuryLiquidated = false;
-//ss.totalSupplyForRedemption = totalSupply;
-//ss.contractExpiration = block.timestamp + (6 * 365 days);
 //
 //    constructor (address payable _tokenAddr) payable {
 //        tuffToken = TuffToken(_tokenAddr);
