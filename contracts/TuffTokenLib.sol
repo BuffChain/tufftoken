@@ -17,6 +17,8 @@ library TuffTokenLib {
         uint8 decimals;
         uint256 farmFee;
         uint256 totalSupply;
+        uint256 totalSupplyForRedemption;
+        uint256 contractExpiration;
     }
 
     function getState() internal pure returns (StateStorage storage stateStorage) {

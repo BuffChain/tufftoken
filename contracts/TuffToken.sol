@@ -24,8 +24,6 @@ contract TuffToken is Context, IERC20 {
         require(!isTuffTokenInit(), string(abi.encodePacked(TuffTokenLib.NAMESPACE, ": ", "ALREADY_INITIALIZED")));
 
         TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
-    uint256 private _totalSupplyForRedemption = _totalSupply;
-    uint256 contractExpiration = block.timestamp + (6 * 365 days);
 
         ss.name = "TuffToken";
         ss.symbol = "TUFF";
@@ -37,6 +35,8 @@ contract TuffToken is Context, IERC20 {
         ss.balances[initialOwner] = ss.totalSupply;
         ss.isExcludedFromFee[initialOwner] = true;
 
+        ss.totalSupplyForRedemption = totalSupply;
+        ss.contractExpiration = block.timestamp + (6 * 365 days);
 
         ss.isInit = true;
     }
@@ -92,7 +92,8 @@ contract TuffToken is Context, IERC20 {
     }
 
     function totalSupplyForRedemption() external view returns (uint256) {
-        return _totalSupplyForRedemption;
+        TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
+        return ss.totalSupplyForRedemption;
     }
 
     function approve(address spender, uint256 amount) public override tuffTokenInitLock returns (bool) {
@@ -184,19 +185,22 @@ contract TuffToken is Context, IERC20 {
         emit Transfer(from, address(this), farmFeeAmount);
     }
 
-    receive() external payable {}
     function burn(address account, uint256 amount) public onlyOwner {
         require(account != address(0), "ERC20: burn from the zero address");
 
-        uint256 accountBalance = balances[account];
+        TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
+
+        uint256 accountBalance = ss.balances[account];
         require(accountBalance >= amount, "ERC20: burn amount exceeds balance");
         unchecked {
-            balances[account] = accountBalance - amount;
+            ss.balances[account] = accountBalance - amount;
         }
-        _totalSupply -= amount;
+        ss.totalSupply -= amount;
 
         emit Transfer(account, address(0), amount);
 
     }
+
+    receive() external payable {}
 
 }
