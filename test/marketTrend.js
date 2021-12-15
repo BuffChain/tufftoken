@@ -2,7 +2,6 @@
 
 const {expect} = require("chai");
 const hre = require("hardhat");
-const {smockit} = require("@eth-optimism/smock");
 const {
     CHAINLINK_PRICE_CONSUMER_ENUM,
     UNISWAP_PRICE_CONSUMER_ENUM
@@ -185,25 +184,13 @@ describe('MarketTrend', function () {
 
     it('should call check up keep', async () => {
 
-        const MarketTrendKeeperHelper = await smockit(marketTrendKeeperHelper);
-
-        MarketTrendKeeperHelper.smocked.upkeepNeeded.will.return.with(true);
-
-        await marketTrend.setMarketTrendKeeperHelper(MarketTrendKeeperHelper.address);
-
         let [needed, performData] = await marketTrend.checkUpkeep(randomBytes(0));
 
-        expect(needed).to.equal(true, "should need upkeep.");
+        expect(needed).to.equal(false, "should need upkeep.");
 
     });
 
     it('should call perform upkeep', async () => {
-
-        const MarketTrendKeeperHelper = await smockit(marketTrendKeeperHelper);
-
-        MarketTrendKeeperHelper.smocked.upkeepNeeded.will.return.with(true);
-
-        await marketTrend.setMarketTrendKeeperHelper(MarketTrendKeeperHelper.address);
 
         await marketTrend.createTrackingPeriod(nowTimeStamp, nowTimeStamp + 1);
 
