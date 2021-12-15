@@ -38,6 +38,28 @@ requires solidity 0.6.12 then it belongs in`./contract/v6/`. Thus, anything that
 must be called via `abi`. This should help make it clear which contracts you can import directly, and thus easier and 
 safer to use, vs which you must call via abi.
 
+### Diamond Contracts
+We decided to structure our contracts with the diamond standard to ensure we write clean and concise code, while still
+practicing separation-of-concerns. Among other benefits, the diamond standard also enabled us to treat our code as one
+meta-contract which shares the same owner, address, and wallet. Architecting our contract this way also means
+transactions will use less gas as they do not have to transfer tokens from each contract's wallet.
+
+It is encouraged to familiarize yourself with Diamonds, [this repo](https://github.com/mudgen/diamond) is a good place
+to start. Note that we chose the 3rd implementation [here](https://github.com/mudgen/diamond-3-hardhat). 
+
+It is imperative that you understand how state and storage is managed with within Diamonds. [This link](https://medium.com/1milliondevs/solidity-storage-layout-for-proxy-contracts-and-diamonds-c4f009b6903) 
+goes over several options and their pros and cons. This project uses the diamond storage method, which you can learn 
+more about [here](https://dev.to/mudgen/how-diamond-storage-works-90e) and [here](https://eips.ethereum.org/EIPS/eip-2535#facets-state-variables-and-diamond-storage). 
+There are a few additional quirks I would like to call out:
+- There are some key differences with inline assembly between solidity version
+- All first-party contract function names must be unique. This means no interfaces
+- The key feature to support diamond storage was released in solidity v0.6.4. Thus, all contracts must compile with 
+versions higher than that
+- You can mix and match different storage solutions, but that should only be a last resort. It is untested
+- //TODO: Public vs private within diamond storage?
+- //TODO: Contract ownership?
+- //TODO: Use address(this) everywhere since the state and storage are based in the diamond contract, and facets are just used for their logic?
+
 ## License
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 

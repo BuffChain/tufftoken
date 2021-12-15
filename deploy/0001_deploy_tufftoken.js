@@ -1,107 +1,48 @@
 // SPDX-License-Identifier: agpl-3.0
 
 const hre = require("hardhat");
-const { getContractAddress } = require("@ethersproject/address");
-const {WETH9_ADDRESS, DAI_ADDRESS, UNISWAP_POOL_BASE_FEE, CHAINLINK_ETH_USD_AGGREGATOR_ADDRESS, UNISWAP_FACTORY_ADDRESS} = require("../test/utils");
+const {
+    WETH9_ADDRESS,
+    DAI_ADDRESS,
+    UNISWAP_POOL_BASE_FEE,
+    CHAINLINK_ETH_USD_AGGREGATOR_ADDRESS,
+    CHAINLINK_TOTAL_MARKETCAP_USD_AGGREGATOR_ADDRESS,
+    UNISWAP_FACTORY_ADDRESS,
+    CHAINLINK_PRICE_CONSUMER_ENUM,
+    UNISWAP_PRICE_CONSUMER_ENUM
+} = require("../test/utils");
 
 module.exports = async () => {
-  const { deployments, getNamedAccounts } = hre;
-  const { deploy } = deployments;
-  const { deployer, contractOwner } = await getNamedAccounts();
+    const {deployments, getNamedAccounts} = hre;
+    const {deployer, contractOwner} = await getNamedAccounts();
 
-  console.log(`Deployer address [${deployer}]`)
-  console.log(`Contract owner address [${contractOwner}]`)
+    console.log(`Deployer address [${deployer}]`)
+    console.log(`Contract owner address [${contractOwner}]`)
 
-  const deployerAcct = await hre.ethers.getSigner(deployer);
-  let transactionCount = await deployerAcct.getTransactionCount();
-  const farmTreasuryAddress = getContractAddress({
-    from: deployer,
+    let tuffTokenDiamond = await deployments.diamond.deploy('TuffTokenDiamond', {
+        from: deployer,
+        owner: contractOwner,
+        facets: [
+            "TuffToken",
+            "AaveLPManager",
+            // "UniswapPoolDeployer",
+            "UniswapPriceConsumer",
+            "ChainLinkPriceConsumer",
+            "MarketTrend",
+            "Governance"
+        ],
+        log: true
+    });
+    let tuffTokenDiamondContract = await hre.ethers.getContractAt(tuffTokenDiamond.abi, tuffTokenDiamond.address, contractOwner);
+    console.log(`TuffTokenDiamond address [${await tuffTokenDiamondContract.address}]`);
 
-    //Add one as we want the contract address after next. Another way to say that is, we want the farmTreasury contract
-    // address, which will be the address after the aaveLPManager contract is deployed
-    nonce: transactionCount + 1
-  })
-
-  const aaveLPManager = await deploy('AaveLPManager', {
-    from: deployer,
-    args: [farmTreasuryAddress],
-    log: true,
-  });
-
-  const farmTreasury = await deploy('FarmTreasury', {
-    from: deployer,
-    args: [contractOwner, aaveLPManager.address],
-    log: true,
-  });
-
-  const tuffToken = await deploy('TuffToken', {
-    from: deployer,
-    args: [contractOwner, farmTreasury.address],
-    log: true,
-  });
-
-  const uniswapPoolDeployer = await deploy('UniswapPoolDeployer', {
-    from: deployer,
-    args: [
-        contractOwner,
-        WETH9_ADDRESS,
-        DAI_ADDRESS,
-        UNISWAP_POOL_BASE_FEE
-    ],
-    log: true,
-  });
-
-  const marketTrendKeeperHelper = await deploy('MarketTrendKeeperHelper', {
-    from: deployer,
-    args: [
-    ],
-    log: true,
-  });
-
-
-  transactionCount = await deployerAcct.getTransactionCount();
-
-  const marketTrendAddress = getContractAddress({
-    from: deployer,
-
-    //Add one as we want the contract address after next.
-    nonce: transactionCount + 2
-  })
-
-  const uniswapPriceConsumer = await deploy('UniswapPriceConsumer', {
-    from: deployer,
-    args: [
-      marketTrendAddress,
-      WETH9_ADDRESS,
-      DAI_ADDRESS,
-      UNISWAP_POOL_BASE_FEE,
-      UNISWAP_FACTORY_ADDRESS
-    ],
-    log: true,
-  });
-
-  // Main net ETH/USD 0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419
-  const chainLinkPriceConsumer = await deploy('ChainLinkPriceConsumer', {
-    from: deployer,
-    args: [
-      marketTrendAddress,
-      CHAINLINK_ETH_USD_AGGREGATOR_ADDRESS,
-    ],
-    log: true,
-  });
-
-  const marketTrend = await deploy('MarketTrend', {
-    from: deployer,
-    args: [
-      contractOwner,
-      uniswapPriceConsumer.address,
-      false,
-      farmTreasuryAddress,
-      marketTrendKeeperHelper.address
-    ],
-    log: true,
-  });
-
+    await tuffTokenDiamondContract.initTuffToken(contractOwner);
+    await tuffTokenDiamondContract.initAaveLPManager();
+    // await tuffTokenDiamondContract.initUniswapPoolDeployer(WETH9_ADDRESS, DAI_ADDRESS, UNISWAP_POOL_BASE_FEE);
+    await tuffTokenDiamondContract.initUniswapPriceConsumer(WETH9_ADDRESS, DAI_ADDRESS, UNISWAP_POOL_BASE_FEE, UNISWAP_FACTORY_ADDRESS);
+    await tuffTokenDiamondContract.initChainLinkPriceConsumer(CHAINLINK_TOTAL_MARKETCAP_USD_AGGREGATOR_ADDRESS);
+    await tuffTokenDiamondContract.initMarketTrend(CHAINLINK_PRICE_CONSUMER_ENUM, false);
+    await tuffTokenDiamondContract.initGovernance();
 };
 
 module.exports.tags = ['v0001'];
