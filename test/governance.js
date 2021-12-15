@@ -1,108 +1,95 @@
 // SPDX-License-Identifier: agpl-3.0
 
-const { expect } = require("chai");
-const { ethers } = require("hardhat");
+const {expect} = require("chai");
+const hre = require("hardhat");
 
 describe("Governance", function () {
 
     let owner;
     let accounts;
 
-    let farmTreasuryFactory;
-    let farmTreasury;
+    let tuffTokenDiamond;
+    
+    const expectedName = "Test Election";
+    const expectedDescription = "This is a test.";
+    const expectedAuthor = "Tuff Guy";
 
-    let aaveLPManagerFactory;
-    let aaveLPManager;
-
-    let tuffTokenFactory;
-    let tuffToken;
-
-    let governanceFactory;
-    let governance;
-
-    let electionFactory;
-    let election;
-    let electionPastEnd;
+    const currentTimestamp = Date.now();
+    const expectedElectionEnd = currentTimestamp + 60000;
 
     before(async function () {
-        tuffTokenFactory = await ethers.getContractFactory("TuffToken");
-        governanceFactory = await ethers.getContractFactory("Governance");
-        farmTreasuryFactory = await ethers.getContractFactory("FarmTreasury");
-        aaveLPManagerFactory = await ethers.getContractFactory("AaveLPManager");
-        electionFactory = await ethers.getContractFactory("Election");
+        const {contractOwner} = await hre.getNamedAccounts();
+        owner = await hre.ethers.getSigner(contractOwner);
+
+        //Per `hardhat.config.js`, the 0 and 1 index accounts are named accounts. They are reserved for deployment uses
+        [, , ...accounts] = await hre.ethers.getSigners();
     });
 
     beforeEach(async function () {
-        [owner, ...accounts] = await ethers.getSigners();
+        const {TuffTokenDiamond} = await hre.deployments.fixture();
+        tuffTokenDiamond = await hre.ethers.getContractAt(TuffTokenDiamond.abi, TuffTokenDiamond.address, owner);
 
-        aaveLPManager = await aaveLPManagerFactory.deploy();
-        await aaveLPManager.deployed();
+        await tuffTokenDiamond.createElection(expectedName, expectedDescription, expectedAuthor, expectedElectionEnd);
+    });
 
-        farmTreasury = await farmTreasuryFactory.deploy(aaveLPManager.address);
-        await farmTreasury.deployed();
-
-        tuffToken = await tuffTokenFactory.deploy(farmTreasury.address);
-        await tuffToken.deployed();
-
-        governance = await governanceFactory.deploy(tuffToken.address);
-        await governance.deployed();
-
-        const currentTimestamp = Date.now();
-        const electionEnd = currentTimestamp + 60000;
-        election = await electionFactory.deploy("Test Election", "This is a test.", "Ian Ballard", electionEnd, tuffToken.address);
-        await election.deployed();
-
-        electionPastEnd = await electionFactory.deploy("Test Election 2", "This is a test.", "Ian Ballard", 1, tuffToken.address);
-        await electionPastEnd.deployed();
-
+    it("should get elections length", async () => {
+        const electionLength = await tuffTokenDiamond.getElectionLength();
+        expect(electionLength).to.equal(1, "should be length 1");
     });
 
     it("should create an election from governance", async () => {
-        const currentTimestamp = Date.now();
-        const electionEnd = currentTimestamp + 60000;
-        const electionAddress = await governance.createElection("Test Election", "This is a test.", "Ian Ballard", electionEnd);
-        expect(electionAddress).to.not.be.null;
-    });
 
-    it("should get is holder", async () => {
-        let isHolder = await election.isHolder(owner.getAddress());
-        expect(isHolder).to.equal(true, "should be holder");
+        let electionLength = await tuffTokenDiamond.getElectionLength();
+        expect(electionLength).to.equal(1, "should be length 0");
 
-        isHolder = await election.isHolder(accounts[0].getAddress());
-        expect(isHolder).to.equal(false, "should not be holder");
+        await tuffTokenDiamond.createElection(expectedName + 1, expectedDescription, expectedAuthor, expectedElectionEnd);
+        electionLength = await tuffTokenDiamond.getElectionLength();
+        expect(electionLength).to.equal(2, "should be length 1");
+
+        const electionIndex = electionLength - 1;
+        const [name, description, author, endTime, ended] = await tuffTokenDiamond.getElectionMetaData(electionIndex);
+        expect(name).to.equal(expectedName + 1, "incorrect name");
+        expect(description).to.equal(expectedDescription, "incorrect description");
+        expect(author).to.equal(expectedAuthor, "incorrect author");
+        expect(endTime).to.equal(expectedElectionEnd, "incorrect end");
+        expect(ended).to.equal(false, "incorrect status");
     });
 
     it("should get remaining time", async () => {
-        let remainingTime = await election.getRemainingTime();
+        let remainingTime = await tuffTokenDiamond.getRemainingTime(0);
         expect(remainingTime > 0).to.equal(true, "should have more time");
     });
 
     it("should vote", async () => {
-        await election.vote(true);
 
-        let [approveVotes, vetoVotes] = await election.getVoteCounts();
+        await tuffTokenDiamond.vote(0, true);
+
+        let [approveVotes, vetoVotes] = await tuffTokenDiamond.getVoteCounts(0);
 
         expect(approveVotes.toNumber()).to.equal(1, "should have 1 approve votes");
         expect(vetoVotes.toNumber()).to.equal(0, "should have 0 veto votes");
     });
 
     it("should get vote counts", async () => {
-        let [approveVotes, vetoVotes] = await election.getVoteCounts();
+        let [approveVotes, vetoVotes] = await tuffTokenDiamond.getVoteCounts(0);
         expect(approveVotes.toNumber()).to.equal(0, "should have 0 approve votes");
         expect(vetoVotes.toNumber()).to.equal(0, "should have 0 veto votes");
     });
 
     it("should get vote outcome", async () => {
-        let [outcome, approveVotes, vetoVotes] = await election.isProposalSuccess();
+        let [outcome, approveVotes, vetoVotes] = await tuffTokenDiamond.isProposalSuccess(0);
         expect(outcome).to.equal(true, "should have passed");
         expect(approveVotes.toNumber()).to.equal(0, "should have 0 approve votes");
         expect(vetoVotes.toNumber()).to.equal(0, "should have 0 veto votes");
     });
 
     it("should try to end vote", async () => {
-        await electionPastEnd.end();
+        const expectedElectionEnd = 0;
+        await tuffTokenDiamond.createElection(expectedName + 2, expectedDescription, expectedAuthor, expectedElectionEnd);
 
-        let ended = await electionPastEnd.ended();
+        await tuffTokenDiamond.endElection(1);
+
+        const [name, description, author, endTime, ended] = await tuffTokenDiamond.getElectionMetaData(1);
 
         expect(ended).to.equal(true, "should have been ended");
     });
