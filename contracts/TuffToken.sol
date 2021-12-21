@@ -35,7 +35,6 @@ contract TuffToken is Context, IERC20 {
         ss.balances[initialOwner] = ss.totalSupply;
         ss.isExcludedFromFee[initialOwner] = true;
 
-
         ss.isInit = true;
     }
 

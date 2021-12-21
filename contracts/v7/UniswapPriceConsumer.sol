@@ -42,7 +42,7 @@ contract UniswapPriceConsumer {
 
         address _poolAddress = getPoolAddress(ss.tokenA, ss.tokenB, ss.fee);
 
-        int24 timeWeightedAverageTick = OracleLibrary.consult(_poolAddress, period);
+        (int24 timeWeightedAverageTick,) = OracleLibrary.consult(_poolAddress, period);
 
         uint128 baseAmount = 1;
         uint256 _quoteAmount = OracleLibrary.getQuoteAtTick(timeWeightedAverageTick, baseAmount, ss.tokenA, ss.tokenB);

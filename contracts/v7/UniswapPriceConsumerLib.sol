@@ -13,7 +13,6 @@ library UniswapPriceConsumerLib {
         address tokenB;
         uint24 fee;
         address factoryAddr;
-        //        IUniswapV3Factory factory;
     }
 
     function getState() internal pure returns (StateStorage storage stateStorage) {
