@@ -1,14 +1,8 @@
 // SPDX-License-Identifier: agpl-3.0
 
 const hre = require("hardhat");
-const {
-    WETH9_ADDRESS,
-    DAI_ADDRESS,
-    UNISWAP_POOL_BASE_FEE,
-    CHAINLINK_TOTAL_MARKETCAP_USD_AGGREGATOR_ADDRESS,
-    UNISWAP_FACTORY_ADDRESS,
-    CHAINLINK_PRICE_CONSUMER_ENUM
-} = require("../test/utils");
+
+const consts = require("../consts");
 
 module.exports = async () => {
     const {deployments, getNamedAccounts} = hre;
@@ -35,9 +29,9 @@ module.exports = async () => {
 
     await tuffTokenDiamondContract.initTuffToken(contractOwner);
     await tuffTokenDiamondContract.initAaveLPManager();
-    await tuffTokenDiamondContract.initUniswapPriceConsumer(WETH9_ADDRESS, DAI_ADDRESS, UNISWAP_POOL_BASE_FEE, UNISWAP_FACTORY_ADDRESS);
-    await tuffTokenDiamondContract.initChainLinkPriceConsumer(CHAINLINK_TOTAL_MARKETCAP_USD_AGGREGATOR_ADDRESS);
-    await tuffTokenDiamondContract.initMarketTrend(CHAINLINK_PRICE_CONSUMER_ENUM, false);
+    await tuffTokenDiamondContract.initUniswapPriceConsumer(consts.WETH9_ADDRESS, consts.DAI_ADDRESS, consts.UNISWAP_POOL_BASE_FEE, consts.UNISWAP_V3_FACTORY_ADDRESS);
+    await tuffTokenDiamondContract.initChainLinkPriceConsumer(consts.CHAINLINK_TOTAL_MARKETCAP_USD_AGGREGATOR_ADDRESS);
+    await tuffTokenDiamondContract.initMarketTrend(consts.CHAINLINK_PRICE_CONSUMER_ENUM, false);
     await tuffTokenDiamondContract.initGovernance();
 };
 

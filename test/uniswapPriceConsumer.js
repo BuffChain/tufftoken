@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: agpl-3.0
 
-const { expect } = require("chai");
+const {expect} = require("chai");
 const hre = require("hardhat");
-const {WETH9_ADDRESS, DAI_ADDRESS, UNISWAP_WETH_DAI_POOL_ADDRESS,
-    UNISWAP_POOL_BASE_FEE, UNISWAP_FACTORY_ADDRESS
-} = require("./utils");
+
+const consts = require("../consts");
 
 describe('UniswapPriceConsumer', function () {
 
@@ -28,9 +27,9 @@ describe('UniswapPriceConsumer', function () {
 
 
     it('should get pool', async () => {
-        const poolAddress = await tuffTokenDiamond.getPoolAddress(WETH9_ADDRESS, DAI_ADDRESS, UNISWAP_POOL_BASE_FEE);
+        const poolAddress = await tuffTokenDiamond.getPoolAddress(consts.WETH9_ADDRESS, consts.DAI_ADDRESS, consts.UNISWAP_POOL_BASE_FEE);
 
-        expect(poolAddress).to.equal(UNISWAP_WETH_DAI_POOL_ADDRESS, "unexpected pool address.")
+        expect(poolAddress).to.equal(consts.UNISWAP_WETH_DAI_POOL_ADDRESS, "unexpected pool address.")
     });
 
     it('should get quote', async () => {
