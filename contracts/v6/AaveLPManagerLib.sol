@@ -3,7 +3,7 @@ pragma solidity ^0.6.0;
 
 library AaveLPManagerLib {
 
-    //IMPORTANT: You must increment this string if you add a new variable to UniswapPoolDeployerStruct that is not at the end
+    //IMPORTANT: You must increment this string if you add a new variable to StateStorage that is not at the end
     string constant NAMESPACE = "io.BuffChain.TuffToken.AaveLPManagerLib.1";
     bytes32 constant POSITION = keccak256(bytes(NAMESPACE));
 
