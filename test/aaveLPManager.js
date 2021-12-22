@@ -54,7 +54,7 @@ describe('AaveLPManager', function () {
         const startDaiQty = await daiContract.balanceOf(tuffTokenDiamond.address);
         expect(new BN(startDaiQty.toString())).to.be.bignumber.greaterThan(new BN(qtyInDAI.toString()));
 
-        //Check that the account has no ADAI
+        //Check that the account has no aDAI
         const adaiContract = await utils.getADAIContract();
         const startAdaiQty = await adaiContract.balanceOf(tuffTokenDiamond.address);
         expect(new BN(0)).to.be.bignumber.equal(new BN(startAdaiQty.toString()));

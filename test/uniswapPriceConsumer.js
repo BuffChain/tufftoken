@@ -25,22 +25,21 @@ describe('UniswapPriceConsumer', function () {
         tuffTokenDiamond = await hre.ethers.getContractAt(TuffTokenDiamond.abi, TuffTokenDiamond.address, owner);
     });
 
-
     it('should get pool', async () => {
         const poolAddress = await tuffTokenDiamond.getPoolAddress(consts.WETH9_ADDRESS, consts.DAI_ADDRESS, consts.UNISWAP_POOL_BASE_FEE);
 
-        expect(poolAddress).to.equal(consts.UNISWAP_WETH_DAI_POOL_ADDRESS, "unexpected pool address.")
+        expect(poolAddress).to.equal(consts.UNISWAP_WETH_DAI_POOL_ADDRESS, "unexpected pool address.");
     });
 
     it('should get quote', async () => {
         const quote = await tuffTokenDiamond.getQuote(3600);
 
-        expect(quote > 0).to.equal(true, "unexpected quote.")
+        expect(quote > 0).to.equal(true, "unexpected quote.");
     });
 
     it('should get price', async () => {
         const price = await tuffTokenDiamond.getUniswapPrice();
 
-        expect(price > 0).to.equal(true, "unexpected price.")
+        expect(price > 0).to.equal(true, "unexpected price.");
     });
 });

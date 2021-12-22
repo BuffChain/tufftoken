@@ -16,14 +16,13 @@ contract AaveLPManager is Context {
 
     //Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
     // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
-    function initAaveLPManager() public {
+    function initAaveLPManager(address _lendingPoolProviderAddr, address[] memory _supportedTokens) public {
         require(!isAaveInit(), string(abi.encodePacked(AaveLPManagerLib.NAMESPACE, ": ", "ALREADY_INITIALIZED")));
 
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
 
-        //Aave ABI Contract addresses https://docs.aave.com/developers/deployed-contracts/deployed-contracts
-        ss.lpProviderAddr = address(0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5);
-        ss.supportedTokens.push(address(0x6B175474E89094C44Da98b954EedeAC495271d0F)); //DAI
+        ss.lpProviderAddr = _lendingPoolProviderAddr;
+        ss.supportedTokens = _supportedTokens;
 
         ss.isInit = true;
     }
