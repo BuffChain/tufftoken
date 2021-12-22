@@ -9,7 +9,8 @@ library AaveLPManagerLib {
 
     struct StateStorage {
         bool isInit;
-        address[] supportedTokens;
+        mapping (address => bool) supportedTokens;
+        uint supportedTokensCount;
         address lpProviderAddr;
         address lpAddr;
     }

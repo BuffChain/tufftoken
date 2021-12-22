@@ -46,6 +46,12 @@ describe('AaveLPManager', function () {
         expect(address).to.equal("0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9");
     });
 
+    it('should have the correct tokens supported at launch', async () => {
+        const supportedTokens = await tuffTokenDiamond.getAllAaveSupportedTokens();
+
+        expect(supportedTokens.length).to.equal(3);
+    });
+
     it("should deposit dai into aave from TuffToken's wallet", async () => {
         const qtyInDAI = hre.ethers.utils.parseEther("2000");
 
