@@ -29,10 +29,10 @@ module.exports = async () => {
 
     await tuffTokenDiamondContract.initTuffToken(contractOwner);
     await tuffTokenDiamondContract.initAaveLPManager(consts.AAVE_LENDINGPOOL_PROVIDER_ADDR, [
-        consts.DAI_ADDRESS, consts.USDC_ADDRESS, consts.USDT_ADDR
+        consts.DAI_ADDR, consts.USDC_ADDR, consts.USDT_ADDR
     ]);
-    await tuffTokenDiamondContract.initUniswapPriceConsumer(consts.WETH9_ADDRESS, consts.DAI_ADDRESS, consts.UNISWAP_POOL_BASE_FEE, consts.UNISWAP_V3_FACTORY_ADDRESS);
-    await tuffTokenDiamondContract.initChainLinkPriceConsumer(consts.CHAINLINK_TOTAL_MARKETCAP_USD_AGGREGATOR_ADDRESS);
+    await tuffTokenDiamondContract.initUniswapPriceConsumer(consts.WETH9_ADDR, consts.DAI_ADDR, consts.UNISWAP_POOL_BASE_FEE, consts.UNISWAP_V3_FACTORY_ADDR);
+    await tuffTokenDiamondContract.initChainLinkPriceConsumer(consts.CHAINLINK_TOTAL_MARKETCAP_USD_AGGREGATOR_ADDR);
     await tuffTokenDiamondContract.initMarketTrend(consts.CHAINLINK_PRICE_CONSUMER_ENUM, false);
     await tuffTokenDiamondContract.initGovernance();
 };

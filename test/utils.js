@@ -8,19 +8,19 @@ const IERC20ABI = require("@uniswap/v3-core/artifacts/contracts/interfaces/IERC2
 const consts = require("../consts");
 
 async function getDAIContract() {
-    return await hre.ethers.getContractAt(IERC20ABI, consts.DAI_ADDRESS);
+    return await hre.ethers.getContractAt(IERC20ABI, consts.DAI_ADDR);
 }
 
 async function getWETH9Contract() {
-    return await hre.ethers.getContractAt(WETH9ABI, consts.WETH9_ADDRESS);
+    return await hre.ethers.getContractAt(WETH9ABI, consts.WETH9_ADDR);
 }
 
 async function getUSDCContract() {
-    return await hre.ethers.getContractAt(IERC20ABI, consts.USDC_ADDRESS);
+    return await hre.ethers.getContractAt(IERC20ABI, consts.USDC_ADDR);
 }
 
 async function getADAIContract() {
-    return await hre.ethers.getContractAt(IERC20ABI, consts.ADAI_ADDRESS);
+    return await hre.ethers.getContractAt(IERC20ABI, consts.ADAI_ADDR);
 }
 
 /**
@@ -72,7 +72,7 @@ async function runCallbackImpersonatingAcct(acct, callbackFn) {
  * @param toAddr
  * @returns {Promise<void>}
  */
-async function sendTokensToAddress(fromAcct, toAddr) {
+async function sendTokensToAddr(fromAcct, toAddr) {
     //Set up accounts and variables
     const toAcct = await hre.ethers.getSigner(toAddr);
     await transferETH(fromAcct, toAddr)
@@ -84,7 +84,7 @@ async function sendTokensToAddress(fromAcct, toAddr) {
     const weth9Contract = await getWETH9Contract();
     const uniswapSwapRouterContract = await hre.ethers.getContractAt(
         SwapRouterABI,
-        consts.UNISWAP_V3_ROUTER_ADDRESS
+        consts.UNISWAP_V3_ROUTER_ADDR
     );
 
     //Convert ETH to WETH
@@ -95,8 +95,8 @@ async function sendTokensToAddress(fromAcct, toAddr) {
 
     //Swap half of the WETH to DAI with uniswap_v3
     const params = {
-        tokenIn: consts.WETH9_ADDRESS,
-        tokenOut: consts.DAI_ADDRESS,
+        tokenIn: consts.WETH9_ADDR,
+        tokenOut: consts.DAI_ADDR,
         fee: 3000,
         recipient: toAddr,
         deadline: expiryDate,
@@ -122,4 +122,4 @@ module.exports.getUSDCContract = getUSDCContract;
 module.exports.getADAIContract = getADAIContract;
 module.exports.transferETH = transferETH;
 module.exports.runCallbackImpersonatingAcct = runCallbackImpersonatingAcct;
-module.exports.sendTokensToAddress = sendTokensToAddress;
+module.exports.sendTokensToAddr = sendTokensToAddr;

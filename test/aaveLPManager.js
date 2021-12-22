@@ -31,7 +31,7 @@ describe('AaveLPManager', function () {
         const {TuffTokenDiamond} = await hre.deployments.fixture();
         tuffTokenDiamond = await hre.ethers.getContractAt(TuffTokenDiamond.abi, TuffTokenDiamond.address, owner);
 
-        await utils.sendTokensToAddress(accounts.at(-1), tuffTokenDiamond.address);
+        await utils.sendTokensToAddr(accounts.at(-1), tuffTokenDiamond.address);
     });
 
     it('should be initialized', async () => {
@@ -60,7 +60,7 @@ describe('AaveLPManager', function () {
         expect(new BN(0)).to.be.bignumber.equal(new BN(startAdaiQty.toString()));
 
         //Make the call to deposit Aave
-        await tuffTokenDiamond.depositToAave(consts.DAI_ADDRESS, qtyInDAI);
+        await tuffTokenDiamond.depositToAave(consts.DAI_ADDR, qtyInDAI);
 
         //Check that the account has deposited the DAI
         const endDaiQty = await daiContract.balanceOf(tuffTokenDiamond.address);

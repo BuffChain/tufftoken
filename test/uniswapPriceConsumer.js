@@ -26,9 +26,9 @@ describe('UniswapPriceConsumer', function () {
     });
 
     it('should get pool', async () => {
-        const poolAddress = await tuffTokenDiamond.getPoolAddress(consts.WETH9_ADDRESS, consts.DAI_ADDRESS, consts.UNISWAP_POOL_BASE_FEE);
+        const poolAddr = await tuffTokenDiamond.getPoolAddr(consts.WETH9_ADDR, consts.DAI_ADDR, consts.UNISWAP_POOL_BASE_FEE);
 
-        expect(poolAddress).to.equal(consts.UNISWAP_WETH_DAI_POOL_ADDRESS, "unexpected pool address.");
+        expect(poolAddr).to.equal(consts.UNISWAP_WETH_DAI_POOL_ADDR, "unexpected pool address.");
     });
 
     it('should get quote', async () => {
