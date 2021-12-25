@@ -2,11 +2,8 @@
 
 const {expect} = require("chai");
 const hre = require("hardhat");
-const {
-    CHAINLINK_PRICE_CONSUMER_ENUM,
-    UNISWAP_PRICE_CONSUMER_ENUM
-} = require("./utils");
-const {randomBytes} = require("ethers/lib/utils");
+
+const consts = require("../consts");
 
 describe('MarketTrend', function () {
     this.timeout(5000);
@@ -31,8 +28,7 @@ describe('MarketTrend', function () {
         tuffTokenDiamond = await hre.ethers.getContractAt(TuffTokenDiamond.abi, TuffTokenDiamond.address, owner);
     });
 
-    async function assertPrice(priceConsumer) {
-
+    async function assertPrice() {
         const price = await tuffTokenDiamond.getPrice();
 
         expect(price > 0).to.equal(true, "unexpected price.");
@@ -131,13 +127,13 @@ describe('MarketTrend', function () {
     });
 
     it('should get price consumer address: UNISWAP', async () => {
-        await tuffTokenDiamond.setPriceConsumer(UNISWAP_PRICE_CONSUMER_ENUM);
+        await tuffTokenDiamond.setPriceConsumer(consts.UNISWAP_PRICE_CONSUMER_ENUM);
         const priceConsumer = await tuffTokenDiamond.getPriceConsumer();
-        expect(priceConsumer).to.equal(UNISWAP_PRICE_CONSUMER_ENUM, "current price consumer should be uniswap.");
+        expect(priceConsumer).to.equal(consts.UNISWAP_PRICE_CONSUMER_ENUM, "current price consumer should be uniswap.");
     });
 
     it('should get price: UNISWAP', async () => {
-        await assertPrice(UNISWAP_PRICE_CONSUMER_ENUM);
+        await assertPrice();
     });
 
     it('should create tracking period: UNISWAP', async () => {
@@ -153,32 +149,32 @@ describe('MarketTrend', function () {
     });
 
     it('should get price consumer address: CHAINLINK', async () => {
-        await tuffTokenDiamond.setPriceConsumer(CHAINLINK_PRICE_CONSUMER_ENUM);
+        await tuffTokenDiamond.setPriceConsumer(consts.CHAINLINK_PRICE_CONSUMER_ENUM);
         const priceConsumer = await tuffTokenDiamond.getPriceConsumer();
-        expect(priceConsumer).to.equal(CHAINLINK_PRICE_CONSUMER_ENUM, "current price consumer should be link.");
+        expect(priceConsumer).to.equal(consts.CHAINLINK_PRICE_CONSUMER_ENUM, "current price consumer should be link.");
     });
 
     it('should get price: CHAINLINK', async () => {
-        await assertPrice(CHAINLINK_PRICE_CONSUMER_ENUM);
+        await assertPrice();
     });
 
     it('should create tracking period: CHAINLINK', async () => {
-        await tuffTokenDiamond.setPriceConsumer(CHAINLINK_PRICE_CONSUMER_ENUM);
+        await tuffTokenDiamond.setPriceConsumer(consts.CHAINLINK_PRICE_CONSUMER_ENUM);
         await createTrackingPeriod();
     });
 
     it('should get is buy back needed: CHAINLINK', async () => {
-        await tuffTokenDiamond.setPriceConsumer(CHAINLINK_PRICE_CONSUMER_ENUM);
+        await tuffTokenDiamond.setPriceConsumer(consts.CHAINLINK_PRICE_CONSUMER_ENUM);
         await isNegativeOrZeroPriceChange();
     });
 
     it('should get is buy back fulfilled: CHAINLINK', async () => {
-        await tuffTokenDiamond.setPriceConsumer(CHAINLINK_PRICE_CONSUMER_ENUM);
+        await tuffTokenDiamond.setPriceConsumer(consts.CHAINLINK_PRICE_CONSUMER_ENUM);
         await isBuyBackFulfilled();
     });
 
     it('should process market trend: CHAINLINK', async () => {
-        await tuffTokenDiamond.setPriceConsumer(CHAINLINK_PRICE_CONSUMER_ENUM);
+        await tuffTokenDiamond.setPriceConsumer(consts.CHAINLINK_PRICE_CONSUMER_ENUM);
         await processMarketTrend();
     });
 

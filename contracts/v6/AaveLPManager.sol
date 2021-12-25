@@ -10,37 +10,36 @@ import { AaveLPManagerLib } from "./AaveLPManagerLib.sol";
 
 contract AaveLPManager is Context {
     modifier aaveInitLock() {
-        require(isAaveInit(), 'Tuff.AaveLPManager: UNINITIALIZED');
+        require(isAaveInit(), string(abi.encodePacked(AaveLPManagerLib.NAMESPACE, ": ", "UNINITIALIZED")));
         _;
     }
 
     //Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
     // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
-    function initAaveLPManager() public {
-        require(!isAaveInit(), 'Tuff.AaveLPManager: ALREADY_INITIALIZED');
+    function initAaveLPManager(address _lendingPoolProviderAddr, address[] memory _supportedTokens) public {
+        require(!isAaveInit(), string(abi.encodePacked(AaveLPManagerLib.NAMESPACE, ": ", "ALREADY_INITIALIZED")));
 
-        AaveLPManagerLib.AaveLPManagerStruct storage ss = AaveLPManagerLib.aaveLPManagerStorage();
+        AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
 
-        //Aave ABI Contract addresses https://docs.aave.com/developers/deployed-contracts/deployed-contracts
-        ss.lpProviderAddr = address(0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5);
-        ss.supportedTokens.push(address(0x6B175474E89094C44Da98b954EedeAC495271d0F)); //DAI
+        ss.lpProviderAddr = _lendingPoolProviderAddr;
+        ss.supportedTokens = _supportedTokens;
 
         ss.isInit = true;
     }
 
     function isAaveInit() public view returns (bool) {
-        AaveLPManagerLib.AaveLPManagerStruct storage ss = AaveLPManagerLib.aaveLPManagerStorage();
+        AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
         return ss.isInit;
     }
 
     function getAaveLPAddr() public view aaveInitLock returns (address) {
-        AaveLPManagerLib.AaveLPManagerStruct storage ss = AaveLPManagerLib.aaveLPManagerStorage();
+        AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
         return LendingPoolAddressesProvider(ss.lpProviderAddr).getLendingPool();
     }
 
     //TODO: Need to make sure this is locked down to only owner and approved callers (eg chainlink)
     function depositToAave(address erc20TokenAddr, uint256 amount) public aaveInitLock {
-        AaveLPManagerLib.AaveLPManagerStruct storage ss = AaveLPManagerLib.aaveLPManagerStorage();
+        AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
 
         //TODO: Make address to bool mapping
         bool _isSupportedToken = false;

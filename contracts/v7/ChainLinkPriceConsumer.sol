@@ -18,18 +18,18 @@ contract ChainLinkPriceConsumer {
 
     //Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
     // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
-    function initChainLinkPriceConsumer(address _aggregatorAddress) public {
+    function initChainLinkPriceConsumer(address _aggregatorAddr) public {
         require(!isChainLinkPriceConsumerInit(), string(abi.encodePacked(ChainLinkPriceConsumerLib.NAMESPACE, ": ", "ALREADY_INITIALIZED")));
 
         ChainLinkPriceConsumerLib.StateStorage storage ss = ChainLinkPriceConsumerLib.getState();
 
-        ss.priceFeed = AggregatorV3Interface(_aggregatorAddress);
+        ss.priceFeed = AggregatorV3Interface(_aggregatorAddr);
         ss.isInit = true;
     }
 
-    function setPriceFeed(address _aggregatorAddress) public initChainLinkPriceConsumerLock {
+    function setPriceFeed(address _aggregatorAddr) public initChainLinkPriceConsumerLock {
         ChainLinkPriceConsumerLib.StateStorage storage ss = ChainLinkPriceConsumerLib.getState();
-        ss.priceFeed = AggregatorV3Interface(_aggregatorAddress);
+        ss.priceFeed = AggregatorV3Interface(_aggregatorAddr);
     }
 
     function getLatestRoundData() public view initChainLinkPriceConsumerLock returns (uint80, int, uint, uint, uint80) {

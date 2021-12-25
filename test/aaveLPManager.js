@@ -9,7 +9,8 @@ const {
 } = require('@openzeppelin/test-helpers');
 const hre = require("hardhat");
 
-const utils = require("./utils")
+const utils = require("./utils");
+const consts = require("../consts");
 
 describe('AaveLPManager', function () {
 
@@ -30,7 +31,7 @@ describe('AaveLPManager', function () {
         const {TuffTokenDiamond} = await hre.deployments.fixture();
         tuffTokenDiamond = await hre.ethers.getContractAt(TuffTokenDiamond.abi, TuffTokenDiamond.address, owner);
 
-        await utils.sendTokensToAddress(accounts.at(-1), tuffTokenDiamond.address);
+        await utils.sendTokensToAddr(accounts.at(-1), tuffTokenDiamond.address);
     });
 
     it('should be initialized', async () => {
@@ -53,13 +54,13 @@ describe('AaveLPManager', function () {
         const startDaiQty = await daiContract.balanceOf(tuffTokenDiamond.address);
         expect(new BN(startDaiQty.toString())).to.be.bignumber.greaterThan(new BN(qtyInDAI.toString()));
 
-        //Check that the account has no ADAI
+        //Check that the account has no aDAI
         const adaiContract = await utils.getADAIContract();
         const startAdaiQty = await adaiContract.balanceOf(tuffTokenDiamond.address);
         expect(new BN(0)).to.be.bignumber.equal(new BN(startAdaiQty.toString()));
 
         //Make the call to deposit Aave
-        await tuffTokenDiamond.depositToAave(utils.DAI_ADDRESS, qtyInDAI);
+        await tuffTokenDiamond.depositToAave(consts.DAI_ADDR, qtyInDAI);
 
         //Check that the account has deposited the DAI
         const endDaiQty = await daiContract.balanceOf(tuffTokenDiamond.address);

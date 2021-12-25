@@ -2,7 +2,8 @@
 
 const {expect} = require("chai");
 const hre = require("hardhat");
-const {CHAINLINK_ETH_USD_AGGREGATOR_ADDRESS} = require("./utils");
+
+const consts = require("../consts");
 
 describe('ChainLinkPriceConsumer', function () {
 

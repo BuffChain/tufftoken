@@ -3,7 +3,7 @@ pragma solidity >=0.7.0;
 
 library UniswapPriceConsumerLib {
 
-    //IMPORTANT: You must increment this string if you add a new variable to UniswapPoolDeployerStruct that is not at the end
+    //IMPORTANT: You must increment this string if you add a new variable to StateStorage that is not at the end
     string constant NAMESPACE = "io.BuffChain.TuffToken.UniswapPriceConsumerLib.1";
     bytes32 constant POSITION = keccak256(bytes(NAMESPACE));
 
@@ -13,7 +13,6 @@ library UniswapPriceConsumerLib {
         address tokenB;
         uint24 fee;
         address factoryAddr;
-        //        IUniswapV3Factory factory;
     }
 
     function getState() internal pure returns (StateStorage storage stateStorage) {

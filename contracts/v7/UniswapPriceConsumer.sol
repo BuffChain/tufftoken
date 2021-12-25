@@ -8,7 +8,7 @@ import {UniswapPriceConsumerLib} from "./UniswapPriceConsumerLib.sol";
 
 contract UniswapPriceConsumer {
     modifier uniswapPriceConsumerInitLock() {
-        require(isUniswapPriceConsumerInit(), 'Tuff.UniswapPriceConsumer: UNINITIALIZED');
+        require(isUniswapPriceConsumerInit(), string(abi.encodePacked(UniswapPriceConsumerLib.NAMESPACE, ": ", "UNINITIALIZED")));
         _;
     }
 
@@ -19,12 +19,12 @@ contract UniswapPriceConsumer {
 
     //Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
     // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
-    function initUniswapPriceConsumer(address _tokenA, address _tokenB, uint24 _fee, address _factoryAddress) public {
-        require(!isUniswapPriceConsumerInit(), 'Tuff.UniswapPriceConsumer: ALREADY_INITIALIZED');
+    function initUniswapPriceConsumer(address _tokenA, address _tokenB, uint24 _fee, address _factoryAddr) public {
+        require(!isUniswapPriceConsumerInit(), string(abi.encodePacked(UniswapPriceConsumerLib.NAMESPACE, ": ", "ALREADY_INITIALIZED")));
 
         UniswapPriceConsumerLib.StateStorage storage ss = UniswapPriceConsumerLib.getState();
 
-        ss.factoryAddr = _factoryAddress;
+        ss.factoryAddr = _factoryAddr;
         ss.tokenA = _tokenA;
         ss.tokenB = _tokenB;
         ss.fee = _fee;
@@ -32,7 +32,7 @@ contract UniswapPriceConsumer {
         ss.isInit = true;
     }
 
-    function getPoolAddress(address _tokenA, address _tokenB, uint24 _fee) public view uniswapPriceConsumerInitLock returns (address) {
+    function getPoolAddr(address _tokenA, address _tokenB, uint24 _fee) public view uniswapPriceConsumerInitLock returns (address) {
         UniswapPriceConsumerLib.StateStorage storage ss = UniswapPriceConsumerLib.getState();
         return IUniswapV3Factory(ss.factoryAddr).getPool(_tokenA, _tokenB, _fee);
     }
@@ -40,9 +40,9 @@ contract UniswapPriceConsumer {
     function getQuote(uint32 period) public view uniswapPriceConsumerInitLock returns (uint256 quoteAmount) {
         UniswapPriceConsumerLib.StateStorage storage ss = UniswapPriceConsumerLib.getState();
 
-        address _poolAddress = getPoolAddress(ss.tokenA, ss.tokenB, ss.fee);
+        address _poolAddr = getPoolAddr(ss.tokenA, ss.tokenB, ss.fee);
 
-        int24 timeWeightedAverageTick = OracleLibrary.consult(_poolAddress, period);
+        (int24 timeWeightedAverageTick,) = OracleLibrary.consult(_poolAddr, period);
 
         uint128 baseAmount = 1;
         uint256 _quoteAmount = OracleLibrary.getQuoteAtTick(timeWeightedAverageTick, baseAmount, ss.tokenA, ss.tokenB);
