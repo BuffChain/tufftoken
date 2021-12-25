@@ -133,6 +133,11 @@ contract MarketTrend {
         return ss.isBuyBackNeeded;
     }
 
+    function getIsNegativeOrZeroPriceChange() public view returns (bool) {
+        MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
+        return ss.isNegativeOrZeroPriceChange;
+    }
+
     function getPseudoRandomNumber(uint _rangeStart, uint _rangeEnd) public view initMarketTrendLock returns (uint) {
         uint randomNumber = uint(keccak256(abi.encodePacked(block.timestamp, block.difficulty, msg.sender))) % _rangeEnd;
         randomNumber = randomNumber + _rangeStart;

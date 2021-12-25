@@ -36,34 +36,15 @@ describe('MarketTrend', function () {
 
     async function createTrackingPeriod() {
         await tuffTokenDiamond.createTrackingPeriod(nowTimeStamp, nowTimeStamp + 1);
-        const currentIndex = await tuffTokenDiamond.getCurrentTrackingPeriodIndex();
-        expect(currentIndex).to.equal(0, "current index should be 0.");
-    }
-
-    async function isNegativeOrZeroPriceChange() {
-        const isNeeded = await tuffTokenDiamond.isNegativeOrZeroPriceChange(1, 0);
-        expect(isNeeded).to.equal(true, "buy back should be needed.");
-    }
-
-    async function isBuyBackFulfilled() {
-        await tuffTokenDiamond.createTrackingPeriod(nowTimeStamp, nowTimeStamp + 1);
-        const currentIndex = await tuffTokenDiamond.getCurrentTrackingPeriodIndex();
-        let isFulfilled = await tuffTokenDiamond.getIsBuyBackFulfilled(currentIndex);
-        expect(isFulfilled).to.equal(false, "buy back should not be fulfilled yet.");
-
-        await tuffTokenDiamond.setIsBuyBackFulfilled(currentIndex, true);
-        isFulfilled = await tuffTokenDiamond.getIsBuyBackFulfilled(currentIndex);
-        expect(isFulfilled).to.equal(true, "buy back should be fulfilled.");
+        const priceDataEntriesLength = await tuffTokenDiamond.getPriceDataEntriesLength();
+        expect(priceDataEntriesLength).to.equal(1, "current index should be 0.");
     }
 
     async function processMarketTrend() {
-        let isBuyBackNeeded = await tuffTokenDiamond.anyBuyBacksRequired();
+        let isBuyBackNeeded = await tuffTokenDiamond.getIsBuyBackNeeded();
         expect(isBuyBackNeeded).to.equal(false, "buy back should not be needed.");
 
         await tuffTokenDiamond.createTrackingPeriod(nowTimeStamp, nowTimeStamp + 1);
-
-        let currentIndex = await tuffTokenDiamond.getCurrentTrackingPeriodIndex();
-        expect(currentIndex).to.equal(0, "current index should be 0.");
 
         const startingPrice = await tuffTokenDiamond.getPrice();
 
@@ -76,32 +57,27 @@ describe('MarketTrend', function () {
 
 
         //bullish trends
-        await tuffTokenDiamond.processMarketTrend(nowTimeStamp + 2, "" + (startingPrice + 7));
+        await tuffTokenDiamond.processMarketTrend("" + (startingPrice + 7));
 
-        currentIndex = await tuffTokenDiamond.getCurrentTrackingPeriodIndex();
-        expect(currentIndex).to.equal(0, "current index should be 0.");
-
-        isBuyBackNeeded = await tuffTokenDiamond.anyBuyBacksRequired();
+        isBuyBackNeeded = await tuffTokenDiamond.getIsBuyBackNeeded();
         expect(isBuyBackNeeded).to.equal(false, "buy back should not be needed.");
 
+        await tuffTokenDiamond.processMarketTrend("" + (startingPrice + 8));
 
-        await tuffTokenDiamond.processMarketTrend(nowTimeStamp + 3, "" + (startingPrice + 8));
-
-        currentIndex = await tuffTokenDiamond.getCurrentTrackingPeriodIndex();
-        expect(currentIndex).to.equal(0, "current index should be 0.");
-
-        isBuyBackNeeded = await tuffTokenDiamond.anyBuyBacksRequired();
+        isBuyBackNeeded = await tuffTokenDiamond.getIsBuyBackNeeded();
         expect(isBuyBackNeeded).to.equal(false, "buy back should not be needed.");
 
 
         //bearish trend
         let increment = 0;
         while (!isBuyBackNeeded) {
-            await tuffTokenDiamond.processMarketTrend(nowTimeStamp + 4 + increment, "" + (startingPrice - increment));
+            await tuffTokenDiamond.processMarketTrend("" + (startingPrice - increment));
 
-            isBuyBackNeeded = await tuffTokenDiamond.anyBuyBacksRequired();
+            console.log(startingPrice - increment)
 
-            const [buyBackChance, chosenNumber] = await tuffTokenDiamond.getLastBuyBackChoiceResults(0);
+            isBuyBackNeeded = await tuffTokenDiamond.getIsBuyBackNeeded();
+
+            const [buyBackChance, chosenNumber] = await tuffTokenDiamond.getLastBuyBackChoiceResults();
 
             if (hre.hardhatArguments.verbose) {
                 console.log(`Current Buy Back Conditions: chance=${buyBackChance}%, choice=${chosenNumber}`);
@@ -115,8 +91,6 @@ describe('MarketTrend', function () {
         }
         expect(isBuyBackNeeded).to.equal(true, "buy back should be needed.");
 
-        currentIndex = await tuffTokenDiamond.getCurrentTrackingPeriodIndex();
-        expect(currentIndex).to.equal(1, "current index should be 1.");
     }
 
     it('should get price random number', async () => {
@@ -140,10 +114,6 @@ describe('MarketTrend', function () {
         await createTrackingPeriod();
     });
 
-    it('should get is buy back needed: UNISWAP', async () => {
-        await isNegativeOrZeroPriceChange();
-    });
-
     it('should process market trend: UNISWAP', async () => {
         await processMarketTrend();
     });
@@ -163,16 +133,6 @@ describe('MarketTrend', function () {
         await createTrackingPeriod();
     });
 
-    it('should get is buy back needed: CHAINLINK', async () => {
-        await tuffTokenDiamond.setPriceConsumer(consts.CHAINLINK_PRICE_CONSUMER_ENUM);
-        await isNegativeOrZeroPriceChange();
-    });
-
-    it('should get is buy back fulfilled: CHAINLINK', async () => {
-        await tuffTokenDiamond.setPriceConsumer(consts.CHAINLINK_PRICE_CONSUMER_ENUM);
-        await isBuyBackFulfilled();
-    });
-
     it('should process market trend: CHAINLINK', async () => {
         await tuffTokenDiamond.setPriceConsumer(consts.CHAINLINK_PRICE_CONSUMER_ENUM);
         await processMarketTrend();
@@ -180,7 +140,7 @@ describe('MarketTrend', function () {
 
     it('should call check up keep', async () => {
 
-        let [needed, performData] = await marketTrend.checkUpkeep(randomBytes(0));
+        let [needed, performData] = await tuffTokenDiamond.checkUpkeep(randomBytes(0));
 
         expect(needed).to.equal(false, "should need upkeep.");
 
@@ -188,9 +148,9 @@ describe('MarketTrend', function () {
 
     it('should call perform upkeep', async () => {
 
-        await marketTrend.createTrackingPeriod(nowTimeStamp, nowTimeStamp + 1);
+        await tuffTokenDiamond.createTrackingPeriod(nowTimeStamp, nowTimeStamp + 1);
 
-        await marketTrend.performUpkeep(randomBytes(0));
+        await tuffTokenDiamond.performUpkeep(randomBytes(0));
 
     });
 
