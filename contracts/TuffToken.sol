@@ -35,7 +35,6 @@ contract TuffToken is Context, IERC20 {
         ss.balances[initialOwner] = ss.totalSupply;
         ss.isExcludedFromFee[initialOwner] = true;
 
-
         ss.isInit = true;
     }
 
@@ -136,7 +135,7 @@ contract TuffToken is Context, IERC20 {
         TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
 
         uint256 fee = _amount.mul(ss.farmFee).div(10 ** 2);
-        //        require(fee > 0, "TUFF: Insufficient amount.");
+        require(fee > 0, string(abi.encodePacked(TuffTokenLib.NAMESPACE, ": ", "Insufficient amount.")));
         return fee;
     }
 

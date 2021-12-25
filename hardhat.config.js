@@ -135,6 +135,13 @@ module.exports = {
     etherscan: {
         //TODO: This will help verify the smart contract code (https://github.com/wighawag/hardhat-deploy/tree/master#4-hardhat-etherscan-verify)
         apiKey: ''
+    },
+    external: {
+        contracts: [
+            {
+                artifacts: "node_modules/@uniswap/v3-core/artifacts",
+            }
+        ]
     }
 };
 
