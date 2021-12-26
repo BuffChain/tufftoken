@@ -3,8 +3,6 @@
 const {expect} = require("chai");
 const hre = require("hardhat");
 
-const consts = require("../consts");
-
 describe('ChainLinkPriceConsumer', function () {
 
     let owner;
