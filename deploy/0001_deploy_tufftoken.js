@@ -32,7 +32,7 @@ module.exports = async () => {
         consts("DAI_ADDR"), consts("USDC_ADDR"), consts("USDT_ADDR")
     ]);
     await tuffTokenDiamondContract.initUniswapPriceConsumer(consts("WETH9_ADDR"), consts("DAI_ADDR"), UNISWAP_POOL_BASE_FEE, consts("UNISWAP_V3_FACTORY_ADDR"));
-    await tuffTokenDiamondContract.initChainLinkPriceConsumer(consts("CHAINLINK_TOTAL_MARKETCAP_USD_AGGREGATOR_ADDR"));
+    await tuffTokenDiamondContract.initChainLinkPriceConsumer(consts("CHAINLINK_AGGREGATOR_ADDR"));
     await tuffTokenDiamondContract.initMarketTrend(CHAINLINK_PRICE_CONSUMER_ENUM, false);
     await tuffTokenDiamondContract.initGovernance();
 };
