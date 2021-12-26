@@ -47,7 +47,7 @@ let constsMap = {
     }
 }
 
-async function consts(constsKey) {
+function consts(constsKey) {
     //Our hardhat network config is a fork off of mainnet
     let networkKey = networkName === "hardhat" ? "mainnet" : networkName;
 
