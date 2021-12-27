@@ -1,4 +1,4 @@
-jbeckman@jonathans-mbp tokenx % npm run deploy_kovan
+% npm run deploy_kovan
 
 > @buffchain/tufftoken@1.2.2 deploy_kovan
 > hardhat --network kovan deploy && hardhat --network kovan etherscan-verify
