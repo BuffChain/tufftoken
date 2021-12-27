@@ -60,6 +60,11 @@ versions higher than that
 - //TODO: Contract ownership?
 - //TODO: Use address(this) everywhere since the state and storage are based in the diamond contract, and facets are just used for their logic?
 
+## Deploying
+First, source your `.env` file. Then run the npm deploy script for the respective network. For example, if you are 
+deploying to `kovan`, then run `npm run deploy_kovan`. Finally, take the output logs from your terminal and add them to
+`./deployments/kovan/logs/deployment-${LAST_DEPLOYMENT++}.log`.
+
 ## License
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
 

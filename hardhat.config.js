@@ -119,22 +119,22 @@ module.exports = {
         mainnet_cloudflare: {
             url: "https://cloudflare-eth.com"
         },
+        kovan: {
+            url: process.env.INFURA_URL,
+            accounts: [process.env.ETH_ACCOUNT_PRIV_KEY]
+        }
     },
     namedAccounts: {
         deployer: {
             default: 0, //For tests and hardhat network, use accounts[0]
-            1: '', //TODO: Multi-sig ETH account
-            "rinkeby": '', //TODO: ETH account
+            1: '', //TODO: Multi-sig ETH account for mainnet
+            "kovan": '0x4d5031A3BF5b4828932D0e1C3006cC860b97aC3c',
         },
         contractOwner: {
             default: 1, //For tests and hardhat network, use accounts[1]
-            1: '', //TODO: Multi-sig ETH account
-            "rinkeby": '', //TODO: ETH account
+            1: '', //TODO: Multi-sig ETH account for mainnet
+            "kovan": '0x4d5031A3BF5b4828932D0e1C3006cC860b97aC3c',
         }
-    },
-    etherscan: {
-        //TODO: This will help verify the smart contract code (https://github.com/wighawag/hardhat-deploy/tree/master#4-hardhat-etherscan-verify)
-        apiKey: ''
     },
     external: {
         contracts: [

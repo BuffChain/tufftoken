@@ -1,0 +1,19 @@
+jbeckman@jonathans-mbp tokenx % npm run deploy_kovan
+
+> @buffchain/tufftoken@1.2.2 deploy_kovan
+> hardhat --network kovan deploy && hardhat --network kovan etherscan-verify
+
+Nothing to compile
+Using [kovan] network config
+Deployer address [0x4d5031A3BF5b4828932D0e1C3006cC860b97aC3c]
+Contract owner address [0x4d5031A3BF5b4828932D0e1C3006cC860b97aC3c]
+deploying "TuffToken" (tx: 0x6da549671b5f47ac7361b8328c90884f83ea5e23afce31818510b9475583b3c1)...: deployed at 0xF49630D0F5fF73BBcB246B0c5De2A0BD04d3014a with 1515310 gas
+deploying "AaveLPManager" (tx: 0x6f8d537a3367acd6d3666d78a8e081445163196a33fbd3cd247571b88f71c407)...: deployed at 0x7815C0489aBcD84156F615Bfb3feF341B358E1BC with 540442 gas
+deploying "UniswapPriceConsumer" (tx: 0xf3ac4a50b25b2c72a68c53691567d3b141ca471c9b276e2d8d79bb942f45172c)...: deployed at 0x10A7CF48328E1c24e4a7A2632e28bA39c1333a31 with 1004702 gas
+deploying "ChainLinkPriceConsumer" (tx: 0x4f472cbb21c41e7b7f53b074d670da9fc29218c52d67c15c805d056370b05710)...: deployed at 0xE72f3661d805C0d667fBA4014341d9390a5E372a with 463946 gas
+deploying "MarketTrend" (tx: 0xc4bb0247433918e2e5693dd23997abbe47ea02aa95e3b79866aea6cfbb8145cf)...: deployed at 0x1008c93aFB710e78D2f53bE687288EeCCBB689B1 with 1602459 gas
+deploying "Governance" (tx: 0x138c7cbecbce8767372626ceb42084c9dca42cf105086ce6d8f091c539541025)...: deployed at 0x0D01e40Fee2BB4A7A54460d28AF43f698e6e4732 with 1230514 gas
+reusing "Diamantaire" at 0xB812f503607Ee2259E9607Cb5E5836B550ac6492
+executing Diamantaire.createDiamond (tx: 0xd3c8b9e8af42973fff75e58a58a24a84bdb076bf01d921a65548ce20703aad68) ...: performed with 4360338 gas
+Diamond deployed at 0xf242275C5083c48d118fE07CDf2AD0beB00c2e39 via Diamantaire (0xB812f503607Ee2259E9607Cb5E5836B550ac6492 (tx: 0xd3c8b9e8af42973fff75e58a58a24a84bdb076bf01d921a65548ce20703aad68)) with 4360338 gas
+TuffTokenDiamond address [0xf242275C5083c48d118fE07CDf2AD0beB00c2e39]
