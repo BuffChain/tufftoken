@@ -5,7 +5,7 @@ pragma abicoder v2;
 import {MarketTrendLib} from "./MarketTrendLib.sol";
 import {ChainLinkPriceConsumer} from "./ChainLinkPriceConsumer.sol";
 import {UniswapPriceConsumer} from "./UniswapPriceConsumer.sol";
-//import {KeeperCompatibleInterface} from "@chainlink/contracts/src/v0.8/interfaces/KeeperCompatibleInterface.sol"
+import {KeeperCompatibleInterface} from "@chainlink/contracts/src/v0.7/interfaces/KeeperCompatibleInterface.sol";
 
 /*
 can buy back when
@@ -19,7 +19,7 @@ Ex: buy back happens on day x, epoch = 7 days, base market trend period = 4 epoc
 	- case 3: current day = x + 4 epochs and 0 days, price change from current day - 7 days ago is -, chance = 10%, choice = 19 => no buy back;
 	- case 4: current day = x + 4 epochs and 1 days, price change from current day - 7 days ago is -, chance = 20%, choice = 19  => buy back;
 */
-contract MarketTrend {
+contract MarketTrend is KeeperCompatibleInterface {
     modifier initMarketTrendLock() {
         require(isMarketTrendInit(), string(abi.encodePacked(MarketTrendLib.NAMESPACE, ": ", "UNINITIALIZED")));
         _;
@@ -243,7 +243,7 @@ contract MarketTrend {
         return (ss.lastBuyBackChance, ss.lastBuyBackChoice);
     }
 
-    function checkUpkeep(bytes calldata /* checkData */) external view initMarketTrendLock returns (bool needed, bytes memory /* performData */) {
+    function checkUpkeep(bytes calldata /* checkData */) external override view initMarketTrendLock returns (bool needed, bytes memory /* performData */) {
         needed = isIntervalComplete();
     }
 
@@ -252,7 +252,7 @@ contract MarketTrend {
         return (block.timestamp - ss.lastTimeStamp) > ss.interval;
     }
 
-    function performUpkeep(bytes calldata /* performData */) external initMarketTrendLock {
+    function performUpkeep(bytes calldata /* performData */) external override initMarketTrendLock {
         MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
         if (isIntervalComplete()) {
 
