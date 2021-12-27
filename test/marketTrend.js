@@ -4,6 +4,8 @@ const {expect} = require("chai");
 const hre = require("hardhat");
 
 const consts = require("../consts");
+const {BN} = require("@openzeppelin/test-helpers");
+const {randomBytes} = require('crypto');
 
 describe('MarketTrend', function () {
     this.timeout(5000);
@@ -44,25 +46,25 @@ describe('MarketTrend', function () {
         let isBuyBackNeeded = await tuffTokenDiamond.getIsBuyBackNeeded();
         expect(isBuyBackNeeded).to.equal(false, "buy back should not be needed.");
 
-        await tuffTokenDiamond.createTrackingPeriod(nowTimeStamp, nowTimeStamp + 1);
+        await tuffTokenDiamond.createTrackingPeriod(nowTimeStamp, nowTimeStamp + 7);
 
         const startingPrice = await tuffTokenDiamond.getPrice();
 
-        await tuffTokenDiamond.pushPriceData("" + (startingPrice + 1));
-        await tuffTokenDiamond.pushPriceData("" + (startingPrice + 2));
-        await tuffTokenDiamond.pushPriceData("" + (startingPrice + 3));
-        await tuffTokenDiamond.pushPriceData("" + (startingPrice + 4));
-        await tuffTokenDiamond.pushPriceData("" + (startingPrice + 5));
-        await tuffTokenDiamond.pushPriceData("" + (startingPrice + 6));
+        await tuffTokenDiamond.pushPriceData(nowTimeStamp + 2, new BN((BigInt(startingPrice) + BigInt(1)).toString()).toString());
+        await tuffTokenDiamond.pushPriceData(nowTimeStamp + 3, new BN((BigInt(startingPrice) + BigInt(2)).toString()).toString());
+        await tuffTokenDiamond.pushPriceData(nowTimeStamp + 4, new BN((BigInt(startingPrice) + BigInt(3)).toString()).toString());
+        await tuffTokenDiamond.pushPriceData(nowTimeStamp + 5, new BN((BigInt(startingPrice) + BigInt(4)).toString()).toString());
+        await tuffTokenDiamond.pushPriceData(nowTimeStamp + 6, new BN((BigInt(startingPrice) + BigInt(5)).toString()).toString());
+        await tuffTokenDiamond.pushPriceData(nowTimeStamp + 7, new BN((BigInt(startingPrice) + BigInt(6)).toString()).toString());
 
 
         //bullish trends
-        await tuffTokenDiamond.processMarketTrend("" + (startingPrice + 7));
+        await tuffTokenDiamond.processMarketTrend(nowTimeStamp + 8, new BN((BigInt(startingPrice) + BigInt(7)).toString()).toString());
 
         isBuyBackNeeded = await tuffTokenDiamond.getIsBuyBackNeeded();
         expect(isBuyBackNeeded).to.equal(false, "buy back should not be needed.");
 
-        await tuffTokenDiamond.processMarketTrend("" + (startingPrice + 8));
+        await tuffTokenDiamond.processMarketTrend(nowTimeStamp + 9, "" + (startingPrice + 8));
 
         isBuyBackNeeded = await tuffTokenDiamond.getIsBuyBackNeeded();
         expect(isBuyBackNeeded).to.equal(false, "buy back should not be needed.");
@@ -71,9 +73,10 @@ describe('MarketTrend', function () {
         //bearish trend
         let increment = 0;
         while (!isBuyBackNeeded) {
-            await tuffTokenDiamond.processMarketTrend("" + (startingPrice - increment));
 
-            console.log(startingPrice - increment)
+            const newPrice = new BN((BigInt(startingPrice) - BigInt(increment)).toString()).toString();
+
+            await tuffTokenDiamond.processMarketTrend(nowTimeStamp + 10, newPrice);
 
             isBuyBackNeeded = await tuffTokenDiamond.getIsBuyBackNeeded();
 

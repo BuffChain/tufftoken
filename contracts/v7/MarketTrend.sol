@@ -162,24 +162,24 @@ contract MarketTrend {
 
     }
 
-    function pushPriceData(uint256 currentPrice) public initMarketTrendLock {
+    function pushPriceData(uint256 timestamp, uint256 currentPrice) public initMarketTrendLock {
         MarketTrendLib.PriceData memory currentPriceData;
         currentPriceData.price = currentPrice;
-        currentPriceData.timestamp = block.timestamp;
+        currentPriceData.timestamp = timestamp;
 
         MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
         ss.priceDataEntries.push(currentPriceData);
     }
 
     function processCurrentMarketTrend() public initMarketTrendLock {
-        processMarketTrend(getPrice());
+        processMarketTrend(block.timestamp, getPrice());
     }
 
-    function processMarketTrend(uint256 currentPrice) public initMarketTrendLock {
+    function processMarketTrend(uint256 timestamp, uint256 currentPrice) public initMarketTrendLock {
 
         MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
 
-        pushPriceData(currentPrice);
+        pushPriceData(timestamp, currentPrice);
 
         uint256 lastEntryIndex = getPriceDataEntriesLength() - 1;
         uint256 startingEntryIndex = getStartingEntryIndex(lastEntryIndex);
@@ -192,9 +192,9 @@ contract MarketTrend {
         ss.lastBuyBackChance = ss.buyBackChance;
         ss.lastBuyBackChoice = buyBackRandomNumber;
 
-        if (block.timestamp >= ss.baseTrackingPeriodEnd && ss.isNegativeOrZeroPriceChange && buyBackRandomNumber < ss.buyBackChance) {
+        if (timestamp >= ss.baseTrackingPeriodEnd && ss.isNegativeOrZeroPriceChange && buyBackRandomNumber < ss.buyBackChance) {
             ss.isBuyBackNeeded = true;
-        } else if (block.timestamp >= ss.baseTrackingPeriodEnd && ss.isNegativeOrZeroPriceChange) {
+        } else if (timestamp >= ss.baseTrackingPeriodEnd && ss.isNegativeOrZeroPriceChange) {
             ss.buyBackChance = ss.buyBackChance + ss.buyBackChanceIncrement;
         }
 
