@@ -7,6 +7,8 @@
     "compile": "hardhat compile",
     "test": "hardhat test --deploy-fixture",
     "test_verbose": "npm run test -- --verbose",
+    "node": "hardhat node --no-deploy",
+    "deploy_hardhat": "hardhat deploy",
     "deploy_kovan": "hardhat --network kovan deploy && hardhat --network kovan etherscan-verify",
     "deploy_rinkeby": "TODO: https://github.com/wighawag/hardhat-deploy/tree/master#how-to-deploy-contracts",
     "deploy_mainnet": "TODO: https://github.com/wighawag/hardhat-deploy/tree/master#how-to-deploy-contracts"

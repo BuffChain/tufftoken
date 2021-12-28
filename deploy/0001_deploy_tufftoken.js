@@ -26,7 +26,7 @@ module.exports = async () => {
         log: true
     });
     let tuffTokenDiamondContract = await hre.ethers.getContractAt(tuffTokenDiamond.abi, tuffTokenDiamond.address, contractOwner);
-    logDeploymentTx(`TuffTokenDiamond address [${await tuffTokenDiamondContract.address}]`);
+    console.log(`TuffTokenDiamond address [${await tuffTokenDiamondContract.address}]`);
 
     let initTx = await tuffTokenDiamondContract.initTuffToken(contractOwner);
     logDeploymentTx("Initialized TuffToken:", initTx);
