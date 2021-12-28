@@ -38,9 +38,9 @@ contract TokenMaturity {
         ss.contractMaturityTimestamp = timestamp;
     }
 
-    function isTokenMatured() public view returns (bool) {
+    function isTokenMatured(uint256 timestamp) public view returns (bool) {
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
-        return block.timestamp >= ss.contractMaturityTimestamp;
+        return timestamp >= ss.contractMaturityTimestamp;
     }
 
     function totalSupplyForRedemption() public view returns (uint256) {
@@ -82,7 +82,7 @@ contract TokenMaturity {
 
     function redeem() public {
 
-        require(isTokenMatured(), "Address can not redeem before expiration.");
+        require(isTokenMatured(block.timestamp), "Address can not redeem before expiration.");
 
         require(getIsTreasuryLiquidated(), "Address can not redeem before treasury has been liquidated.");
 
@@ -125,7 +125,7 @@ contract TokenMaturity {
 //    call via perform upkeep once current timestamp >= contract maturity timestamp
     function onTokenMaturity() public {
 
-        require(isTokenMatured(), "Token must have reached maturity.");
+        require(isTokenMatured(block.timestamp), "Token must have reached maturity.");
 
         require(getIsTreasuryLiquidated(), "Treasury must not have been liquidated.");
 
