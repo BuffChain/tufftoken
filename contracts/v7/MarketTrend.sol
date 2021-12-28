@@ -252,6 +252,8 @@ contract MarketTrend is KeeperCompatibleInterface {
         return (block.timestamp - ss.lastTimeStamp) > ss.interval;
     }
 
+//    todo: check contract maturity & liquidate
+//    todo: run self balancing / use fees collected to add to LPs
     function performUpkeep(bytes calldata /* performData */) external override initMarketTrendLock {
         MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
         if (isIntervalComplete()) {
