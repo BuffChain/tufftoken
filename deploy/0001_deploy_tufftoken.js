@@ -20,6 +20,7 @@ module.exports = async () => {
             "UniswapPriceConsumer",
             "ChainLinkPriceConsumer",
             "MarketTrend",
+            "TokenMaturity",
             "Governance"
         ],
         log: true
@@ -34,6 +35,7 @@ module.exports = async () => {
     await tuffTokenDiamondContract.initUniswapPriceConsumer(consts.WETH9_ADDR, consts.DAI_ADDR, consts.UNISWAP_POOL_BASE_FEE, consts.UNISWAP_V3_FACTORY_ADDR);
     await tuffTokenDiamondContract.initChainLinkPriceConsumer(consts.CHAINLINK_TOTAL_MARKETCAP_USD_AGGREGATOR_ADDR);
     await tuffTokenDiamondContract.initMarketTrend(consts.CHAINLINK_PRICE_CONSUMER_ENUM, false);
+    await tuffTokenDiamondContract.initTokenMaturity();
     await tuffTokenDiamondContract.initGovernance();
 };
 

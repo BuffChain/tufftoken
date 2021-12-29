@@ -177,5 +177,22 @@ contract TuffToken is Context, IERC20 {
         emit Transfer(from, address(this), farmFeeAmount);
     }
 
+    function burn(address account, uint256 amount) public tuffTokenInitLock {
+        require(account != address(0), "ERC20: burn from the zero address");
+
+        TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
+
+        uint256 accountBalance = ss.balances[account];
+        require(accountBalance >= amount, "ERC20: burn amount exceeds balance");
+        unchecked {
+            ss.balances[account] = accountBalance - amount;
+        }
+        ss.totalSupply -= amount;
+
+        emit Transfer(account, address(0), amount);
+
+    }
+
     receive() external payable {}
+
 }
