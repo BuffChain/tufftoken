@@ -9,7 +9,6 @@ const {randomBytes} = require('crypto');
 const utils = require("./utils");
 
 describe('TokenMaturity', function () {
-    this.timeout(5000);
 
     const nowTimeStamp = Math.floor(Date.now() / 1000);
 
