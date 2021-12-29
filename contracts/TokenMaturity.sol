@@ -100,6 +100,7 @@ contract TokenMaturity {
         uint256 redemptionAmount = getRedemptionAmount(account, ownerBalance);
 
         account.transfer(redemptionAmount);
+//        todo: add event
 
         tuffToken.burn(account, ownerBalance);
 
