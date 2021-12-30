@@ -3,9 +3,7 @@
 const {expect} = require("chai");
 const hre = require("hardhat");
 
-const consts = require("../consts");
-const {BN} = require("@openzeppelin/test-helpers");
-const {randomBytes} = require('crypto');
+const {consts} = require("../utils/consts");
 const utils = require("./utils");
 
 describe('TokenMaturity', function () {

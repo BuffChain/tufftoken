@@ -56,7 +56,10 @@ module.exports = async () => {
         logDeploymentTx("Initialized MarketTrend:", initTx);
     }
 
-    await tuffTokenDiamondContract.initTokenMaturity();
+    if (!await tuffTokenDiamondContract.isTokenMaturityInit()) {
+        let initTx = await tuffTokenDiamondContract.initTokenMaturity();
+        logDeploymentTx("Initialized TokenMaturity:", initTx);
+    }
 
     if (!await tuffTokenDiamondContract.isGovernanceInit()) {
         let initTx = await tuffTokenDiamondContract.initGovernance();
