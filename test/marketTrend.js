@@ -3,7 +3,7 @@
 const {expect} = require("chai");
 const hre = require("hardhat");
 
-const consts = require("../consts");
+const {CHAINLINK_PRICE_CONSUMER_ENUM, UNISWAP_PRICE_CONSUMER_ENUM} = require("../utils/consts");
 const {BN} = require("@openzeppelin/test-helpers");
 const {randomBytes} = require('crypto');
 
@@ -104,9 +104,9 @@ describe('MarketTrend', function () {
     });
 
     it('should get price consumer address: UNISWAP', async () => {
-        await tuffTokenDiamond.setPriceConsumer(consts.UNISWAP_PRICE_CONSUMER_ENUM);
+        await tuffTokenDiamond.setPriceConsumer(UNISWAP_PRICE_CONSUMER_ENUM);
         const priceConsumer = await tuffTokenDiamond.getPriceConsumer();
-        expect(priceConsumer).to.equal(consts.UNISWAP_PRICE_CONSUMER_ENUM, "current price consumer should be uniswap.");
+        expect(priceConsumer).to.equal(UNISWAP_PRICE_CONSUMER_ENUM, "current price consumer should be uniswap.");
     });
 
     it('should get price: UNISWAP', async () => {
@@ -122,9 +122,9 @@ describe('MarketTrend', function () {
     });
 
     it('should get price consumer address: CHAINLINK', async () => {
-        await tuffTokenDiamond.setPriceConsumer(consts.CHAINLINK_PRICE_CONSUMER_ENUM);
+        await tuffTokenDiamond.setPriceConsumer(CHAINLINK_PRICE_CONSUMER_ENUM);
         const priceConsumer = await tuffTokenDiamond.getPriceConsumer();
-        expect(priceConsumer).to.equal(consts.CHAINLINK_PRICE_CONSUMER_ENUM, "current price consumer should be link.");
+        expect(priceConsumer).to.equal(CHAINLINK_PRICE_CONSUMER_ENUM, "current price consumer should be link.");
     });
 
     it('should get price: CHAINLINK', async () => {
@@ -132,12 +132,12 @@ describe('MarketTrend', function () {
     });
 
     it('should create tracking period: CHAINLINK', async () => {
-        await tuffTokenDiamond.setPriceConsumer(consts.CHAINLINK_PRICE_CONSUMER_ENUM);
+        await tuffTokenDiamond.setPriceConsumer(CHAINLINK_PRICE_CONSUMER_ENUM);
         await createTrackingPeriod();
     });
 
     it('should process market trend: CHAINLINK', async () => {
-        await tuffTokenDiamond.setPriceConsumer(consts.CHAINLINK_PRICE_CONSUMER_ENUM);
+        await tuffTokenDiamond.setPriceConsumer(CHAINLINK_PRICE_CONSUMER_ENUM);
         await processMarketTrend();
     });
 
@@ -156,6 +156,4 @@ describe('MarketTrend', function () {
         await tuffTokenDiamond.performUpkeep(randomBytes(0));
 
     });
-
-
 });

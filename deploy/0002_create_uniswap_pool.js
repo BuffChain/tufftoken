@@ -2,19 +2,23 @@
 
 const hre = require("hardhat");
 
-const consts = require("../consts");
+const {consts, UNISWAP_POOL_BASE_FEE} = require("../utils/consts");
+const {logDeploymentTx} = require("../utils/deployment_helpers");
 
 module.exports = async () => {
     const {deployments} = hre;
 
     const tuffTokenDiamond = await deployments.get("TuffTokenDiamond");
-    const uniswapV3Factory = await hre.ethers.getContractAt("UniswapV3Factory", consts.UNISWAP_V3_FACTORY_ADDR);
+    const uniswapV3Factory = await hre.ethers.getContractAt("UniswapV3Factory", consts("UNISWAP_V3_FACTORY_ADDR"));
 
-    let tuffTokenPoolAddr = await uniswapV3Factory.getPool(consts.WETH9_ADDR, tuffTokenDiamond.address, consts.UNISWAP_POOL_BASE_FEE);
+    let tuffTokenPoolAddr = await uniswapV3Factory.getPool(consts("WETH9_ADDR"), tuffTokenDiamond.address, UNISWAP_POOL_BASE_FEE);
     if (!tuffTokenPoolAddr || tuffTokenPoolAddr === hre.ethers.constants.AddressZero) {
         console.log(`TuffToken pool not found, creating one now...`);
-        await uniswapV3Factory.createPool(consts.WETH9_ADDR, tuffTokenDiamond.address, consts.UNISWAP_POOL_BASE_FEE);
-        tuffTokenPoolAddr = await uniswapV3Factory.getPool(consts.WETH9_ADDR, tuffTokenDiamond.address, consts.UNISWAP_POOL_BASE_FEE);
+
+        let createPoolTx = await uniswapV3Factory.createPool(consts("WETH9_ADDR"), tuffTokenDiamond.address, UNISWAP_POOL_BASE_FEE);
+        logDeploymentTx("Created pool:", createPoolTx);
+
+        tuffTokenPoolAddr = await uniswapV3Factory.getPool(consts("WETH9_ADDR"), tuffTokenDiamond.address, UNISWAP_POOL_BASE_FEE);
     }
     console.log(`TuffToken pool address [${tuffTokenPoolAddr}]`);
 };

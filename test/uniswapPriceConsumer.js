@@ -3,7 +3,7 @@
 const {expect} = require("chai");
 const hre = require("hardhat");
 
-const consts = require("../consts");
+const {consts, UNISWAP_POOL_BASE_FEE} = require("../utils/consts");
 
 describe('UniswapPriceConsumer', function () {
 
@@ -26,9 +26,9 @@ describe('UniswapPriceConsumer', function () {
     });
 
     it('should get pool', async () => {
-        const poolAddr = await tuffTokenDiamond.getPoolAddr(consts.WETH9_ADDR, consts.DAI_ADDR, consts.UNISWAP_POOL_BASE_FEE);
+        const poolAddr = await tuffTokenDiamond.getPoolAddr(consts("WETH9_ADDR"), consts("DAI_ADDR"), UNISWAP_POOL_BASE_FEE);
 
-        expect(poolAddr).to.equal(consts.UNISWAP_WETH_DAI_POOL_ADDR, "unexpected pool address.");
+        expect(poolAddr).to.equal(consts("UNISWAP_WETH_DAI_POOL_ADDR"), "unexpected pool address.");
     });
 
     it('should get quote', async () => {
