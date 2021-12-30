@@ -13,6 +13,7 @@ const utils = require("./utils");
 const {consts} = require("../utils/consts");
 
 describe('AaveLPManager', function () {
+    this.timeout(5000);
 
     let owner;
     let accounts;
@@ -50,6 +51,38 @@ describe('AaveLPManager', function () {
         const supportedTokens = await tuffTokenDiamond.getAllAaveSupportedTokens();
 
         expect(supportedTokens.length).to.equal(3);
+        expect(supportedTokens).to.contain(consts("DAI_ADDR"));
+        expect(supportedTokens).to.contain(consts("USDC_ADDR"));
+        expect(supportedTokens).to.contain(consts("USDT_ADDR"));
+    });
+
+    it('should add a token', async () => {
+        let supportedTokens = await tuffTokenDiamond.getAllAaveSupportedTokens();
+        expect(supportedTokens.length).to.equal(3);
+        expect(supportedTokens).to.not.contain(consts("ADAI_ADDR"));
+
+        await tuffTokenDiamond.addAaveSupportedToken(consts("ADAI_ADDR"));
+
+        supportedTokens = await tuffTokenDiamond.getAllAaveSupportedTokens();
+        expect(supportedTokens.length).to.equal(4);
+        expect(supportedTokens).to.contain(consts("ADAI_ADDR"));
+    });
+
+    it('should remove a token', async () => {
+        let supportedTokens = await tuffTokenDiamond.getAllAaveSupportedTokens();
+        expect(supportedTokens.length).to.equal(3);
+        expect(supportedTokens).to.contain(consts("DAI_ADDR"));
+
+        await tuffTokenDiamond.removeAaveSupportedToken(consts("DAI_ADDR"));
+
+        supportedTokens = await tuffTokenDiamond.getAllAaveSupportedTokens();
+        expect(supportedTokens.length).to.equal(2);
+        expect(supportedTokens).to.not.contain(consts("DAI_ADDR"));
+    });
+
+    it('reverts if adding a non-ERC20 token', async () => {
+        await expectRevert(tuffTokenDiamond.addAaveSupportedToken(consts("UNISWAP_V3_ROUTER_ADDR")),
+            "The tokenAddr supplied is not ERC20 compatible");
     });
 
     it("should deposit dai into aave from TuffToken's wallet", async () => {

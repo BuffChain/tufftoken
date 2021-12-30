@@ -8,6 +8,8 @@ import { IERC20 } from "@openzeppelin/contracts-v6/token/ERC20/IERC20.sol";
 
 import { AaveLPManagerLib } from "./AaveLPManagerLib.sol";
 
+import "hardhat/console.sol";
+
 contract AaveLPManager is Context {
     modifier aaveInitLock() {
         require(isAaveInit(), string(abi.encodePacked(AaveLPManagerLib.NAMESPACE, ": ", "UNINITIALIZED")));
@@ -23,8 +25,7 @@ contract AaveLPManager is Context {
 
         ss.lpProviderAddr = _lendingPoolProviderAddr;
 
-        ss.supportedToken = new address[](_supportedTokens.length);
-        for (uint i = 0; i < _supportedTokens.length - 1; i++) {
+        for (uint i = 0; i < _supportedTokens.length; i++) {
             addAaveSupportedToken(_supportedTokens[i]);
         }
 
@@ -43,52 +44,56 @@ contract AaveLPManager is Context {
 
     //TODO: Need to make sure this is locked down to only owner and approved callers (eg chainlink)
     function depositToAave(address erc20TokenAddr, uint256 amount) public aaveInitLock {
-        AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
-
-        bool _isSupportedToken = isAaveSupportedToken(erc20TokenAddr);
+        (bool _isSupportedToken,) = isAaveSupportedToken(erc20TokenAddr);
         require(_isSupportedToken, string(abi.encodePacked(AaveLPManagerLib.NAMESPACE, ": ", "This token is not currently supported")));
 
         IERC20(erc20TokenAddr).approve(getAaveLPAddr(), amount);
         LendingPool(getAaveLPAddr()).deposit(erc20TokenAddr, amount, address(this), 0);
     }
 
-    function isAaveSupportedToken(address tokenAddr) public aaveInitLock returns (bool) {
+    function isAaveSupportedToken(address tokenAddr) public view aaveInitLock returns (bool, uint256) {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
 
         bool _isSupportedToken = false;
+        uint256 _tokenIndex = ss.supportedTokens.length;
         for (uint256 i = 0; i < ss.supportedTokens.length; i++) {
             if (ss.supportedTokens[i] == tokenAddr) {
                 _isSupportedToken = true;
+                _tokenIndex = i;
                 break;
             }
         }
 
-        return _isSupportedToken;
+        return (_isSupportedToken, _tokenIndex);
+    }
+
+    function addAaveSupportedToken(address tokenAddr) public {
+        AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
+
+        //Check to ensure that the token is in fact an ERC-20 token. This isn't full proof, but there is no efficient
+        // way to definitively check a contract implements all ERC-20 functions. Since balanceOf() is a view function,
+        // we use that to efficiently check if it is an ERC-20 token
+        try IERC20(tokenAddr).balanceOf(address(this)) {
+        } catch {
+            revert("The tokenAddr supplied is not ERC20 compatible");
+        }
+
+        ss.supportedTokens.push(tokenAddr);
     }
 
     function removeAaveSupportedToken(address tokenAddr) public aaveInitLock {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
 
-        bool _isSupportedToken = isAaveSupportedToken(tokenAddr);
+        (bool _isSupportedToken, uint256 _tokenIndex) = isAaveSupportedToken(tokenAddr);
         if (_isSupportedToken) {
-
+            //Remove the token without preserving order
+            ss.supportedTokens[_tokenIndex] = ss.supportedTokens[ss.supportedTokens.length - 1];
+            ss.supportedTokens.pop();
         }
     }
 
-    // initLock is not required as this function is used by the init function
-    function addAaveSupportedToken(address tokenAddr) public {
+    function getAllAaveSupportedTokens() public view aaveInitLock returns (address[] memory) {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
-
-        //TODO: Check to make sure the token is an erc20Token
-        // (i.e. has approve() function, though balanceOf() is a view and gas free)
-        IERC20(tokenAddr).balanceOf(address(this));
-
-        ss.supportedToken.push(tokenAddr);
-    }
-
-    function getAllAaveSupportedTokens() public aaveInitLock returns (address[] memory) {
-        AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
-
-        return ss.supportedToken;
+        return ss.supportedTokens;
     }
 }
