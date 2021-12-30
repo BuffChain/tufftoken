@@ -10,7 +10,7 @@ const {
 const hre = require("hardhat");
 
 const utils = require("./utils");
-const consts = require("../consts");
+const {consts} = require("../utils/consts");
 
 describe('AaveLPManager', function () {
 
@@ -66,7 +66,7 @@ describe('AaveLPManager', function () {
         expect(new BN(0)).to.be.bignumber.equal(new BN(startAdaiQty.toString()));
 
         //Make the call to deposit Aave
-        await tuffTokenDiamond.depositToAave(consts.DAI_ADDR, qtyInDAI);
+        await tuffTokenDiamond.depositToAave(consts("DAI_ADDR"), qtyInDAI);
 
         //Check that the account has deposited the DAI
         const endDaiQty = await daiContract.balanceOf(tuffTokenDiamond.address);

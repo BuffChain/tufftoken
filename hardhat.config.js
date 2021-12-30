@@ -1,22 +1,14 @@
+const fs = require("fs/promises");
+const path = require("path");
+
 require("@nomiclabs/hardhat-waffle");
 require("@nomiclabs/hardhat-web3");
 require('hardhat-deploy');
 require('hardhat-deploy-ethers');
+require("hardhat-gas-reporter");
+const {TASK_DEPLOY_MAIN} = require('hardhat-deploy');
 
 require('dotenv').config();
-
-// This is a sample Hardhat task. To learn how to create your own go to
-// https://hardhat.org/guides/create-task.html
-task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
-    const accounts = await hre.ethers.getSigners();
-
-    for (const account of accounts) {
-        console.log(account.address);
-    }
-});
-
-// You need to export an object to set up your config
-// Go to https://hardhat.org/config/ to learn more
 
 /**
  * @type import('hardhat/config').HardhatUserConfig
@@ -119,22 +111,22 @@ module.exports = {
         mainnet_cloudflare: {
             url: "https://cloudflare-eth.com"
         },
+        kovan: {
+            url: process.env.INFURA_URL,
+            accounts: [process.env.ETH_ACCOUNT_PRIV_KEY]
+        }
     },
     namedAccounts: {
         deployer: {
             default: 0, //For tests and hardhat network, use accounts[0]
-            1: '', //TODO: Multi-sig ETH account
-            "rinkeby": '', //TODO: ETH account
+            1: '', //TODO: Multi-sig ETH account for mainnet
+            "kovan": '0x4d5031A3BF5b4828932D0e1C3006cC860b97aC3c',
         },
         contractOwner: {
             default: 1, //For tests and hardhat network, use accounts[1]
-            1: '', //TODO: Multi-sig ETH account
-            "rinkeby": '', //TODO: ETH account
+            1: '', //TODO: Multi-sig ETH account for mainnet
+            "kovan": '0x4d5031A3BF5b4828932D0e1C3006cC860b97aC3c',
         }
-    },
-    etherscan: {
-        //TODO: This will help verify the smart contract code (https://github.com/wighawag/hardhat-deploy/tree/master#4-hardhat-etherscan-verify)
-        apiKey: ''
     },
     external: {
         contracts: [
@@ -150,4 +142,43 @@ extendEnvironment((hre) => {
         console.log("Enabling hre logging")
         hre.network.config.loggingEnabled = true;
     }
+});
+
+task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
+    const accounts = await hre.ethers.getSigners();
+
+    for (const account of accounts) {
+        console.log(account.address);
+    }
+});
+
+/**
+ * Added this hook into the hardhat deploy plugin to automatically write log output to the corresponding network's
+ * deployment folder
+ */
+subtask(TASK_DEPLOY_MAIN, async (taskArgs, hre, runSuper) => {
+    const networkName = hre.network.name;
+    const manifestPath = path.join(process.cwd(), "deployments", networkName, ".manifest.json");
+
+    // Get deployedCount
+    let deployedCount = 0;
+    fs.readFile(manifestPath)
+        .then(function(buffer) {
+            let content = JSON.parse(buffer.toString());
+            deployedCount = parseInt(content["deployedCount"]);
+        })
+        .catch(function () {});
+
+    // Run deployment
+    const taskResult = await runSuper(taskArgs);
+
+    // Persist deployedCount
+    if (networkName !== "hardhat") {
+        let content = JSON.stringify({
+            "deployedCount": ++deployedCount
+        });
+        await fs.writeFile(manifestPath, content);
+    }
+
+    return taskResult;
 });

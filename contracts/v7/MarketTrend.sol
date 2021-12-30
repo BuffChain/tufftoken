@@ -3,9 +3,9 @@ pragma solidity >=0.7.0;
 pragma abicoder v2;
 
 import {MarketTrendLib} from "./MarketTrendLib.sol";
-
 import {ChainLinkPriceConsumer} from "./ChainLinkPriceConsumer.sol";
 import {UniswapPriceConsumer} from "./UniswapPriceConsumer.sol";
+import {KeeperCompatibleInterface} from "@chainlink/contracts/src/v0.7/interfaces/KeeperCompatibleInterface.sol";
 
 /*
 can buy back when
@@ -19,7 +19,7 @@ Ex: buy back happens on day x, epoch = 7 days, base market trend period = 4 epoc
 	- case 3: current day = x + 4 epochs and 0 days, price change from current day - 7 days ago is -, chance = 10%, choice = 19 => no buy back;
 	- case 4: current day = x + 4 epochs and 1 days, price change from current day - 7 days ago is -, chance = 20%, choice = 19  => buy back;
 */
-contract MarketTrend {
+contract MarketTrend is KeeperCompatibleInterface {
     modifier initMarketTrendLock() {
         require(isMarketTrendInit(), string(abi.encodePacked(MarketTrendLib.NAMESPACE, ": ", "UNINITIALIZED")));
         _;
@@ -45,6 +45,9 @@ contract MarketTrend {
 
         ss.priceConsumer = priceConsumer;
 
+        ss.interval = 86400; // starts at 1 day
+        ss.lastTimeStamp = block.timestamp;
+
         if (createInitialTrackingPeriod) {
             uint randomNumberOfEpochs = getPseudoRandomNumber(ss.amountOfEpochsLowerLimit, ss.amountOfEpochsUpperLimit);
             uint baseTrackingPeriodEnd = block.timestamp + (randomNumberOfEpochs * ss.daysInEpoch * 1 days);
@@ -54,7 +57,7 @@ contract MarketTrend {
         ss.isInit = true;
     }
 
-    //This will only take effect on next tracking period
+    //    This will only take effect on next tracking period
     function setPriceConsumer(MarketTrendLib.PriceConsumer priceConsumer) public initMarketTrendLock {
         MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
         ss.priceConsumer = priceConsumer;
@@ -63,6 +66,26 @@ contract MarketTrend {
     function getPriceConsumer() public initMarketTrendLock view returns (MarketTrendLib.PriceConsumer) {
         MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
         return ss.priceConsumer;
+    }
+
+    function setInterval(uint _interval) public initMarketTrendLock {
+        MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
+        ss.interval = _interval;
+    }
+
+    function getInterval() public view returns (uint) {
+        MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
+        return ss.interval;
+    }
+
+    function setLastTimestamp(uint _lastTimeStamp) public initMarketTrendLock {
+        MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
+        ss.lastTimeStamp = _lastTimeStamp;
+    }
+
+    function getLastTimestamp() public view returns (uint) {
+        MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
+        return ss.lastTimeStamp;
     }
 
     function setDaysInEpoch(uint _daysInEpoch) public initMarketTrendLock {
@@ -75,9 +98,9 @@ contract MarketTrend {
         return ss.daysInEpoch;
     }
 
-    function setAmountOfEpochsLowerLimit(uint amountOfEpochsLowerLimit) public initMarketTrendLock {
+    function setAmountOfEpochsLowerLimit(uint _amountOfEpochsLowerLimit) public initMarketTrendLock {
         MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
-        ss.amountOfEpochsLowerLimit = amountOfEpochsLowerLimit;
+        ss.amountOfEpochsLowerLimit = _amountOfEpochsLowerLimit;
     }
 
     function getAmountOfEpochsLowerLimit() public initMarketTrendLock view returns (uint) {
@@ -95,54 +118,56 @@ contract MarketTrend {
         return ss.amountOfEpochsUpperLimit;
     }
 
-    function getPseudoRandomNumber(uint _rangeStart, uint _rangeEnd) public initMarketTrendLock view returns (uint) {
+    function getTrackingPeriodStart() public view returns (uint256) {
+        MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
+        return ss.trackingPeriodStart;
+    }
+
+    function getLastBuyBackTimestamp() public view returns (uint256) {
+        MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
+        return ss.lastBuyBackTimestamp;
+    }
+
+    function getIsBuyBackNeeded() public view returns (bool) {
+        MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
+        return ss.isBuyBackNeeded;
+    }
+
+    function getIsNegativeOrZeroPriceChange() public view returns (bool) {
+        MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
+        return ss.isNegativeOrZeroPriceChange;
+    }
+
+    function getPseudoRandomNumber(uint _rangeStart, uint _rangeEnd) public view initMarketTrendLock returns (uint) {
         uint randomNumber = uint(keccak256(abi.encodePacked(block.timestamp, block.difficulty, msg.sender))) % _rangeEnd;
         randomNumber = randomNumber + _rangeStart;
         return randomNumber;
     }
 
-    function getCurrentTrackingPeriodIndex() public initMarketTrendLock view returns (uint256) {
-        MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
-        return ss.trackingPeriods.length - 1;
-    }
+    function createTrackingPeriod(uint _trackingPeriodStart, uint baseTrackingPeriodEnd) public initMarketTrendLock {
 
-    function createTrackingPeriod(uint baseTrackingPeriodStart, uint baseTrackingPeriodEnd) public initMarketTrendLock {
         MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
 
-        require(
-            ss.trackingPeriods.length == 0 ||
-            !ss.trackingPeriods[ss.trackingPeriods.length - 1].isActive,
-            "Can only have one active tracking period."
-        );
+        delete ss.priceDataEntries;
 
         MarketTrendLib.PriceData memory priceData;
         priceData.price = getPrice();
-        priceData.timestamp = baseTrackingPeriodStart;
+        priceData.timestamp = _trackingPeriodStart;
         ss.priceDataEntries.push(priceData);
 
-        MarketTrendLib.TrackingPeriod memory trackingPeriod;
-        trackingPeriod.baseTrackingPeriodStart = baseTrackingPeriodStart;
-        trackingPeriod.baseTrackingPeriodEnd = baseTrackingPeriodEnd;
-        trackingPeriod.isActive = true;
-        trackingPeriod.priceConsumer = ss.priceConsumer;
-        trackingPeriod.buyBackChance = ss.buyBackChanceIncrement;
-        ss.trackingPeriods.push(trackingPeriod);
+        ss.trackingPeriodStart = _trackingPeriodStart;
+        ss.baseTrackingPeriodEnd = baseTrackingPeriodEnd;
+        ss.trackingPeriodPriceConsumer = ss.priceConsumer;
+        ss.buyBackChance = ss.buyBackChanceIncrement;
+
     }
 
-    function completeTrackingPeriod(uint256 trackingPeriodIndex) public initMarketTrendLock {
-        MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
-
-        require(ss.trackingPeriods[trackingPeriodIndex].isActive, "Cannot complete an inactive tracking period.");
-        ss.trackingPeriods[trackingPeriodIndex].isActive = false;
-        ss.trackingPeriods[trackingPeriodIndex].isBuyBackNeeded = true;
-    }
-
-    function pushPriceData(uint256 currentPrice) public initMarketTrendLock {
-        MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
-
+    function pushPriceData(uint256 timestamp, uint256 currentPrice) public initMarketTrendLock {
         MarketTrendLib.PriceData memory currentPriceData;
         currentPriceData.price = currentPrice;
-        currentPriceData.timestamp = block.timestamp;
+        currentPriceData.timestamp = timestamp;
+
+        MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
         ss.priceDataEntries.push(currentPriceData);
     }
 
@@ -151,44 +176,28 @@ contract MarketTrend {
     }
 
     function processMarketTrend(uint256 timestamp, uint256 currentPrice) public initMarketTrendLock {
+
         MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
 
-        uint256 currentTrackingPeriodIndex = getCurrentTrackingPeriodIndex();
-        //TODO: Why storage, when below you use memory?
-        MarketTrendLib.TrackingPeriod storage trackingPeriod = ss.trackingPeriods[currentTrackingPeriodIndex];
-
-        pushPriceData(currentPrice);
+        pushPriceData(timestamp, currentPrice);
 
         uint256 lastEntryIndex = getPriceDataEntriesLength() - 1;
         uint256 startingEntryIndex = getStartingEntryIndex(lastEntryIndex);
 
-        if (timestamp < trackingPeriod.baseTrackingPeriodEnd || startingEntryIndex < 0) {
-            //TODO: comment: tracking period hasn't completed yet or it hasn't started yet
-            return;
-        }
-
         uint256 startingPrice = getPriceFromDataEntry(startingEntryIndex);
-        if (!isNegativeOrZeroPriceChange(startingPrice, currentPrice)) {
-            //TODO: comment: Not a bull trend, no need to continue processing the market trend
-            return;
-        }
+
+        ss.isNegativeOrZeroPriceChange = currentPrice <= startingPrice;
 
         uint buyBackRandomNumber = getPseudoRandomNumber(ss.buyBackChanceLowerLimit, ss.buyBackChanceUpperLimit);
-        trackingPeriod.lastBuyBackChance = trackingPeriod.buyBackChance;
-        trackingPeriod.lastBuyBackChoice = buyBackRandomNumber;
+        ss.lastBuyBackChance = ss.buyBackChance;
+        ss.lastBuyBackChoice = buyBackRandomNumber;
 
-        if (buyBackRandomNumber < trackingPeriod.buyBackChance) {
-            completeTrackingPeriod(currentTrackingPeriodIndex);
-            uint randomNumberOfEpochs = getPseudoRandomNumber(ss.amountOfEpochsLowerLimit, ss.amountOfEpochsUpperLimit);
-            uint baseTrackingPeriodEnd = block.timestamp + (randomNumberOfEpochs * ss.daysInEpoch * 1 days);
-            createTrackingPeriod(block.timestamp, baseTrackingPeriodEnd);
-        } else {
-            trackingPeriod.buyBackChance = trackingPeriod.buyBackChance + ss.buyBackChanceIncrement;
+        if (timestamp >= ss.baseTrackingPeriodEnd && ss.isNegativeOrZeroPriceChange && buyBackRandomNumber < ss.buyBackChance) {
+            ss.isBuyBackNeeded = true;
+        } else if (timestamp >= ss.baseTrackingPeriodEnd && ss.isNegativeOrZeroPriceChange) {
+            ss.buyBackChance = ss.buyBackChance + ss.buyBackChanceIncrement;
         }
-    }
 
-    function isNegativeOrZeroPriceChange(uint256 oldPrice, uint256 newPrice) public pure returns (bool){
-        return oldPrice >= newPrice;
     }
 
     function getPriceDataEntriesLength() public view initMarketTrendLock returns (uint256) {
@@ -198,6 +207,9 @@ contract MarketTrend {
 
     function getStartingEntryIndex(uint256 lastEntryIndex) public view initMarketTrendLock returns (uint256) {
         MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
+        if (lastEntryIndex < ss.daysInEpoch) {
+            return 0;
+        }
         return lastEntryIndex - ss.daysInEpoch;
     }
 
@@ -208,13 +220,9 @@ contract MarketTrend {
 
     function getPrice() public view initMarketTrendLock returns (uint256) {
         MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
-
-        if (ss.trackingPeriods.length > 0) {
-            uint256 currentTrackingPeriodIndex = getCurrentTrackingPeriodIndex();
-
-            //TODO: Why memory, when above you used storage?
-            MarketTrendLib.TrackingPeriod memory trackingPeriod = ss.trackingPeriods[currentTrackingPeriodIndex];
-            return getPriceFromPriceConsumer(trackingPeriod.priceConsumer);
+        //        if current trend is using a specific consumer, keep using that consumer
+        if (ss.priceDataEntries.length > 0) {
+            return getPriceFromPriceConsumer(ss.trackingPeriodPriceConsumer);
         } else {
             return getPriceFromPriceConsumer(ss.priceConsumer);
         }
@@ -230,33 +238,54 @@ contract MarketTrend {
         }
     }
 
-    function anyBuyBacksRequired() public view initMarketTrendLock returns (bool) {
+    function getLastBuyBackChoiceResults() public view initMarketTrendLock returns (uint, uint) {
         MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
+        return (ss.lastBuyBackChance, ss.lastBuyBackChoice);
+    }
 
-        bool required = false;
-        for (uint256 trackingPeriodIndex = 0; trackingPeriodIndex < ss.trackingPeriods.length; trackingPeriodIndex++) {
-            MarketTrendLib.TrackingPeriod memory trackingPeriod = ss.trackingPeriods[trackingPeriodIndex];
-            if (trackingPeriod.isBuyBackNeeded && !trackingPeriod.isBuyBackFulfilled) {
-                required = true;
-                break;
+    function checkUpkeep(bytes calldata /* checkData */) external override view initMarketTrendLock returns (bool needed, bytes memory /* performData */) {
+        needed = isIntervalComplete();
+    }
+
+    function isIntervalComplete() private view initMarketTrendLock returns (bool) {
+        MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
+        return (block.timestamp - ss.lastTimeStamp) > ss.interval;
+    }
+
+//    todo: check contract maturity & liquidate
+//    todo: run self balancing / use fees collected to add to LPs
+    function performUpkeep(bytes calldata /* performData */) external override initMarketTrendLock {
+        MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
+        if (isIntervalComplete()) {
+
+            processCurrentMarketTrend();
+
+            if (ss.isNegativeOrZeroPriceChange) {
+                addAccruedInterestToBuyBackPool();
+                ss.isNegativeOrZeroPriceChange = false;
             }
+
+            if (ss.isBuyBackNeeded) {
+                doBuyBack();
+                uint randomNumberOfEpochs = getPseudoRandomNumber(ss.amountOfEpochsLowerLimit, ss.amountOfEpochsUpperLimit);
+                uint _baseTrackingPeriodEnd = block.timestamp + (randomNumberOfEpochs * ss.daysInEpoch * 1 days);
+                createTrackingPeriod(block.timestamp, _baseTrackingPeriodEnd);
+                ss.lastBuyBackTimestamp = block.timestamp;
+                ss.isBuyBackNeeded = false;
+            }
+
+            //        1 day give or take 15 minutes
+            ss.interval = getPseudoRandomNumber(85500, 87300);
+            ss.lastTimeStamp = block.timestamp;
         }
-        return required;
     }
 
-    function getIsBuyBackFulfilled(uint256 trackingPeriod) public view initMarketTrendLock returns (bool) {
-        MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
-        return ss.trackingPeriods[trackingPeriod].isBuyBackFulfilled;
+    function doBuyBack() private initMarketTrendLock {
+
     }
 
-    function setIsBuyBackFulfilled(uint256 trackingPeriod, bool fulfilled) public initMarketTrendLock {
-        MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
-        ss.trackingPeriods[trackingPeriod].isBuyBackFulfilled = fulfilled;
+    function addAccruedInterestToBuyBackPool() private initMarketTrendLock {
+
     }
 
-    function getLastBuyBackChoiceResults(uint256 trackingPeriodIndex) public view initMarketTrendLock returns (uint, uint) {
-        MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
-        MarketTrendLib.TrackingPeriod memory trackingPeriod = ss.trackingPeriods[trackingPeriodIndex];
-        return (trackingPeriod.lastBuyBackChance, trackingPeriod.lastBuyBackChoice);
-    }
 }

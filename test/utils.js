@@ -5,22 +5,22 @@ const SwapRouterABI = require("@uniswap/v3-periphery/artifacts/contracts/SwapRou
 const WETH9ABI = require("@uniswap/v3-periphery/artifacts/contracts/interfaces/external/IWETH9.sol/IWETH9.json").abi;
 const IERC20ABI = require("@uniswap/v3-core/artifacts/contracts/interfaces/IERC20Minimal.sol/IERC20Minimal.json").abi;
 
-const consts = require("../consts");
+const {consts} = require("../utils/consts");
 
 async function getDAIContract() {
-    return await hre.ethers.getContractAt(IERC20ABI, consts.DAI_ADDR);
+    return await hre.ethers.getContractAt(IERC20ABI, consts("DAI_ADDR"));
 }
 
 async function getWETH9Contract() {
-    return await hre.ethers.getContractAt(WETH9ABI, consts.WETH9_ADDR);
+    return await hre.ethers.getContractAt(WETH9ABI, consts("WETH9_ADDR"));
 }
 
 async function getUSDCContract() {
-    return await hre.ethers.getContractAt(IERC20ABI, consts.USDC_ADDR);
+    return await hre.ethers.getContractAt(IERC20ABI, consts("USDC_ADDR"));
 }
 
 async function getADAIContract() {
-    return await hre.ethers.getContractAt(IERC20ABI, consts.ADAI_ADDR);
+    return await hre.ethers.getContractAt(IERC20ABI, consts("ADAI_ADDR"));
 }
 
 /**
@@ -31,7 +31,7 @@ async function getADAIContract() {
  * @param amount: Amount of ETH to transfer Defaults to 100
  * @returns {Promise<Contract>}
  */
-async function transferETH(fromAccount, toAddr, amount="100") {
+async function transferETH(fromAccount, toAddr, amount = "100") {
     if (hre.hardhatArguments.verbose) {
         console.log(`[${fromAccount.address}] has [${hre.ethers.utils.formatEther(await hre.ethers.provider.getBalance(fromAccount.address))}]`);
         console.log(`[${toAddr}] has [${hre.ethers.utils.formatEther(await hre.ethers.provider.getBalance(toAddr))}]`);
@@ -58,7 +58,7 @@ async function runCallbackImpersonatingAcct(acct, callbackFn) {
         params: [acct.address],
     });
 
-    await callbackFn(acct)
+    await callbackFn(acct);
 
     await hre.network.provider.request({
         method: "hardhat_stopImpersonatingAccount",
@@ -75,7 +75,7 @@ async function runCallbackImpersonatingAcct(acct, callbackFn) {
 async function sendTokensToAddr(fromAcct, toAddr) {
     //Set up accounts and variables
     const toAcct = await hre.ethers.getSigner(toAddr);
-    await transferETH(fromAcct, toAddr)
+    await transferETH(fromAcct, toAddr);
     const expiryDate = Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes from the current Unix time
     const qtyInWETH = hre.ethers.utils.parseEther("20");
 
@@ -84,19 +84,19 @@ async function sendTokensToAddr(fromAcct, toAddr) {
     const weth9Contract = await getWETH9Contract();
     const uniswapSwapRouterContract = await hre.ethers.getContractAt(
         SwapRouterABI,
-        consts.UNISWAP_V3_ROUTER_ADDR
+        consts("UNISWAP_V3_ROUTER_ADDR")
     );
 
     //Convert ETH to WETH
     await runCallbackImpersonatingAcct(toAcct, async (acct) => {
         await weth9Contract.connect(acct).approve(acct.address, qtyInWETH)
         await weth9Contract.connect(acct).deposit({"value": qtyInWETH})
-    })
+    });
 
     //Swap half of the WETH to DAI with uniswap_v3
     const params = {
-        tokenIn: consts.WETH9_ADDR,
-        tokenOut: consts.DAI_ADDR,
+        tokenIn: consts("WETH9_ADDR"),
+        tokenOut: consts("DAI_ADDR"),
         fee: 3000,
         recipient: toAddr,
         deadline: expiryDate,
@@ -107,12 +107,12 @@ async function sendTokensToAddr(fromAcct, toAddr) {
     await runCallbackImpersonatingAcct(toAcct, async (acct) => {
         await weth9Contract.connect(acct).approve(uniswapSwapRouterContract.address, qtyInWETH);
         await uniswapSwapRouterContract.connect(acct).exactInputSingle(params);
-    })
+    });
 
     if (hre.hardhatArguments.verbose) {
         console.log(`[${toAddr}] balance of ETH is [${hre.ethers.utils.formatEther(await hre.ethers.provider.getBalance(toAddr))}]`);
-        console.log(`[${toAddr}] balance of WETH is [${hre.ethers.utils.formatEther(await weth9Contract.balanceOf(toAddr))}]`)
-        console.log(`[${toAddr}] balance of DAI is [${hre.ethers.utils.formatEther(await daiContract.balanceOf(toAddr))}]`)
+        console.log(`[${toAddr}] balance of WETH is [${hre.ethers.utils.formatEther(await weth9Contract.balanceOf(toAddr))}]`);
+        console.log(`[${toAddr}] balance of DAI is [${hre.ethers.utils.formatEther(await daiContract.balanceOf(toAddr))}]`);
     }
 }
 

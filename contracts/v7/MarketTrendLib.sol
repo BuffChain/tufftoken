@@ -15,29 +15,36 @@ library MarketTrendLib {
         uint256 timestamp;
     }
 
-    struct TrackingPeriod {
-        uint baseTrackingPeriodStart;
-        uint baseTrackingPeriodEnd;
-        bool isActive;
-        bool isBuyBackNeeded;
-        bool isBuyBackFulfilled;
+    struct StateStorage {
+        bool isInit;
+
+        PriceConsumer priceConsumer;
+        PriceConsumer trackingPeriodPriceConsumer;
+        PriceData[] priceDataEntries;
+
         uint buyBackChance;
         uint lastBuyBackChance;
         uint lastBuyBackChoice;
-        PriceConsumer priceConsumer;
-    }
+        bool isBuyBackNeeded;
+        bool isNegativeOrZeroPriceChange;
 
-    struct StateStorage {
-        bool isInit;
-        PriceConsumer priceConsumer;
-        TrackingPeriod[] trackingPeriods;
-        PriceData[] priceDataEntries;
         uint daysInEpoch;
         uint amountOfEpochsLowerLimit;
         uint amountOfEpochsUpperLimit;
+        uint baseTrackingPeriodStart;
+        uint baseTrackingPeriodEnd;
         uint buyBackChanceIncrement;
         uint buyBackChanceLowerLimit;
         uint buyBackChanceUpperLimit;
+
+        uint trackingPeriodStart;
+        uint trackingPeriodEnd;
+
+        // Use an interval in seconds and a timestamp to slow execution of Upkeep between 85500 and 87300 seconds
+
+        uint interval;
+        uint lastTimeStamp;
+        uint256 lastBuyBackTimestamp;
     }
 
     function getState() internal pure returns (StateStorage storage stateStorage) {
