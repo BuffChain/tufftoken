@@ -21,6 +21,7 @@ module.exports = async () => {
             "UniswapPriceConsumer",
             "ChainLinkPriceConsumer",
             "MarketTrend",
+            "TokenMaturity",
             "Governance"
         ],
         log: true
@@ -55,10 +56,13 @@ module.exports = async () => {
         logDeploymentTx("Initialized MarketTrend:", initTx);
     }
 
+    await tuffTokenDiamondContract.initTokenMaturity();
+
     if (!await tuffTokenDiamondContract.isGovernanceInit()) {
         let initTx = await tuffTokenDiamondContract.initGovernance();
         logDeploymentTx("Initialized Governance:", initTx);
     }
+
 };
 
 module.exports.tags = ['v0001'];

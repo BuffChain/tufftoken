@@ -5,6 +5,7 @@ require("@nomiclabs/hardhat-waffle");
 require("@nomiclabs/hardhat-web3");
 require('hardhat-deploy');
 require('hardhat-deploy-ethers');
+require("hardhat-gas-reporter");
 const {TASK_DEPLOY_MAIN} = require('hardhat-deploy');
 
 require('dotenv').config();
