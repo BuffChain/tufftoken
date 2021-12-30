@@ -109,4 +109,9 @@ describe('AaveLPManager', function () {
         const endAdaiQty = await adaiContract.balanceOf(tuffTokenDiamond.address);
         expect(new BN(qtyInDAI.toString())).to.be.bignumber.equal(new BN(endAdaiQty.toString()));
     });
+
+    it("revert if token deposited is not supported", async () => {
+        await expectRevert(tuffTokenDiamond.depositToAave(consts("WETH9_ADDR"), 0),
+            "This token is not currently supported");
+    });
 });
