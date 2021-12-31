@@ -70,7 +70,7 @@
   },
   "husky": {
     "hooks": {
-      "pre-push": "npm run prettier:solidity"
+      "pre-push": "yarn prettier:solidity"
     }
   }
 }
