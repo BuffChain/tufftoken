@@ -1,19 +1,36 @@
 pragma solidity ^0.8.0;
-import { TuffToken } from  "./TuffToken.sol";
+import {TuffToken} from "./TuffToken.sol";
 import {TokenMaturityLib} from "./TokenMaturityLib.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 
 contract TokenMaturity {
-
     modifier tokenMaturityInitLock() {
-        require(isTokenMaturityInit(), string(abi.encodePacked(TokenMaturityLib.NAMESPACE, ": ", "UNINITIALIZED")));
+        require(
+            isTokenMaturityInit(),
+            string(
+                abi.encodePacked(
+                    TokenMaturityLib.NAMESPACE,
+                    ": ",
+                    "UNINITIALIZED"
+                )
+            )
+        );
         _;
     }
 
     using SafeMath for uint256;
 
     function initTokenMaturity() public {
-        require(!isTokenMaturityInit(), string(abi.encodePacked(TokenMaturityLib.NAMESPACE, ": ", "ALREADY_INITIALIZED")));
+        require(
+            !isTokenMaturityInit(),
+            string(
+                abi.encodePacked(
+                    TokenMaturityLib.NAMESPACE,
+                    ": ",
+                    "ALREADY_INITIALIZED"
+                )
+            )
+        );
 
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
 
@@ -48,7 +65,9 @@ contract TokenMaturity {
         return ss.totalSupplyForRedemption;
     }
 
-    function setTotalSupplyForRedemption(uint256 totalSupplyForRedemption) public {
+    function setTotalSupplyForRedemption(uint256 totalSupplyForRedemption)
+        public
+    {
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
         ss.totalSupplyForRedemption = totalSupplyForRedemption;
     }
@@ -63,14 +82,21 @@ contract TokenMaturity {
         ss.startingEthBalance = startingEthBalance;
     }
 
-    function getRedemptionAmount(address account, uint256 ownerBalance) public view returns (uint256) {
+    function getRedemptionAmount(address account, uint256 ownerBalance)
+        public
+        view
+        returns (uint256)
+    {
         if (ownerBalance == 0) {
             return 0;
         }
-        return getContractStartingEthBalance().mul(ownerBalance).div(totalSupplyForRedemption());
+        return
+            getContractStartingEthBalance().mul(ownerBalance).div(
+                totalSupplyForRedemption()
+            );
     }
 
-    function getIsTreasuryLiquidated() public view returns (bool){
+    function getIsTreasuryLiquidated() public view returns (bool) {
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
         return ss.isTreasuryLiquidated;
     }
@@ -81,14 +107,19 @@ contract TokenMaturity {
     }
 
     function redeem() public {
+        require(
+            isTokenMatured(block.timestamp),
+            "Address can not redeem before expiration."
+        );
 
-        require(isTokenMatured(block.timestamp), "Address can not redeem before expiration.");
-
-        require(getIsTreasuryLiquidated(), "Address can not redeem before treasury has been liquidated.");
+        require(
+            getIsTreasuryLiquidated(),
+            "Address can not redeem before treasury has been liquidated."
+        );
 
         address payable account = payable(msg.sender);
 
-        (bool hasRedeemed,) = hasRedeemed(account);
+        (bool hasRedeemed, ) = hasRedeemed(account);
 
         require(!hasRedeemed, "Address can only redeem once.");
 
@@ -100,19 +131,21 @@ contract TokenMaturity {
         uint256 redemptionAmount = getRedemptionAmount(account, ownerBalance);
 
         account.transfer(redemptionAmount);
-//        todo: add event
+        //        todo: add event
 
         tuffToken.burn(account, ownerBalance);
 
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
         ss.ownersRedeemed[account] = true;
         ss.ownersRedemptionBalances[account] = redemptionAmount;
-
     }
 
     function hasRedeemed(address account) public view returns (bool, uint256) {
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
-        return (ss.ownersRedeemed[account], ss.ownersRedemptionBalances[account]);
+        return (
+            ss.ownersRedeemed[account],
+            ss.ownersRedemptionBalances[account]
+        );
     }
 
     function balanceOfEth(address account) public view returns (uint256) {
@@ -123,12 +156,17 @@ contract TokenMaturity {
         return address(this).balance;
     }
 
-//    call via perform upkeep once current timestamp >= contract maturity timestamp
+    //    call via perform upkeep once current timestamp >= contract maturity timestamp
     function onTokenMaturity() public {
+        require(
+            isTokenMatured(block.timestamp),
+            "Token must have reached maturity."
+        );
 
-        require(isTokenMatured(block.timestamp), "Token must have reached maturity.");
-
-        require(getIsTreasuryLiquidated(), "Treasury must not have been liquidated.");
+        require(
+            getIsTreasuryLiquidated(),
+            "Treasury must not have been liquidated."
+        );
 
         liquidateTreasury();
 
@@ -143,5 +181,4 @@ contract TokenMaturity {
 
         //    todo liquidate treasury to eth
     }
-
 }

@@ -1,23 +1,44 @@
 // SPDX-License-Identifier: agpl-3.0
 pragma solidity ^0.6.0;
 
-import { Context } from "@openzeppelin/contracts-v6/utils/Context.sol";
-import { LendingPool } from "@aave/protocol-v2/contracts/protocol/lendingpool/LendingPool.sol";
-import { LendingPoolAddressesProvider } from "@aave/protocol-v2/contracts/protocol/configuration/LendingPoolAddressesProvider.sol";
-import { IERC20 } from "@openzeppelin/contracts-v6/token/ERC20/IERC20.sol";
+import {Context} from "@openzeppelin/contracts-v6/utils/Context.sol";
+import {LendingPool} from "@aave/protocol-v2/contracts/protocol/lendingpool/LendingPool.sol";
+import {LendingPoolAddressesProvider} from "@aave/protocol-v2/contracts/protocol/configuration/LendingPoolAddressesProvider.sol";
+import {IERC20} from "@openzeppelin/contracts-v6/token/ERC20/IERC20.sol";
 
-import { AaveLPManagerLib } from "./AaveLPManagerLib.sol";
+import {AaveLPManagerLib} from "./AaveLPManagerLib.sol";
 
 contract AaveLPManager is Context {
     modifier aaveInitLock() {
-        require(isAaveInit(), string(abi.encodePacked(AaveLPManagerLib.NAMESPACE, ": ", "UNINITIALIZED")));
+        require(
+            isAaveInit(),
+            string(
+                abi.encodePacked(
+                    AaveLPManagerLib.NAMESPACE,
+                    ": ",
+                    "UNINITIALIZED"
+                )
+            )
+        );
         _;
     }
 
     //Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
     // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
-    function initAaveLPManager(address _lendingPoolProviderAddr, address[] memory _supportedTokens) public {
-        require(!isAaveInit(), string(abi.encodePacked(AaveLPManagerLib.NAMESPACE, ": ", "ALREADY_INITIALIZED")));
+    function initAaveLPManager(
+        address _lendingPoolProviderAddr,
+        address[] memory _supportedTokens
+    ) public {
+        require(
+            !isAaveInit(),
+            string(
+                abi.encodePacked(
+                    AaveLPManagerLib.NAMESPACE,
+                    ": ",
+                    "ALREADY_INITIALIZED"
+                )
+            )
+        );
 
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
 
@@ -38,7 +59,10 @@ contract AaveLPManager is Context {
     }
 
     //TODO: Need to make sure this is locked down to only owner and approved callers (eg chainlink)
-    function depositToAave(address erc20TokenAddr, uint256 amount) public aaveInitLock {
+    function depositToAave(address erc20TokenAddr, uint256 amount)
+        public
+        aaveInitLock
+    {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
 
         //TODO: Make address to bool mapping
@@ -49,9 +73,17 @@ contract AaveLPManager is Context {
                 break;
             }
         }
-        require(_isSupportedToken, "TUFF: AaveLPManager: This token is not currently supported");
+        require(
+            _isSupportedToken,
+            "TUFF: AaveLPManager: This token is not currently supported"
+        );
 
         IERC20(erc20TokenAddr).approve(getAaveLPAddr(), amount);
-        LendingPool(getAaveLPAddr()).deposit(erc20TokenAddr, amount, address(this), 0);
+        LendingPool(getAaveLPAddr()).deposit(
+            erc20TokenAddr,
+            amount,
+            address(this),
+            0
+        );
     }
 }

@@ -17,8 +17,8 @@ library GovernanceLib {
         string author;
         uint256 electionEnd;
         bool ended;
-        mapping (address => Voter) voters;
-        mapping (bool => uint256) votes;
+        mapping(address => Voter) voters;
+        mapping(bool => uint256) votes;
     }
 
     struct StateStorage {
@@ -26,7 +26,11 @@ library GovernanceLib {
         Election[] elections;
     }
 
-    function getState() internal pure returns (StateStorage storage stateStorage) {
+    function getState()
+        internal
+        pure
+        returns (StateStorage storage stateStorage)
+    {
         bytes32 position = POSITION;
 
         //In solidity > 0.7, inline assembly slot and offset variables are referenced with a period. For instance,

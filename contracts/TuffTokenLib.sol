@@ -8,10 +8,9 @@ library TuffTokenLib {
 
     struct StateStorage {
         bool isInit;
-        mapping (address => uint256) balances;
-        mapping (address => mapping (address => uint256)) allowances;
-        mapping (address => bool) isExcludedFromFee;
-
+        mapping(address => uint256) balances;
+        mapping(address => mapping(address => uint256)) allowances;
+        mapping(address => bool) isExcludedFromFee;
         string name;
         string symbol;
         uint8 decimals;
@@ -19,7 +18,11 @@ library TuffTokenLib {
         uint256 totalSupply;
     }
 
-    function getState() internal pure returns (StateStorage storage stateStorage) {
+    function getState()
+        internal
+        pure
+        returns (StateStorage storage stateStorage)
+    {
         bytes32 position = POSITION;
 
         //In solidity > 0.7, inline assembly slot and offset variables are referenced with a period. For instance,

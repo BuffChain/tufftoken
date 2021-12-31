@@ -10,7 +10,12 @@ import {TuffTokenLib} from "./TuffTokenLib.sol";
 
 contract TuffToken is Context, IERC20 {
     modifier tuffTokenInitLock() {
-        require(isTuffTokenInit(), string(abi.encodePacked(TuffTokenLib.NAMESPACE, ": ", "UNINITIALIZED")));
+        require(
+            isTuffTokenInit(),
+            string(
+                abi.encodePacked(TuffTokenLib.NAMESPACE, ": ", "UNINITIALIZED")
+            )
+        );
         _;
     }
 
@@ -21,7 +26,16 @@ contract TuffToken is Context, IERC20 {
     //Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
     // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
     function initTuffToken(address initialOwner) public {
-        require(!isTuffTokenInit(), string(abi.encodePacked(TuffTokenLib.NAMESPACE, ": ", "ALREADY_INITIALIZED")));
+        require(
+            !isTuffTokenInit(),
+            string(
+                abi.encodePacked(
+                    TuffTokenLib.NAMESPACE,
+                    ": ",
+                    "ALREADY_INITIALIZED"
+                )
+            )
+        );
 
         TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
 
@@ -29,7 +43,7 @@ contract TuffToken is Context, IERC20 {
         ss.symbol = "TUFF";
         ss.decimals = 9;
         ss.farmFee = 10;
-        ss.totalSupply = 1000000000 * 10 ** ss.decimals;
+        ss.totalSupply = 1000000000 * 10**ss.decimals;
 
         //Set owner balancer and exclude from fees
         ss.balances[initialOwner] = ss.totalSupply;
@@ -58,7 +72,13 @@ contract TuffToken is Context, IERC20 {
         return ss.decimals;
     }
 
-    function totalSupply() public view override tuffTokenInitLock returns (uint256) {
+    function totalSupply()
+        public
+        view
+        override
+        tuffTokenInitLock
+        returns (uint256)
+    {
         TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
         return ss.totalSupply;
     }
@@ -73,42 +93,96 @@ contract TuffToken is Context, IERC20 {
         ss.farmFee = _farmFee;
     }
 
-    function balanceOf(address account) public view override tuffTokenInitLock returns (uint256) {
+    function balanceOf(address account)
+        public
+        view
+        override
+        tuffTokenInitLock
+        returns (uint256)
+    {
         TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
         return ss.balances[account];
     }
 
-    function transfer(address recipient, uint256 amount) public override tuffTokenInitLock returns (bool) {
+    function transfer(address recipient, uint256 amount)
+        public
+        override
+        tuffTokenInitLock
+        returns (bool)
+    {
         _transfer(_msgSender(), recipient, amount);
         return true;
     }
 
-    function allowance(address owner, address spender) public view override tuffTokenInitLock returns (uint256) {
+    function allowance(address owner, address spender)
+        public
+        view
+        override
+        tuffTokenInitLock
+        returns (uint256)
+    {
         TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
         return ss.allowances[owner][spender];
     }
 
-    function approve(address spender, uint256 amount) public override tuffTokenInitLock returns (bool) {
+    function approve(address spender, uint256 amount)
+        public
+        override
+        tuffTokenInitLock
+        returns (bool)
+    {
         _approve(_msgSender(), spender, amount);
         return true;
     }
 
-    function transferFrom(address sender, address recipient, uint256 amount) public override tuffTokenInitLock returns (bool) {
+    function transferFrom(
+        address sender,
+        address recipient,
+        uint256 amount
+    ) public override tuffTokenInitLock returns (bool) {
         TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
         _transfer(sender, recipient, amount);
-        _approve(sender, _msgSender(), ss.allowances[sender][_msgSender()].sub(amount, "ERC20: transfer amount exceeds allowance"));
+        _approve(
+            sender,
+            _msgSender(),
+            ss.allowances[sender][_msgSender()].sub(
+                amount,
+                "ERC20: transfer amount exceeds allowance"
+            )
+        );
         return true;
     }
 
-    function increaseAllowance(address spender, uint256 addedValue) public virtual tuffTokenInitLock returns (bool) {
+    function increaseAllowance(address spender, uint256 addedValue)
+        public
+        virtual
+        tuffTokenInitLock
+        returns (bool)
+    {
         TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
-        _approve(_msgSender(), spender, ss.allowances[_msgSender()][spender].add(addedValue));
+        _approve(
+            _msgSender(),
+            spender,
+            ss.allowances[_msgSender()][spender].add(addedValue)
+        );
         return true;
     }
 
-    function decreaseAllowance(address spender, uint256 subtractedValue) public virtual tuffTokenInitLock returns (bool) {
+    function decreaseAllowance(address spender, uint256 subtractedValue)
+        public
+        virtual
+        tuffTokenInitLock
+        returns (bool)
+    {
         TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
-        _approve(_msgSender(), spender, ss.allowances[_msgSender()][spender].sub(subtractedValue, "ERC20: decreased allowance below zero"));
+        _approve(
+            _msgSender(),
+            spender,
+            ss.allowances[_msgSender()][spender].sub(
+                subtractedValue,
+                "ERC20: decreased allowance below zero"
+            )
+        );
         return true;
     }
 
@@ -122,24 +196,47 @@ contract TuffToken is Context, IERC20 {
         ss.isExcludedFromFee[account] = false;
     }
 
-    function isExcludedFromFee(address account) public view tuffTokenInitLock returns (bool) {
+    function isExcludedFromFee(address account)
+        public
+        view
+        tuffTokenInitLock
+        returns (bool)
+    {
         TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
         return ss.isExcludedFromFee[account];
     }
 
-    function calculateFarmFee(uint256 _amount, bool takeFee) public view tuffTokenInitLock returns (uint256) {
+    function calculateFarmFee(uint256 _amount, bool takeFee)
+        public
+        view
+        tuffTokenInitLock
+        returns (uint256)
+    {
         if (!takeFee) {
             return 0;
         }
 
         TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
 
-        uint256 fee = _amount.mul(ss.farmFee).div(10 ** 2);
-        require(fee > 0, string(abi.encodePacked(TuffTokenLib.NAMESPACE, ": ", "Insufficient amount.")));
+        uint256 fee = _amount.mul(ss.farmFee).div(10**2);
+        require(
+            fee > 0,
+            string(
+                abi.encodePacked(
+                    TuffTokenLib.NAMESPACE,
+                    ": ",
+                    "Insufficient amount."
+                )
+            )
+        );
         return fee;
     }
 
-    function _approve(address owner, address spender, uint256 amount) private {
+    function _approve(
+        address owner,
+        address spender,
+        uint256 amount
+    ) private {
         require(owner != address(0), "ERC20: approve from the zero address");
         require(spender != address(0), "ERC20: approve to the zero address");
 
@@ -149,11 +246,18 @@ contract TuffToken is Context, IERC20 {
         emit Approval(owner, spender, amount);
     }
 
-    function _transfer(address from, address to, uint256 amount) private {
+    function _transfer(
+        address from,
+        address to,
+        uint256 amount
+    ) private {
         require(from != address(0), "ERC20: transfer from the zero address");
         require(to != address(0), "ERC20: transfer to the zero address");
         require(amount > 0, "Transfer amount must be greater than zero");
-        require(balanceOf(from) >= amount, "Sender does not have adequate funds.");
+        require(
+            balanceOf(from) >= amount,
+            "Sender does not have adequate funds."
+        );
 
         TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
 
@@ -171,7 +275,9 @@ contract TuffToken is Context, IERC20 {
         ss.balances[from] = ss.balances[from].sub(amount);
         ss.balances[to] = ss.balances[to].add(transferAmount);
 
-        ss.balances[address(this)] = ss.balances[address(this)].add(farmFeeAmount);
+        ss.balances[address(this)] = ss.balances[address(this)].add(
+            farmFeeAmount
+        );
 
         emit Transfer(from, to, transferAmount);
         emit Transfer(from, address(this), farmFeeAmount);
@@ -190,9 +296,7 @@ contract TuffToken is Context, IERC20 {
         ss.totalSupply -= amount;
 
         emit Transfer(account, address(0), amount);
-
     }
 
     receive() external payable {}
-
 }
