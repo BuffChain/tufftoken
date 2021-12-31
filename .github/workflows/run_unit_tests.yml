@@ -17,9 +17,6 @@ jobs:
         with:
           node-version: '16'
       - name: Install frontend dependencies
-        run: |
-          npm i yarn
-          npm i npx
-          yarn install
+        run: npm i yarn && yarn install
       - name: Run tests
-        run: npx hardhat test
+        run: yarn hardhat test
