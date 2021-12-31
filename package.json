@@ -65,7 +65,6 @@
     "solhint": "^3.3.6",
     "prettier": "^2.5.1",
     "prettier-plugin-solidity": "^1.0.0-beta.19",
-    "solhint-plugin-prettier": "^0.0.5",
-    "husky": "^7.0.4"
+    "solhint-plugin-prettier": "^0.0.5"
   }
 }
