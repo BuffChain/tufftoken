@@ -39,9 +39,17 @@ contract AaveLPManager is Context {
 
     //TODO: Need to make sure this is locked down to only owner and approved callers (eg chainlink)
     function depositToAave(address erc20TokenAddr, uint256 amount) public aaveInitLock {
-        AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
 
         //TODO: Make address to bool mapping
+        bool _isSupportedToken = isSupportedToken(erc20TokenAddr);
+        require(_isSupportedToken, "TUFF: AaveLPManager: This token is not currently supported");
+
+        IERC20(erc20TokenAddr).approve(getAaveLPAddr(), amount);
+        LendingPool(getAaveLPAddr()).deposit(erc20TokenAddr, amount, address(this), 0);
+    }
+
+    function isSupportedToken(address erc20TokenAddr) public aaveInitLock returns (bool) {
+        AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
         bool _isSupportedToken = false;
         for (uint256 i = 0; i < ss.supportedTokens.length; i++) {
             if (ss.supportedTokens[i] == erc20TokenAddr) {
@@ -49,9 +57,16 @@ contract AaveLPManager is Context {
                 break;
             }
         }
+        return _isSupportedToken;
+    }
+
+    function withdrawFromAave(address erc20TokenAddr, uint256 amount) public aaveInitLock {
+
+        bool _isSupportedToken = isSupportedToken(erc20TokenAddr);
         require(_isSupportedToken, "TUFF: AaveLPManager: This token is not currently supported");
 
-        IERC20(erc20TokenAddr).approve(getAaveLPAddr(), amount);
-        LendingPool(getAaveLPAddr()).deposit(erc20TokenAddr, amount, address(this), 0);
+        LendingPool(getAaveLPAddr()).withdraw(erc20TokenAddr, amount, address(this));
     }
+
+
 }

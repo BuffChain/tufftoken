@@ -252,31 +252,40 @@ contract MarketTrend is KeeperCompatibleInterface {
         return (block.timestamp - ss.lastTimeStamp) > ss.interval;
     }
 
-//    todo: check contract maturity & liquidate
-//    todo: run self balancing / use fees collected to add to LPs
-    function performUpkeep(bytes calldata /* performData */) external override initMarketTrendLock {
+    function runMarketTrendIntervalJob() public {
+
         MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
+
+        processCurrentMarketTrend();
+
+        if (ss.isNegativeOrZeroPriceChange) {
+            addAccruedInterestToBuyBackPool();
+            ss.isNegativeOrZeroPriceChange = false;
+        }
+
+        if (ss.isBuyBackNeeded) {
+            doBuyBack();
+            uint randomNumberOfEpochs = getPseudoRandomNumber(ss.amountOfEpochsLowerLimit, ss.amountOfEpochsUpperLimit);
+            uint _baseTrackingPeriodEnd = block.timestamp + (randomNumberOfEpochs * ss.daysInEpoch * 1 days);
+            createTrackingPeriod(block.timestamp, _baseTrackingPeriodEnd);
+            ss.lastBuyBackTimestamp = block.timestamp;
+            ss.isBuyBackNeeded = false;
+        }
+
+        //        1 day give or take 15 minutes
+        ss.interval = getPseudoRandomNumber(85500, 87300);
+        ss.lastTimeStamp = block.timestamp;
+    }
+
+
+    function performUpkeep(bytes calldata /* performData */) external override initMarketTrendLock {
+
         if (isIntervalComplete()) {
 
-            processCurrentMarketTrend();
+            runMarketTrendIntervalJob();
+            //    todo: check contract maturity & liquidate
+            //    todo: run self balancing / use fees collected to add to LPs
 
-            if (ss.isNegativeOrZeroPriceChange) {
-                addAccruedInterestToBuyBackPool();
-                ss.isNegativeOrZeroPriceChange = false;
-            }
-
-            if (ss.isBuyBackNeeded) {
-                doBuyBack();
-                uint randomNumberOfEpochs = getPseudoRandomNumber(ss.amountOfEpochsLowerLimit, ss.amountOfEpochsUpperLimit);
-                uint _baseTrackingPeriodEnd = block.timestamp + (randomNumberOfEpochs * ss.daysInEpoch * 1 days);
-                createTrackingPeriod(block.timestamp, _baseTrackingPeriodEnd);
-                ss.lastBuyBackTimestamp = block.timestamp;
-                ss.isBuyBackNeeded = false;
-            }
-
-            //        1 day give or take 15 minutes
-            ss.interval = getPseudoRandomNumber(85500, 87300);
-            ss.lastTimeStamp = block.timestamp;
         }
     }
 
