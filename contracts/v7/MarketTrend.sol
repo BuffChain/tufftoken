@@ -406,5 +406,8 @@ contract MarketTrend is KeeperCompatibleInterface {
 
     function doBuyBack() private initMarketTrendLock {}
 
-    function addAccruedInterestToBuyBackPool() private initMarketTrendLock {}
+    function addAccruedInterestToBuyBackPool() private initMarketTrendLock {
+
+    }
+
 }
