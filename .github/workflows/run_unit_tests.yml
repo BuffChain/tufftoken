@@ -20,4 +20,8 @@ jobs:
         with:
           cmd: install # will run `yarn install` command
       - name: Run tests
-        run: yarn hardhat test
+        run: |
+          ALCHEMAPI_KEY=${{ secrets.ALCHEMAPI_KEY }} \
+          INFURA_URL=${{ secrets.INFURA_URL }} \
+          ETH_ACCOUNT_PRIV_KEY=${{ secrets.ETH_ACCOUNT_PRIV_KEY }} \
+          yarn hardhat test
