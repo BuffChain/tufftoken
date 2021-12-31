@@ -18,7 +18,6 @@ jobs:
           node-version: '16'
       - name: Install frontend dependencies
         run: |
-          npm install
           npm i yarn
           npm i npx
           yarn install
