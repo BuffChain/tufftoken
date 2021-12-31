@@ -6,6 +6,7 @@ import {MarketTrendLib} from "./MarketTrendLib.sol";
 import {ChainLinkPriceConsumer} from "./ChainLinkPriceConsumer.sol";
 import {UniswapPriceConsumer} from "./UniswapPriceConsumer.sol";
 import {KeeperCompatibleInterface} from "@chainlink/contracts/src/v0.7/interfaces/KeeperCompatibleInterface.sol";
+import { IERC20 } from "@openzeppelin/contracts-v6/token/ERC20/IERC20.sol";
 
 /*
 can buy back when
@@ -261,6 +262,8 @@ contract MarketTrend is KeeperCompatibleInterface {
         if (ss.isNegativeOrZeroPriceChange) {
             addAccruedInterestToBuyBackPool();
             ss.isNegativeOrZeroPriceChange = false;
+        } else {
+            depositAccruedInterestToLendingPools();
         }
 
         if (ss.isBuyBackNeeded) {
@@ -294,6 +297,10 @@ contract MarketTrend is KeeperCompatibleInterface {
     }
 
     function addAccruedInterestToBuyBackPool() private initMarketTrendLock {
+
+    }
+
+    function depositAccruedInterestToLendingPools() private initMarketTrendLock {
 
     }
 
