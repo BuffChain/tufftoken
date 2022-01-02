@@ -42,6 +42,7 @@ library MarketTrendLib {
         uint256 interval;
         uint256 lastTimeStamp;
         uint256 lastBuyBackTimestamp;
+        mapping(address => uint256) buyBackPool;
     }
 
     function getState()

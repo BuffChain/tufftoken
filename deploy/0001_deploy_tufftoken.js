@@ -66,6 +66,11 @@ module.exports = async () => {
         logDeploymentTx("Initialized Governance:", initTx);
     }
 
+    if (!await tuffTokenDiamondContract.isUniswapSwapperInit()) {
+        let initTx = await tuffTokenDiamondContract.initUniswapSwapper(consts("UNISWAP_V3_ROUTER_ADDR"));
+        logDeploymentTx("Initialized UniswapSwapper:", initTx);
+    }
+
 };
 
 module.exports.tags = ['v0001'];

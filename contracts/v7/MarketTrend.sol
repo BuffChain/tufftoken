@@ -7,6 +7,9 @@ import {ChainLinkPriceConsumer} from "./ChainLinkPriceConsumer.sol";
 import {UniswapPriceConsumer} from "./UniswapPriceConsumer.sol";
 import {KeeperCompatibleInterface} from "@chainlink/contracts/src/v0.7/interfaces/KeeperCompatibleInterface.sol";
 import {IERC20} from "@openzeppelin/contracts-v6/token/ERC20/IERC20.sol";
+//import {AaveLPManager} from "../v6/AaveLPManager.sol";
+//import {UniswapSwapper} from "./UniswapSwapper.sol";
+//import {TuffToken} from "../TuffToken.sol";
 
 /*
 can buy back when
@@ -412,12 +415,65 @@ contract MarketTrend is KeeperCompatibleInterface {
         }
     }
 
-    function doBuyBack() private initMarketTrendLock {}
+    function doBuyBack() private initMarketTrendLock {
+        MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
+        address[1] memory tokens = getSupportedLendingPoolTokens();
+        for (uint256 i = 0; i < tokens.length; i++) {
+            uint256 balance = ss.buyBackPool[tokens[i]];
 
-    function addAccruedInterestToBuyBackPool() private initMarketTrendLock {}
+//            TODO:
 
+//            // 1. withdraw amount
+//            AaveLPManager(address(this)).withdrawFromAave(tokens[i], balance);
+//
+//            // 2. swap to TUFF
+//            address inputToken = tokens[i];
+//            uint256 poolAFee = 3000;
+//            address intermediateToken = WETH9;
+//            uint256 poolBFee = 3000;
+//            address outputToken = address(this); // tuff address?
+//            uint256 amountIn = balance;
+//
+//            uint256 amountOut = UniswapSwapper(address(this)).swapExactInputMultihop(
+//                inputToken,
+//                poolAFee,
+//                intermediateToken,
+//                poolBFee,
+//                outputToken,
+//                amountIn
+//            );
+//
+//            // 3. burn TUFF
+//            TuffToken(address(this)).burn(address(this), amountOut);
+//
+//            // 4. set buy back pools to 0
+//            ss.buyBackPool[tokens[i]] = 0;
+        }
+    }
+
+    function addAccruedInterestToBuyBackPool() private initMarketTrendLock {
+        MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
+        address[1] memory tokens = getSupportedLendingPoolTokens();
+        for (uint256 i = 0; i < tokens.length; i++) {
+            uint256 balance = IERC20(tokens[i]).balanceOf(address(this));
+            ss.buyBackPool[tokens[i]] += balance;
+        }
+    }
+
+    //    todo: needed? - when we earn aTokens, do we also earn the underlying asset which is added right to the pool?
     function depositAccruedInterestToLendingPools()
         private
         initMarketTrendLock
-    {}
+    {
+    }
+
+    //    todo: revert - temp
+    function getSupportedLendingPoolTokens()
+        private
+        view
+        initMarketTrendLock
+        returns (address[1] memory)
+    {
+        return [address(0xdCf0aF9e59C002FA3AA091a46196b37530FD48a8)];
+    }
 }
