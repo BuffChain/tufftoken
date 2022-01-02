@@ -8,10 +8,6 @@ import {UniswapPriceConsumer} from "./UniswapPriceConsumer.sol";
 import {KeeperCompatibleInterface} from "@chainlink/contracts/src/v0.7/interfaces/KeeperCompatibleInterface.sol";
 import {IERC20} from "@openzeppelin/contracts-v6/token/ERC20/IERC20.sol";
 
-//import {AaveLPManager} from "../v6/AaveLPManager.sol";
-//import {UniswapSwapper} from "./UniswapSwapper.sol";
-//import {TuffToken} from "../TuffToken.sol";
-
 /*
 can buy back when
 1. it has been at least base market trend period is met since last buy back
@@ -420,30 +416,45 @@ contract MarketTrend is KeeperCompatibleInterface {
         MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
         address[1] memory tokens = getSupportedLendingPoolTokens();
         for (uint256 i = 0; i < tokens.length; i++) {
-            uint256 accruedInterest = ss.buyBackPools[tokens[i]].accruedInterest;
+            uint256 accruedInterest = ss
+                .buyBackPools[tokens[i]]
+                .accruedInterest;
 
             // 1. withdraw amount
-            AaveLPManager(address(this)).withdrawFromAave(tokens[i], accruedInterest);
+            (bool withdrawSuccess, ) = address(this).call(
+                abi.encodeWithSignature(
+                    "withdrawFromAave(address, uint256)",
+                    tokens[i],
+                    accruedInterest
+                )
+            );
+            require(withdrawSuccess);
 
             // 2. swap to TUFF
-            address inputToken = tokens[i];
-            uint256 poolAFee = 3000;
-            address intermediateToken = WETH9;
-            uint256 poolBFee = 3000;
-            address outputToken = address(this);
-            uint256 amountIn = accruedInterest;
-
-            uint256 amountOut = UniswapSwapper(address(this)).swapExactInputMultihop(
-                inputToken,
-                poolAFee,
-                intermediateToken,
-                poolBFee,
-                outputToken,
-                amountIn
+            (bool swapSuccess, bytes memory returnData) = address(this).call(
+                abi.encodeWithSignature(
+                    "swapExactInputMultihop(address, uint256, address, uint256, address, uint256)",
+                    tokens[i],
+                    3000,
+                    0xd0A1E359811322d97991E03f863a0C30C2cF029C, // todo: kovan WETH, change to var,
+                    3000,
+                    address(this),
+                    accruedInterest
+                )
             );
+            require(swapSuccess);
+
+            uint256 amountOut = abi.decode(returnData, (uint256));
 
             // 3. burn TUFF
-            TuffToken(address(this)).burn(address(this), amountOut);
+            (bool burnSuccess, ) = address(this).call(
+                abi.encodeWithSignature(
+                    "burn(address, uint256)",
+                    address(this),
+                    amountOut
+                )
+            );
+            require(burnSuccess);
 
             // 4. set buy back pools to 0
             ss.buyBackPools[tokens[i]].accruedInterest = 0;
@@ -455,7 +466,6 @@ contract MarketTrend is KeeperCompatibleInterface {
         address[1] memory tokens = getSupportedLendingPoolTokens();
 
         for (uint256 i = 0; i < tokens.length; i++) {
-
             uint256 newBalance = IERC20(tokens[i]).balanceOf(address(this));
             uint256 lastBalance = ss.buyBackPools[tokens[i]].lastBalance;
 
@@ -468,9 +478,10 @@ contract MarketTrend is KeeperCompatibleInterface {
             uint256 newAccruedInterest = newBalance - lastBalance;
 
             if (newAccruedInterest > 0) {
-                ss.buyBackPools[tokens[i]].accruedInterest += newAccruedInterest;
+                ss
+                    .buyBackPools[tokens[i]]
+                    .accruedInterest += newAccruedInterest;
             }
-
         }
     }
 
