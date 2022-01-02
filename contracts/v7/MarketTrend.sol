@@ -6,7 +6,7 @@ import {MarketTrendLib} from "./MarketTrendLib.sol";
 import {ChainLinkPriceConsumer} from "./ChainLinkPriceConsumer.sol";
 import {UniswapPriceConsumer} from "./UniswapPriceConsumer.sol";
 import {KeeperCompatibleInterface} from "@chainlink/contracts/src/v0.7/interfaces/KeeperCompatibleInterface.sol";
-import { IERC20 } from "@openzeppelin/contracts-v6/token/ERC20/IERC20.sol";
+import {IERC20} from "@openzeppelin/contracts-v6/token/ERC20/IERC20.sol";
 
 /*
 can buy back when
@@ -373,7 +373,6 @@ contract MarketTrend is KeeperCompatibleInterface {
     }
 
     function runMarketTrendIntervalJob() public {
-
         MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
 
         processCurrentMarketTrend();
@@ -387,8 +386,12 @@ contract MarketTrend is KeeperCompatibleInterface {
 
         if (ss.isBuyBackNeeded) {
             doBuyBack();
-            uint randomNumberOfEpochs = getPseudoRandomNumber(ss.amountOfEpochsLowerLimit, ss.amountOfEpochsUpperLimit);
-            uint _baseTrackingPeriodEnd = block.timestamp + (randomNumberOfEpochs * ss.daysInEpoch * 1 days);
+            uint256 randomNumberOfEpochs = getPseudoRandomNumber(
+                ss.amountOfEpochsLowerLimit,
+                ss.amountOfEpochsUpperLimit
+            );
+            uint256 _baseTrackingPeriodEnd = block.timestamp +
+                (randomNumberOfEpochs * ss.daysInEpoch * 1 days);
             createTrackingPeriod(block.timestamp, _baseTrackingPeriodEnd);
             ss.lastBuyBackTimestamp = block.timestamp;
             ss.isBuyBackNeeded = false;
@@ -399,28 +402,22 @@ contract MarketTrend is KeeperCompatibleInterface {
         ss.lastTimeStamp = block.timestamp;
     }
 
-
-    function performUpkeep(bytes calldata /* performData */) external override initMarketTrendLock {
-
+    function performUpkeep(
+        bytes calldata /* performData */
+    ) external override initMarketTrendLock {
         if (isIntervalComplete()) {
-
             runMarketTrendIntervalJob();
             //    todo: check contract maturity & liquidate
             //    todo: run self balancing / use fees collected to add to LPs
-
         }
     }
 
     function doBuyBack() private initMarketTrendLock {}
 
-    }
+    function addAccruedInterestToBuyBackPool() private initMarketTrendLock {}
 
-    function addAccruedInterestToBuyBackPool() private initMarketTrendLock {
-
-    }
-
-    function depositAccruedInterestToLendingPools() private initMarketTrendLock {
-
-    }
-
+    function depositAccruedInterestToLendingPools()
+        private
+        initMarketTrendLock
+    {}
 }
