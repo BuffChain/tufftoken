@@ -7,6 +7,7 @@ import {ChainLinkPriceConsumer} from "./ChainLinkPriceConsumer.sol";
 import {UniswapPriceConsumer} from "./UniswapPriceConsumer.sol";
 import {KeeperCompatibleInterface} from "@chainlink/contracts/src/v0.7/interfaces/KeeperCompatibleInterface.sol";
 import {IERC20} from "@openzeppelin/contracts-v6/token/ERC20/IERC20.sol";
+
 //import {AaveLPManager} from "../v6/AaveLPManager.sol";
 //import {UniswapSwapper} from "./UniswapSwapper.sol";
 //import {TuffToken} from "../TuffToken.sol";
@@ -383,8 +384,6 @@ contract MarketTrend is KeeperCompatibleInterface {
         if (ss.isNegativeOrZeroPriceChange) {
             addAccruedInterestToBuyBackPool();
             ss.isNegativeOrZeroPriceChange = false;
-        } else {
-            depositAccruedInterestToLendingPools();
         }
 
         if (ss.isBuyBackNeeded) {
@@ -409,8 +408,10 @@ contract MarketTrend is KeeperCompatibleInterface {
         bytes calldata /* performData */
     ) external override initMarketTrendLock {
         if (isIntervalComplete()) {
-            runMarketTrendIntervalJob();
             //    todo: check contract maturity & liquidate
+
+            runMarketTrendIntervalJob();
+
             //    todo: run self balancing / use fees collected to add to LPs
         }
     }
@@ -419,55 +420,61 @@ contract MarketTrend is KeeperCompatibleInterface {
         MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
         address[1] memory tokens = getSupportedLendingPoolTokens();
         for (uint256 i = 0; i < tokens.length; i++) {
-            uint256 balance = ss.buyBackPool[tokens[i]];
+            uint256 accruedInterest = ss.buyBackPools[tokens[i]].accruedInterest;
 
-//            TODO:
+            // 1. withdraw amount
+            AaveLPManager(address(this)).withdrawFromAave(tokens[i], accruedInterest);
 
-//            // 1. withdraw amount
-//            AaveLPManager(address(this)).withdrawFromAave(tokens[i], balance);
-//
-//            // 2. swap to TUFF
-//            address inputToken = tokens[i];
-//            uint256 poolAFee = 3000;
-//            address intermediateToken = WETH9;
-//            uint256 poolBFee = 3000;
-//            address outputToken = address(this); // tuff address?
-//            uint256 amountIn = balance;
-//
-//            uint256 amountOut = UniswapSwapper(address(this)).swapExactInputMultihop(
-//                inputToken,
-//                poolAFee,
-//                intermediateToken,
-//                poolBFee,
-//                outputToken,
-//                amountIn
-//            );
-//
-//            // 3. burn TUFF
-//            TuffToken(address(this)).burn(address(this), amountOut);
-//
-//            // 4. set buy back pools to 0
-//            ss.buyBackPool[tokens[i]] = 0;
+            // 2. swap to TUFF
+            address inputToken = tokens[i];
+            uint256 poolAFee = 3000;
+            address intermediateToken = WETH9;
+            uint256 poolBFee = 3000;
+            address outputToken = address(this);
+            uint256 amountIn = accruedInterest;
+
+            uint256 amountOut = UniswapSwapper(address(this)).swapExactInputMultihop(
+                inputToken,
+                poolAFee,
+                intermediateToken,
+                poolBFee,
+                outputToken,
+                amountIn
+            );
+
+            // 3. burn TUFF
+            TuffToken(address(this)).burn(address(this), amountOut);
+
+            // 4. set buy back pools to 0
+            ss.buyBackPools[tokens[i]].accruedInterest = 0;
         }
     }
 
     function addAccruedInterestToBuyBackPool() private initMarketTrendLock {
         MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
         address[1] memory tokens = getSupportedLendingPoolTokens();
+
         for (uint256 i = 0; i < tokens.length; i++) {
-            uint256 balance = IERC20(tokens[i]).balanceOf(address(this));
-            ss.buyBackPool[tokens[i]] += balance;
+
+            uint256 newBalance = IERC20(tokens[i]).balanceOf(address(this));
+            uint256 lastBalance = ss.buyBackPools[tokens[i]].lastBalance;
+
+            if (lastBalance == 0) {
+                ss.buyBackPools[tokens[i]].lastBalance = newBalance;
+                continue;
+            }
+
+            ss.buyBackPools[tokens[i]].lastBalance = newBalance;
+            uint256 newAccruedInterest = newBalance - lastBalance;
+
+            if (newAccruedInterest > 0) {
+                ss.buyBackPools[tokens[i]].accruedInterest += newAccruedInterest;
+            }
+
         }
     }
 
-    //    todo: needed? - when we earn aTokens, do we also earn the underlying asset which is added right to the pool?
-    function depositAccruedInterestToLendingPools()
-        private
-        initMarketTrendLock
-    {
-    }
-
-    //    todo: revert - temp
+    //    todo: revert - temp. will be a function on AaveLPManager. needs underlying asset address and aToken address
     function getSupportedLendingPoolTokens()
         private
         view

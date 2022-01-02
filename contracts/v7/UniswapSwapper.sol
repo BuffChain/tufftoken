@@ -23,7 +23,8 @@ contract UniswapSwapper {
     }
 
     function isUniswapSwapperInit() public view returns (bool) {
-        UniswapSwapperLib.StateStorage storage ss = UniswapSwapperLib.getState();
+        UniswapSwapperLib.StateStorage storage ss = UniswapSwapperLib
+            .getState();
         return ss.isInit;
     }
 
@@ -41,7 +42,8 @@ contract UniswapSwapper {
             )
         );
 
-        UniswapSwapperLib.StateStorage storage ss = UniswapSwapperLib.getState();
+        UniswapSwapperLib.StateStorage storage ss = UniswapSwapperLib
+            .getState();
 
         ss.swapRouter = _swapRouter;
 
@@ -57,7 +59,8 @@ contract UniswapSwapper {
         address outputToken,
         uint256 amountIn
     ) external returns (uint256 amountOut) {
-        UniswapSwapperLib.StateStorage storage ss = UniswapSwapperLib.getState();
+        UniswapSwapperLib.StateStorage storage ss = UniswapSwapperLib
+            .getState();
 
         // Transfer `amountIn` of DAI to this contract.
         TransferHelper.safeTransferFrom(
@@ -102,7 +105,8 @@ contract UniswapSwapper {
         address outputToken,
         uint256 amountIn
     ) external returns (uint256 amountOut) {
-        UniswapSwapperLib.StateStorage storage ss = UniswapSwapperLib.getState();
+        UniswapSwapperLib.StateStorage storage ss = UniswapSwapperLib
+            .getState();
 
         // msg.sender must approve this contract
 

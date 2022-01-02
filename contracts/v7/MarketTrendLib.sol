@@ -17,6 +17,11 @@ library MarketTrendLib {
         uint256 timestamp;
     }
 
+    struct BuyBackPool {
+        uint256 lastBalance;
+        uint256 accruedInterest;
+    }
+
     struct StateStorage {
         bool isInit;
         PriceConsumer priceConsumer;
@@ -42,7 +47,7 @@ library MarketTrendLib {
         uint256 interval;
         uint256 lastTimeStamp;
         uint256 lastBuyBackTimestamp;
-        mapping(address => uint256) buyBackPool;
+        mapping(address => BuyBackPool) buyBackPools;
     }
 
     function getState()
