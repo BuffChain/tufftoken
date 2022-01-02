@@ -7,7 +7,12 @@ import {GovernanceLib} from "./GovernanceLib.sol";
 
 contract Governance {
     modifier governanceInitLock() {
-        require(isGovernanceInit(), string(abi.encodePacked(GovernanceLib.NAMESPACE, ": ", "UNINITIALIZED")));
+        require(
+            isGovernanceInit(),
+            string(
+                abi.encodePacked(GovernanceLib.NAMESPACE, ": ", "UNINITIALIZED")
+            )
+        );
         _;
     }
 
@@ -17,7 +22,16 @@ contract Governance {
     //Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
     // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
     function initGovernance() public {
-        require(!isGovernanceInit(), string(abi.encodePacked(GovernanceLib.NAMESPACE, ": ", "ALREADY_INITIALIZED")));
+        require(
+            !isGovernanceInit(),
+            string(
+                abi.encodePacked(
+                    GovernanceLib.NAMESPACE,
+                    ": ",
+                    "ALREADY_INITIALIZED"
+                )
+            )
+        );
 
         GovernanceLib.StateStorage storage ss = GovernanceLib.getState();
 
@@ -47,51 +61,89 @@ contract Governance {
         election.electionEnd = _electionEnd;
     }
 
-    function endElection(uint256 electionIndex) public governanceInitLock returns (bool, uint256, uint256) {
+    function endElection(uint256 electionIndex)
+        public
+        governanceInitLock
+        returns (
+            bool,
+            uint256,
+            uint256
+        )
+    {
         GovernanceLib.StateStorage storage ss = GovernanceLib.getState();
 
-        require(block.timestamp > ss.elections[electionIndex].electionEnd, "Cannot end before allotted time.");
-        require(!ss.elections[electionIndex].ended, "Election has already been ended.");
+        require(
+            block.timestamp > ss.elections[electionIndex].electionEnd,
+            "Cannot end before allotted time."
+        );
+        require(
+            !ss.elections[electionIndex].ended,
+            "Election has already been ended."
+        );
 
         ss.elections[electionIndex].ended = true;
 
         return isProposalSuccess(electionIndex);
     }
 
-    function vote(uint256 electionIndex, bool approve) public virtual governanceInitLock returns (bool) {
+    function vote(uint256 electionIndex, bool approve)
+        public
+        virtual
+        governanceInitLock
+        returns (bool)
+    {
         GovernanceLib.StateStorage storage ss = GovernanceLib.getState();
 
-        require(block.timestamp < ss.elections[electionIndex].electionEnd, "Cannot vote after election has ended.");
-        require(!ss.elections[electionIndex].voters[msg.sender].voted, "Cannot vote twice.");
+        require(
+            block.timestamp < ss.elections[electionIndex].electionEnd,
+            "Cannot vote after election has ended."
+        );
+        require(
+            !ss.elections[electionIndex].voters[msg.sender].voted,
+            "Cannot vote twice."
+        );
         require(_isHolder(msg.sender), "Must be a holder to vote.");
 
         ss.elections[electionIndex].voters[msg.sender].voted = true;
         ss.elections[electionIndex].voters[msg.sender].approve = approve;
 
-        ss.elections[electionIndex].votes[approve] = ss.elections[electionIndex].votes[approve].add(1);
+        ss.elections[electionIndex].votes[approve] = ss
+            .elections[electionIndex]
+            .votes[approve]
+            .add(1);
         return true;
     }
 
-    function getElectionLength() public view governanceInitLock returns (uint256) {
+    function getElectionLength()
+        public
+        view
+        governanceInitLock
+        returns (uint256)
+    {
         GovernanceLib.StateStorage storage ss = GovernanceLib.getState();
         return ss.elections.length;
     }
 
-    function getElectionMetaData(uint256 electionIndex) public view governanceInitLock returns (
-        string memory,
-        string memory,
-        string memory,
-        uint256,
-        bool
-    ) {
+    function getElectionMetaData(uint256 electionIndex)
+        public
+        view
+        governanceInitLock
+        returns (
+            string memory,
+            string memory,
+            string memory,
+            uint256,
+            bool
+        )
+    {
         GovernanceLib.StateStorage storage ss = GovernanceLib.getState();
 
         return (
-        ss.elections[electionIndex].name,
-        ss.elections[electionIndex].description,
-        ss.elections[electionIndex].author,
-        ss.elections[electionIndex].electionEnd,
-        ss.elections[electionIndex].ended
+            ss.elections[electionIndex].name,
+            ss.elections[electionIndex].description,
+            ss.elections[electionIndex].author,
+            ss.elections[electionIndex].electionEnd,
+            ss.elections[electionIndex].ended
         );
     }
 
@@ -99,30 +151,63 @@ contract Governance {
         return IERC20(address(this)).balanceOf(sender) > 0;
     }
 
-    function getVoteCounts(uint256 electionIndex) public view virtual governanceInitLock returns (uint256, uint256) {
+    function getVoteCounts(uint256 electionIndex)
+        public
+        view
+        virtual
+        governanceInitLock
+        returns (uint256, uint256)
+    {
         GovernanceLib.StateStorage storage ss = GovernanceLib.getState();
-        return (ss.elections[electionIndex].votes[true], ss.elections[electionIndex].votes[false]);
+        return (
+            ss.elections[electionIndex].votes[true],
+            ss.elections[electionIndex].votes[false]
+        );
     }
 
-    function getRemainingTime(uint256 electionIndex) public view virtual governanceInitLock returns (uint256) {
+    function getRemainingTime(uint256 electionIndex)
+        public
+        view
+        virtual
+        governanceInitLock
+        returns (uint256)
+    {
         GovernanceLib.StateStorage storage ss = GovernanceLib.getState();
         return ss.elections[electionIndex].electionEnd.sub(block.timestamp);
     }
 
     // proposals will only fail with 2/3 veto
-    function isProposalSuccess(uint256 electionIndex) public view virtual governanceInitLock returns (bool, uint256, uint256) {
+    function isProposalSuccess(uint256 electionIndex)
+        public
+        view
+        virtual
+        governanceInitLock
+        returns (
+            bool,
+            uint256,
+            uint256
+        )
+    {
         GovernanceLib.StateStorage storage ss = GovernanceLib.getState();
 
         uint256 vetoCount = ss.elections[electionIndex].votes[false];
 
         if (vetoCount == 0) {
-            return (true, ss.elections[electionIndex].votes[true], ss.elections[electionIndex].votes[false]);
+            return (
+                true,
+                ss.elections[electionIndex].votes[true],
+                ss.elections[electionIndex].votes[false]
+            );
         }
 
         return (
-        ss.elections[electionIndex].votes[true].div(ss.elections[electionIndex].votes[false]).mul(100) > 33,
-        ss.elections[electionIndex].votes[true],
-        ss.elections[electionIndex].votes[false]
+            ss
+                .elections[electionIndex]
+                .votes[true]
+                .div(ss.elections[electionIndex].votes[false])
+                .mul(100) > 33,
+            ss.elections[electionIndex].votes[true],
+            ss.elections[electionIndex].votes[false]
         );
     }
 }

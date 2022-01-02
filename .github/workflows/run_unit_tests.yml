@@ -1,0 +1,27 @@
+name: Run Unit Tests
+
+on:
+
+  pull_request:
+    branches: [ main ]
+    types: [ opened, synchronize ]
+
+jobs:
+
+  RunUnitTests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Node
+        uses: actions/setup-node@v1
+        with:
+          node-version: '16'
+      - uses: borales/actions-yarn@v2.3.0
+        with:
+          cmd: install # will run `yarn install` command
+      - name: Run tests
+        run: |
+          ALCHEMAPI_KEY=${{ secrets.ALCHEMAPI_KEY }} \
+          INFURA_URL=${{ secrets.INFURA_URL }} \
+          ETH_ACCOUNT_PRIV_KEY=${{ secrets.ETH_ACCOUNT_PRIV_KEY }} \
+          yarn hardhat test
