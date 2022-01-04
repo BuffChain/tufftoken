@@ -168,8 +168,7 @@ describe('MarketTrend', function () {
     });
 
 
-    it('should add accrued interest', async () => {
-
+    async function assertInterestAccrued() {
         let [lastBalance, accruedInterest] = await tuffTokenDiamond.getBuyBackPool(consts("ADAI_ADDR"));
 
         expect(lastBalance).to.equal(0, "should have 0 balance.");
@@ -204,6 +203,27 @@ describe('MarketTrend', function () {
         [lastBalance, accruedInterest] = await tuffTokenDiamond.getBuyBackPool(consts("ADAI_ADDR"));
         expect(lastBalance).to.equal(startingQtyInDAI + interestQtyInDAI, "unexpected balance after interest earned.");
         expect(accruedInterest).to.equal(interestQtyInDAI, "should have interest.");
+    }
+
+    it('should add accrued interest', async () => {
+
+        await assertInterestAccrued();
+
+    });
+
+    it('should do buy back', async () => {
+
+        const expectedSupply = 1000000000 * 10 ** 9
+
+        const startingSupply = parseFloat(await tuffTokenDiamond.totalSupply());
+        expect(startingSupply).to.equal(expectedSupply, "incorrect totalSupply");
+
+        await assertInterestAccrued();
+
+        await tuffTokenDiamond.doBuyBack();
+
+        const endingSupply = parseFloat(await tuffTokenDiamond.totalSupply());
+        expect(endingSupply).to.equal(expectedSupply, "incorrect totalSupply");
 
     });
 

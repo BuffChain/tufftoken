@@ -431,7 +431,7 @@ contract MarketTrend is KeeperCompatibleInterface {
                         accruedInterest
                     )
                 );
-                require(withdrawSuccess);
+                require(withdrawSuccess, "TUFF: AaveLPManager withdraw failed");
 
                 // 2. swap to TUFF
                 (bool swapSuccess, bytes memory returnData) = address(this)
@@ -445,7 +445,7 @@ contract MarketTrend is KeeperCompatibleInterface {
                             accruedInterest
                         )
                     );
-                require(swapSuccess);
+                require(swapSuccess, "TUFF: Uniswap multihop swap failed");
 
                 uint256 amountOut = abi.decode(returnData, (uint256));
 
@@ -457,7 +457,7 @@ contract MarketTrend is KeeperCompatibleInterface {
                         amountOut
                     )
                 );
-                require(burnSuccess);
+                require(burnSuccess, "TUFF: token burn failed");
 
                 // 4. set buy back pool interest to 0
                 ss.buyBackPools[aToken].accruedInterest = 0;
