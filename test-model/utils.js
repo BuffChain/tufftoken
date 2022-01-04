@@ -11,7 +11,7 @@ const fs = require("fs/promises");
  * @param blockNumber: The block number to get the list of txs from
  * @returns {Promise<void>}
  */
-async function sendTxsForBlock(blockNumber) {
+async function sendTxsFromBlock(blockNumber) {
     const blockDataPath = path.join(process.cwd(), "block-data", `${blockNumber}.json`);
 
     let txs = []
@@ -36,7 +36,7 @@ async function sendTxsForBlock(blockNumber) {
  * @param endBlockNumber: End of the block range you want to process
  * @returns {Promise<void>}
  */
-async function sendTxsForBlocks(startBlockNumber, endBlockNumber) {
+async function sendTxsFromBlocks(startBlockNumber, endBlockNumber) {
     if (startBlockNumber >= endBlockNumber) {
         throw `startBlockNumber: [${startBlockNumber}] is lge than endBlockNumber: [${endBlockNumber}]`;
     }
@@ -59,6 +59,6 @@ async function mineBlock() {
     await hre.ethers.provider.send('evm_mine');
 }
 
-module.exports.sendTxsForBlock = sendTxsForBlock;
-module.exports.sendTxsForBlocks = sendTxsForBlocks;
+module.exports.sendTxsFromBlock = sendTxsFromBlock;
+module.exports.sendTxsFromBlocks = sendTxsFromBlocks;
 module.exports.mineBlock = mineBlock;

@@ -28,7 +28,7 @@ describe('AaveLPManager', function () {
         [, , ...accounts] = await hre.ethers.getSigners();
 
         await testModelUtils.mineBlock();
-        await testModelUtils.sendTxsForBlocks(13302360, 13302370);
+        await testModelUtils.sendTxsFromBlocks(13302360, 13302370);
     });
 
     beforeEach(async function () {
