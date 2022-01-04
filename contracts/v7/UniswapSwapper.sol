@@ -30,7 +30,9 @@ contract UniswapSwapper {
 
     //Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
     // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
-    function initUniswapSwapper(ISwapRouter _swapRouter) public {
+    function initUniswapSwapper(ISwapRouter _swapRouter, address WETHAddress)
+        public
+    {
         require(
             !isUniswapSwapperInit(),
             string(
@@ -46,6 +48,7 @@ contract UniswapSwapper {
             .getState();
 
         ss.swapRouter = _swapRouter;
+        ss.WETHAddress = WETHAddress;
 
         ss.isInit = true;
     }
@@ -54,7 +57,6 @@ contract UniswapSwapper {
     function swapExactInputMultihop(
         address inputToken,
         uint256 poolAFee,
-        address intermediateToken,
         uint256 poolBFee,
         address outputToken,
         uint256 amountIn
@@ -85,7 +87,7 @@ contract UniswapSwapper {
                 path: abi.encodePacked(
                     inputToken,
                     poolAFee,
-                    intermediateToken,
+                    ss.WETHAddress,
                     poolBFee,
                     outputToken
                 ),
@@ -99,6 +101,7 @@ contract UniswapSwapper {
         amountOut = ss.swapRouter.exactInput(params);
     }
 
+    //    based on https://docs.uniswap.org/protocol/guides/swaps/single-swaps
     function swapExactInputSingle(
         address inputToken,
         uint24 poolFee,

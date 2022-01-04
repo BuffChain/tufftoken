@@ -412,86 +412,107 @@ contract MarketTrend is KeeperCompatibleInterface {
         }
     }
 
-    function doBuyBack() private initMarketTrendLock {
+    function doBuyBack() public initMarketTrendLock {
         MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
-        address[1] memory tokens = getSupportedLendingPoolTokens();
+        MarketTrendLib.LendingPoolToken[1]
+            memory tokens = getSupportedLendingPoolTokens();
         for (uint256 i = 0; i < tokens.length; i++) {
-            uint256 accruedInterest = ss
-                .buyBackPools[tokens[i]]
-                .accruedInterest;
+            address token = tokens[i].token;
+            address aToken = tokens[i].aToken;
 
-            // 1. withdraw amount
-            (bool withdrawSuccess, ) = address(this).call(
-                abi.encodeWithSignature(
-                    "withdrawFromAave(address, uint256)",
-                    tokens[i],
-                    accruedInterest
-                )
-            );
-            require(withdrawSuccess);
+            uint256 accruedInterest = ss.buyBackPools[aToken].accruedInterest;
 
-            // 2. swap to TUFF
-            (bool swapSuccess, bytes memory returnData) = address(this).call(
-                abi.encodeWithSignature(
-                    "swapExactInputMultihop(address, uint256, address, uint256, address, uint256)",
-                    tokens[i],
-                    3000,
-                    0xd0A1E359811322d97991E03f863a0C30C2cF029C, // todo: kovan WETH, change to var,
-                    3000,
-                    address(this),
-                    accruedInterest
-                )
-            );
-            require(swapSuccess);
+            if (accruedInterest > 0) {
+                // 1. withdraw amount
+                (bool withdrawSuccess, ) = address(this).call(
+                    abi.encodeWithSignature(
+                        "withdrawFromAave(address, uint256)",
+                        token,
+                        accruedInterest
+                    )
+                );
+                require(withdrawSuccess);
 
-            uint256 amountOut = abi.decode(returnData, (uint256));
+                // 2. swap to TUFF
+                (bool swapSuccess, bytes memory returnData) = address(this)
+                    .call(
+                        abi.encodeWithSignature(
+                            "swapExactInputMultihop(address, uint256, uint256, address, uint256)",
+                            token,
+                            3000,
+                            3000,
+                            address(this),
+                            accruedInterest
+                        )
+                    );
+                require(swapSuccess);
 
-            // 3. burn TUFF
-            (bool burnSuccess, ) = address(this).call(
-                abi.encodeWithSignature(
-                    "burn(address, uint256)",
-                    address(this),
-                    amountOut
-                )
-            );
-            require(burnSuccess);
+                uint256 amountOut = abi.decode(returnData, (uint256));
 
-            // 4. set buy back pools to 0
-            ss.buyBackPools[tokens[i]].accruedInterest = 0;
+                // 3. burn TUFF
+                (bool burnSuccess, ) = address(this).call(
+                    abi.encodeWithSignature(
+                        "burn(address, uint256)",
+                        address(this),
+                        amountOut
+                    )
+                );
+                require(burnSuccess);
+
+                // 4. set buy back pool interest to 0
+                ss.buyBackPools[aToken].accruedInterest = 0;
+            }
         }
     }
 
-    function addAccruedInterestToBuyBackPool() private initMarketTrendLock {
+    function addAccruedInterestToBuyBackPool() public initMarketTrendLock {
         MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
-        address[1] memory tokens = getSupportedLendingPoolTokens();
+        MarketTrendLib.LendingPoolToken[1]
+            memory tokens = getSupportedLendingPoolTokens();
 
         for (uint256 i = 0; i < tokens.length; i++) {
-            uint256 newBalance = IERC20(tokens[i]).balanceOf(address(this));
-            uint256 lastBalance = ss.buyBackPools[tokens[i]].lastBalance;
+            address aToken = tokens[i].aToken;
+            uint256 newBalance = IERC20(aToken).balanceOf(address(this));
+            uint256 lastBalance = ss.buyBackPools[aToken].lastBalance;
 
             if (lastBalance == 0) {
-                ss.buyBackPools[tokens[i]].lastBalance = newBalance;
+                //                initialize buy back pool for given asset, accrued interest will be calculated on next job execution
+                ss.buyBackPools[aToken].lastBalance = newBalance;
                 continue;
             }
 
-            ss.buyBackPools[tokens[i]].lastBalance = newBalance;
+            ss.buyBackPools[aToken].lastBalance = newBalance;
             uint256 newAccruedInterest = newBalance - lastBalance;
 
             if (newAccruedInterest > 0) {
-                ss
-                    .buyBackPools[tokens[i]]
-                    .accruedInterest += newAccruedInterest;
+                ss.buyBackPools[aToken].accruedInterest += newAccruedInterest;
             }
         }
+    }
+
+    function getBuyBackPool(address aToken)
+        public
+        view
+        initMarketTrendLock
+        returns (uint256 lastBalance, uint256 accruedInterest)
+    {
+        MarketTrendLib.StateStorage storage ss = MarketTrendLib.getState();
+        lastBalance = ss.buyBackPools[aToken].lastBalance;
+        accruedInterest = ss.buyBackPools[aToken].accruedInterest;
     }
 
     //    todo: revert - temp. will be a function on AaveLPManager. needs underlying asset address and aToken address
     function getSupportedLendingPoolTokens()
-        private
+        public
         view
         initMarketTrendLock
-        returns (address[1] memory)
+        returns (MarketTrendLib.LendingPoolToken[1] memory)
     {
-        return [address(0xdCf0aF9e59C002FA3AA091a46196b37530FD48a8)];
+        return [
+            MarketTrendLib.LendingPoolToken(
+                address(0x6B175474E89094C44Da98b954EedeAC495271d0F),
+                address(0x028171bCA77440897B824Ca71D1c56caC55b68A3)
+            )
+        ];
     }
 }

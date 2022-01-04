@@ -11,6 +11,7 @@ library UniswapSwapperLib {
     struct StateStorage {
         bool isInit;
         ISwapRouter swapRouter;
+        address WETHAddress;
     }
 
     function getState()

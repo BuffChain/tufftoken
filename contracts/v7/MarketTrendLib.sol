@@ -22,6 +22,11 @@ library MarketTrendLib {
         uint256 accruedInterest;
     }
 
+    struct LendingPoolToken {
+        address token;
+        address aToken;
+    }
+
     struct StateStorage {
         bool isInit;
         PriceConsumer priceConsumer;

@@ -22,7 +22,8 @@ module.exports = async () => {
             "ChainLinkPriceConsumer",
             "MarketTrend",
             "TokenMaturity",
-            "Governance"
+            "Governance",
+            "UniswapSwapper"
         ],
         log: true
     });
@@ -67,7 +68,7 @@ module.exports = async () => {
     }
 
     if (!await tuffTokenDiamondContract.isUniswapSwapperInit()) {
-        let initTx = await tuffTokenDiamondContract.initUniswapSwapper(consts("UNISWAP_V3_ROUTER_ADDR"));
+        let initTx = await tuffTokenDiamondContract.initUniswapSwapper(consts("UNISWAP_V3_ROUTER_ADDR"), consts("WETH9_ADDR"));
         logDeploymentTx("Initialized UniswapSwapper:", initTx);
     }
 
