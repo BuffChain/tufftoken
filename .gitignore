@@ -1,6 +1,9 @@
 # Hardhat files
-cache
-artifacts
+cache/
+artifacts/
+
+# Hardhat task files
+block-data/
 
 # Intellij
 .idea/
@@ -11,9 +14,9 @@ artifacts
 
 # NPM
 node_modules/
+package-lock.json
 
+# Secrets
 .secret
 .env
-
-package-lock.json
 /.env

@@ -60,6 +60,28 @@ versions higher than that
 - //TODO: Contract ownership?
 - //TODO: Use address(this) everywhere since the state and storage are based in the diamond contract, and facets are just used for their logic?
 
+## Testing
+
+
+## Modeling
+In a similar fashion to testing, we fork mainnet to a local hardhat network. This lets us imitate mainnet and explore 
+various scenarios given our contracts. To do this, the local network is forked at a specific block, then we deploy our 
+contracts, and finally we apply the txs found in subsequent blocks. This will model how our contract will behave given 
+the changes occurred in the mainnet enviroment.
+
+Before we can start modeling, we need the "future" tx data that we will be replaying for the local network. We have 
+created a convenient download and serializer hardhat task to handle this for you. It requires two parameters where you 
+specify the range of blocks you want to fetch. Note that the values cannot exceed the `blockNumber` configured in `hardhat.config.js`, 
+as hardhat relies on that forked, archival block data to create the local network; from which we fetch that tx data 
+from.
+```
+npm run block-data -- --start-block-number 13302360 --end-block-number 13302370
+```
+
+With the block txs downloaded, we must now configure hardhat's network to start at the appropriate block. Using the 
+example from above, we would update the `blockNumber` configured in `hardhat.config.js` to 13302359 (one less than the 
+start block number). We do this because then we will deploy the contract, and then apply the txs we just fetched.
+
 ## Deploying
 First, source your `.env` file. Then run the npm deploy script for the respective network. For example, if you are 
 deploying to `kovan`, then run `npm run deploy_kovan`. Review the logs after the deployment has finished. The addresses 

@@ -8,8 +8,6 @@ import { IERC20 } from "@openzeppelin/contracts-v6/token/ERC20/IERC20.sol";
 
 import { AaveLPManagerLib } from "./AaveLPManagerLib.sol";
 
-import "hardhat/console.sol";
-
 contract AaveLPManager is Context {
     modifier aaveInitLock() {
         require(isAaveInit(), string(abi.encodePacked(AaveLPManagerLib.NAMESPACE, ": ", "UNINITIALIZED")));
@@ -95,5 +93,10 @@ contract AaveLPManager is Context {
     function getAllAaveSupportedTokens() public view aaveInitLock returns (address[] memory) {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
         return ss.supportedTokens;
+    }
+
+    function updateAaveTokenTargetedPercentage(address tokenAddr, uint targetPercentage) public aaveInitLock {
+        AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
+        ss.tokenMetadata[tokenAddr].targetPercent = targetPercentage;
     }
 }

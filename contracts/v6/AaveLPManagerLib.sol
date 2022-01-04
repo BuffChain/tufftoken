@@ -10,8 +10,14 @@ library AaveLPManagerLib {
     struct StateStorage {
         bool isInit;
         address[] supportedTokens;
+        mapping (address => TokenMetadata) tokenMetadata;
         address lpProviderAddr;
         address lpAddr;
+    }
+
+    struct TokenMetadata {
+        uint targetPercent;
+        uint actualPercent;
     }
 
     function getState() internal pure returns (StateStorage storage stateStorage) {

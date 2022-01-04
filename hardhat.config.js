@@ -152,6 +152,39 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
     }
 });
 
+task("block-data", "Downloads and serializes tx data for a range of blocks")
+    .addParam("startBlockNumber", "Start of the block range you want to serialize")
+    .addParam("endBlockNumber", "End of the block range you want to serialize")
+    .setAction(async (taskArgs, hre) => {
+        const provider = hre.ethers.provider;
+        const blockDataPath = path.join(process.cwd(), "block-data");
+
+        const startBlockNumber = parseInt(taskArgs["startBlockNumber"]);
+        const endBlockNumber = parseInt(taskArgs["endBlockNumber"]);
+
+        if (startBlockNumber >= endBlockNumber) {
+            throw `startBlockNumber: [${startBlockNumber}] is lge than endBlockNumber: [${endBlockNumber}]`;
+        }
+
+        const forkedBlockNum = hre.network.config.forking.blockNumber;
+        if (endBlockNumber > forkedBlockNum) {
+            throw `endBlockNumber: [${endBlockNumber}] occurs after forkedBlockNum: [${forkedBlockNum}] set in 
+            hardhat.config.js. The forked network thus does not have access to block ${endBlockNumber}`;
+        }
+
+        const blockCount = endBlockNumber - startBlockNumber;
+        for (let i = 0; i < blockCount; i++) {
+            const blockNumber = startBlockNumber + i;
+            const blockData = await provider.getBlockWithTransactions(blockNumber);
+
+            const blockJsonFile = path.join(blockDataPath.toString(), `${blockNumber}.json`);
+            console.log(`Writing block's [${blockNumber}] tx data...`);
+            await fs.writeFile(blockJsonFile, JSON.stringify(blockData["transactions"]));
+        }
+
+        console.log(`Finished writing block data`);
+    });
+
 /**
  * Added this hook into the hardhat deploy plugin to automatically write log output to the corresponding network's
  * deployment folder
@@ -163,11 +196,12 @@ subtask(TASK_DEPLOY_MAIN, async (taskArgs, hre, runSuper) => {
     // Get deployedCount
     let deployedCount = 0;
     fs.readFile(manifestPath)
-        .then(function(buffer) {
+        .then(function (buffer) {
             let content = JSON.parse(buffer.toString());
             deployedCount = parseInt(content["deployedCount"]);
         })
-        .catch(function () {});
+        .catch(function () {
+        });
 
     // Run deployment
     const taskResult = await runSuper(taskArgs);

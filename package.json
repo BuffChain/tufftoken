@@ -5,6 +5,7 @@
   "scripts": {
     "clean": "hardhat clean",
     "compile": "hardhat compile",
+    "block-data": "hardhat block-data",
     "test": "hardhat test --deploy-fixture",
     "test_verbose": "npm run test -- --verbose",
     "node": "hardhat node --no-deploy",
