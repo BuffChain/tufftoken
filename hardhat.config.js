@@ -101,6 +101,7 @@ module.exports = {
                 //Feel free to update at any time. This is here to make local development and caching easier
                 blockNumber: 13302370
             },
+            timeout: 30000
 
             // This is useful to imitate mainnet block processing
             // mining: {

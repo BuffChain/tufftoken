@@ -13,8 +13,6 @@ const utils = require("./utils");
 const {consts} = require("../utils/consts");
 
 describe('AaveLPManager', function () {
-    this.timeout(5000);
-
     let owner;
     let accounts;
 

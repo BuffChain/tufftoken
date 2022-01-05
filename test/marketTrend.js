@@ -8,8 +8,6 @@ const {BN} = require("@openzeppelin/test-helpers");
 const {randomBytes} = require('crypto');
 
 describe('MarketTrend', function () {
-    this.timeout(5000);
-
     const nowTimeStamp = Math.floor(Date.now() / 1000);
 
     let owner;
