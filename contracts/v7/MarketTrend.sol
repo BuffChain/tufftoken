@@ -426,7 +426,7 @@ contract MarketTrend is KeeperCompatibleInterface {
                 // 1. withdraw amount
                 (bool withdrawSuccess, ) = address(this).call(
                     abi.encodeWithSignature(
-                        "withdrawFromAave(address, uint256)",
+                        "withdrawFromAave(address,uint256)",
                         token,
                         accruedInterest
                     )
@@ -437,7 +437,7 @@ contract MarketTrend is KeeperCompatibleInterface {
                 (bool swapSuccess, bytes memory returnData) = address(this)
                     .call(
                         abi.encodeWithSignature(
-                            "swapExactInputMultihop(address, uint256, uint256, address, uint256)",
+                            "swapExactInputMultihop(address,uint256,uint256,address,uint256)",
                             token,
                             3000,
                             3000,
@@ -452,7 +452,7 @@ contract MarketTrend is KeeperCompatibleInterface {
                 // 3. burn TUFF
                 (bool burnSuccess, ) = address(this).call(
                     abi.encodeWithSignature(
-                        "burn(address, uint256)",
+                        "burn(address,uint256)",
                         address(this),
                         amountOut
                     )
