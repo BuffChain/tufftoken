@@ -10,7 +10,7 @@ const {
 const hre = require("hardhat");
 
 const testModelUtils = require("./utils");
-const utils = require("./utils");
+const {consts} = require("../utils/consts");
 
 describe('AaveLPManager', function () {
     this.timeout(30000);
@@ -19,6 +19,7 @@ describe('AaveLPManager', function () {
     let accounts;
 
     let tuffTokenDiamond;
+    let aaveDaiIncome;
 
     before(async function () {
         const {contractOwner} = await hre.getNamedAccounts();
@@ -26,18 +27,25 @@ describe('AaveLPManager', function () {
 
         //Per `hardhat.config.js`, the 0 and 1 index accounts are named accounts. They are reserved for deployment uses
         [, , ...accounts] = await hre.ethers.getSigners();
-
-        await testModelUtils.mineBlock();
-        await testModelUtils.sendTxsFromBlocks(13302360, 13302370);
     });
 
     beforeEach(async function () {
         const {TuffTokenDiamond} = await hre.deployments.fixture();
         tuffTokenDiamond = await hre.ethers.getContractAt(TuffTokenDiamond.abi, TuffTokenDiamond.address, owner);
+        aaveDaiIncome = await tuffTokenDiamond.getAaveIncome(consts("DAI_ADDR"));
+        console.log(aaveDaiIncome.toString());
     });
 
-    it('should be initialized', async () => {
-        const isAaveInit = await tuffTokenDiamond.isAaveInit();
-        expect(isAaveInit).to.be.true;
+    it('should have increased income', async () => {
+        await testModelUtils.mineBlock();
+        await testModelUtils.sendTxsFromBlocks(13302360, 13302370);
+
+        const updateAaveDaiIncome = await tuffTokenDiamond.getAaveIncome(consts("DAI_ADDR"));
+        console.log(updateAaveDaiIncome.toString());
+
+        const actualIncomeDiff = updateAaveDaiIncome.sub(aaveDaiIncome);
+        const expectedDiff = hre.ethers.BigNumber.from("15492183832529379515");
+        console.log(`Expected diff is ${hre.ethers.utils.formatEther(expectedDiff)} ether`);
+        expect(actualIncomeDiff).to.be.eq(expectedDiff);
     });
 });

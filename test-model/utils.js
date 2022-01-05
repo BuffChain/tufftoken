@@ -45,7 +45,7 @@ async function sendTxsFromBlocks(startBlockNumber, endBlockNumber) {
     for (let i = 0; i < blockCount; i++) {
         const blockNumber = startBlockNumber + i;
         console.log(`Replaying all transactions for block [${blockNumber}]`);
-        await sendTxsForBlock(blockNumber);
+        await sendTxsFromBlock(blockNumber);
     }
 
     console.log(`Finished writing block data`);

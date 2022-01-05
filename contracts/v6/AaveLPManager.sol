@@ -99,4 +99,8 @@ contract AaveLPManager is Context {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
         ss.tokenMetadata[tokenAddr].targetPercent = targetPercentage;
     }
+
+    function getAaveIncome(address tokenAddr) public view aaveInitLock returns (uint256) {
+        return LendingPool(getAaveLPAddr()).getReserveNormalizedIncome(tokenAddr);
+    }
 }
