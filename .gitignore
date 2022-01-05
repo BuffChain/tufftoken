@@ -20,3 +20,5 @@ package-lock.json
 .secret
 .env
 /.env
+
+yarn.lock
