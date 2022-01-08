@@ -32,12 +32,12 @@ describe('AaveLPManager', function () {
         tuffTokenDiamond = await hre.ethers.getContractAt(TuffTokenDiamond.abi, TuffTokenDiamond.address, owner);
         aaveDaiIncome = await tuffTokenDiamond.getAaveIncome(consts("DAI_ADDR"));
         console.log(aaveDaiIncome.toString());
+
+        await testModelUtils.mineBlock();
+        await testModelUtils.sendTxsFromBlocks(13302360, 13302370);
     });
 
     it('should have increased income', async () => {
-        await testModelUtils.mineBlock();
-        await testModelUtils.sendTxsFromBlocks(13302360, 13302370);
-
         const updateAaveDaiIncome = await tuffTokenDiamond.getAaveIncome(consts("DAI_ADDR"));
         console.log(updateAaveDaiIncome.toString());
 

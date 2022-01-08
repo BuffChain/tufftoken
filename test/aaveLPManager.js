@@ -57,13 +57,13 @@ describe('AaveLPManager', function () {
     it('should add a token', async () => {
         let supportedTokens = await tuffTokenDiamond.getAllAaveSupportedTokens();
         expect(supportedTokens.length).to.equal(3);
-        expect(supportedTokens).to.not.contain(consts("ADAI_ADDR"));
+        expect(supportedTokens).to.not.contain(consts("CRV_ADDR"));
 
-        await tuffTokenDiamond.addAaveSupportedToken(consts("ADAI_ADDR"));
+        await tuffTokenDiamond.addAaveSupportedToken(consts("CRV_ADDR"), 2500);
 
         supportedTokens = await tuffTokenDiamond.getAllAaveSupportedTokens();
         expect(supportedTokens.length).to.equal(4);
-        expect(supportedTokens).to.contain(consts("ADAI_ADDR"));
+        expect(supportedTokens).to.contain(consts("CRV_ADDR"));
     });
 
     it('should remove a token', async () => {
@@ -78,9 +78,9 @@ describe('AaveLPManager', function () {
         expect(supportedTokens).to.not.contain(consts("DAI_ADDR"));
     });
 
-    it('reverts if adding a non-ERC20 token', async () => {
-        await expectRevert(tuffTokenDiamond.addAaveSupportedToken(consts("UNISWAP_V3_ROUTER_ADDR")),
-            "The tokenAddr supplied is not ERC20 compatible");
+    it('reverts if adding a unsupported aave token', async () => {
+        await expectRevert(tuffTokenDiamond.addAaveSupportedToken(consts("UNISWAP_V3_ROUTER_ADDR"), 2500),
+            "The tokenAddress provided is not supported by Aave");
     });
 
     it("should deposit dai into aave from TuffToken's wallet", async () => {
@@ -110,6 +110,6 @@ describe('AaveLPManager', function () {
 
     it("revert if token deposited is not supported", async () => {
         await expectRevert(tuffTokenDiamond.depositToAave(consts("WETH9_ADDR"), 0),
-            "This token is not currently supported");
+            "This token is currently not supported");
     });
 });

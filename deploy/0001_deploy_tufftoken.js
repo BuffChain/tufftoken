@@ -35,10 +35,19 @@ module.exports = async () => {
     }
 
     if (!await tuffTokenDiamondContract.isAaveInit()) {
-        let initTx = await tuffTokenDiamondContract.initAaveLPManager(consts("AAVE_LENDINGPOOL_PROVIDER_ADDR"), [
-            consts("DAI_ADDR"), consts("USDC_ADDR"), consts("USDT_ADDR")
-        ]);
-        logDeploymentTx("Initialized AaveLPManager:", initTx);
+        let tx = await tuffTokenDiamondContract.initAaveLPManager(
+            consts("AAVE_LENDINGPOOL_PROVIDER_ADDR"),  consts("AAVE_PROTOCOL_DATA_PROVIDER_ADDR")
+        );
+        logDeploymentTx("Initialized AaveLPManager:", tx);
+
+        tx = await tuffTokenDiamondContract.addAaveSupportedToken(consts("DAI_ADDR"), 5000);
+        logDeploymentTx("Added DAI support to AaveLPManager:", tx);
+
+        tx = await tuffTokenDiamondContract.addAaveSupportedToken(consts("USDC_ADDR"), 2500);
+        logDeploymentTx("Added USDC support to AaveLPManager:", tx);
+
+        tx = await tuffTokenDiamondContract.addAaveSupportedToken(consts("USDT_ADDR"), 2500);
+        logDeploymentTx("Added USDT support to AaveLPManager:", tx);
     }
 
     if (!await tuffTokenDiamondContract.isUniswapPriceConsumerInit()) {

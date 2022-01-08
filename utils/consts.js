@@ -11,10 +11,12 @@ let constsMap = {
         DAI_ADDR: "0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa",
         USDC_ADDR: "0xb7a4F3E9097C08dA09517b5aB877F7a917224ede",
         USDT_ADDR: "0x07de306FF27a2B630B1141956844eB1552B956B5",
+        CRV_ADDR: "",
         ADAI_ADDR: "0xdcf0af9e59c002fa3aa091a46196b37530fd48a8",
 
         // Aave (https://docs.aave.com/developers/deployed-contracts/deployed-contracts)
         AAVE_LENDINGPOOL_PROVIDER_ADDR: "0x88757f2f99175387aB4C6a4b3067c77A695b0349",
+        AAVE_PROTOCOL_DATA_PROVIDER_ADDR: "0x3c73a5e5785cac854d468f727c606c07488a29d6",
 
         // Uniswap (https://docs.uniswap.org/protocol/reference/deployments)
         UNISWAP_V3_ROUTER_ADDR: "0xE592427A0AEce92De3Edee1F18E0157C05861564",
@@ -31,10 +33,12 @@ let constsMap = {
         DAI_ADDR: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
         USDC_ADDR: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
         USDT_ADDR: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        CRV_ADDR: "0xD533a949740bb3306d119CC777fa900bA034cd52",
         ADAI_ADDR: "0x028171bCA77440897B824Ca71D1c56caC55b68A3",
 
         // Aave (https://docs.aave.com/developers/deployed-contracts/deployed-contracts)
         AAVE_LENDINGPOOL_PROVIDER_ADDR: "0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5",
+        AAVE_PROTOCOL_DATA_PROVIDER_ADDR: "0x057835Ad21a177dbdd3090bB1CAE03EaCF78Fc6d",
 
         // Uniswap (https://docs.uniswap.org/protocol/reference/deployments)
         UNISWAP_V3_ROUTER_ADDR: "0xE592427A0AEce92De3Edee1F18E0157C05861564",

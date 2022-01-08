@@ -4,6 +4,7 @@ pragma solidity ^0.6.0;
 import {Context} from "@openzeppelin/contracts-v6/utils/Context.sol";
 import {LendingPool} from "@aave/protocol-v2/contracts/protocol/lendingpool/LendingPool.sol";
 import {LendingPoolAddressesProvider} from "@aave/protocol-v2/contracts/protocol/configuration/LendingPoolAddressesProvider.sol";
+import {AaveProtocolDataProvider} from "@aave/protocol-v2/contracts/misc/AaveProtocolDataProvider.sol";
 import {IERC20} from "@openzeppelin/contracts-v6/token/ERC20/IERC20.sol";
 
 import {AaveLPManagerLib} from "./AaveLPManagerLib.sol";
@@ -27,7 +28,7 @@ contract AaveLPManager is Context {
     // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
     function initAaveLPManager(
         address _lendingPoolProviderAddr,
-        address[] memory _supportedTokens
+        address _protocolDataProviderAddr
     ) public {
         require(
             !isAaveInit(),
@@ -43,10 +44,7 @@ contract AaveLPManager is Context {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
 
         ss.lpProviderAddr = _lendingPoolProviderAddr;
-
-        for (uint256 i = 0; i < _supportedTokens.length; i++) {
-            addAaveSupportedToken(_supportedTokens[i]);
-        }
+        ss.protocolDataProviderAddr = _protocolDataProviderAddr;
 
         ss.isInit = true;
     }
@@ -73,7 +71,7 @@ contract AaveLPManager is Context {
                 abi.encodePacked(
                     AaveLPManagerLib.NAMESPACE,
                     ": ",
-                    "This token is not currently supported"
+                    "This token is currently not supported"
                 )
             )
         );
@@ -108,17 +106,17 @@ contract AaveLPManager is Context {
         return (_isSupportedToken, _tokenIndex);
     }
 
-    function addAaveSupportedToken(address tokenAddr) public {
+    function addAaveSupportedToken(address tokenAddr, uint256 targetPercentage) public aaveInitLock {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
 
-        //Check to ensure that the token is in fact an ERC-20 token. This isn't full proof, but there is no efficient
-        // way to definitively check a contract implements all ERC-20 functions. Since balanceOf() is a view function,
-        // we use that to efficiently check if it is an ERC-20 token
-        try IERC20(tokenAddr).balanceOf(address(this)) {} catch {
-            revert("The tokenAddr supplied is not ERC20 compatible");
-        }
+        (address aTokenAddr,,) = AaveProtocolDataProvider(ss.protocolDataProviderAddr).getReserveTokensAddresses(tokenAddr);
+        require(aTokenAddr != address(0), "The tokenAddress provided is not supported by Aave");
+
+        //TODO: All targetPercentages should add up to 100%
 
         ss.supportedTokens.push(tokenAddr);
+        ss.tokenMetadata[tokenAddr].targetPercent = targetPercentage;
+        ss.tokenMetadata[tokenAddr].aToken = aTokenAddr;
     }
 
     function removeAaveSupportedToken(address tokenAddr) public aaveInitLock {
@@ -134,6 +132,8 @@ contract AaveLPManager is Context {
             ];
             ss.supportedTokens.pop();
         }
+
+        //TODO: Remove tokenMetadata as well?
     }
 
     function getAllAaveSupportedTokens()
@@ -162,5 +162,25 @@ contract AaveLPManager is Context {
     {
         return
             LendingPool(getAaveLPAddr()).getReserveNormalizedIncome(tokenAddr);
+    }
+
+    //"lite-balance"
+    //This will be called from a keeper when our fee holdings have reached a threshold. We will first need to calculate
+    // current/actual percentages, then determine which tokens are over/under-invested, and finally swap and deposit to
+    // balance the tokens based on their targetedPercentages
+    function balanceAaveLendingPoolWithTuffToken(address tokenAddr)
+        public
+        aaveInitLock
+    {
+    }
+
+    //"full-balance"
+    //This will be called from a keeper when actualPercentage deviates too far from targetPercentage. We will first
+    // need to calculate, current/actual percentages, then determine which tokens are over/under-invested, and finally
+    // swap and deposit to balance the tokens based on their targetedPercentages
+    function balanceAaveLendingPool(address tokenAddr)
+        public
+        aaveInitLock
+    {
     }
 }
