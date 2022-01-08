@@ -3,7 +3,7 @@ cache/
 artifacts/
 
 # Hardhat task files
-block-data/
+block_data/
 
 # Intellij
 .idea/

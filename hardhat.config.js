@@ -161,7 +161,7 @@ task("download_block_data", "Downloads and serializes tx data for a range of blo
     .addParam("endBlockNumber", "End of the block range you want to serialize")
     .setAction(async (taskArgs, hre) => {
         const provider = hre.ethers.provider;
-        const blockDataPath = path.join(process.cwd(), "block-data");
+        const blockDataPath = path.join(process.cwd(), "block_data");
 
         const startBlockNumber = parseInt(taskArgs["startBlockNumber"]);
         const endBlockNumber = parseInt(taskArgs["endBlockNumber"]);
