@@ -57,9 +57,22 @@ async function sendTxsFromBlocks(startBlockNumber, endBlockNumber) {
  * @returns {Promise<void>}
  */
 async function mineBlock() {
+    //TODO: Increase EVM blocktime as well?
     await hre.ethers.provider.send('evm_mine');
 }
 
-module.exports.sendTxsFromBlock = sendTxsFromBlock;
-module.exports.sendTxsFromBlocks = sendTxsFromBlocks;
-module.exports.mineBlock = mineBlock;
+/**
+ * Force hardhat to mine a block
+ * @returns {Promise<void>}
+ */
+async function simulateBlockChainActivity(startBlockNumber=13302360, endBlockNumber=13302370) {
+    await mineBlock();
+    await sendTxsFromBlocks(startBlockNumber, endBlockNumber);
+}
+
+module.exports = {
+    sendTxsFromBlock,
+    sendTxsFromBlocks,
+    mineBlock,
+    simulateBlockChainActivity
+}

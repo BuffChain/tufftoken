@@ -96,7 +96,7 @@ describe('AaveLPManager', function () {
         const startAdaiQty = await adaiContract.balanceOf(tuffTokenDiamond.address);
         expect(new BN(0)).to.be.bignumber.equal(new BN(startAdaiQty.toString()));
 
-        //Make the call to deposit Aave
+        //Make the call to deposit DAI into Aave
         await tuffTokenDiamond.depositToAave(consts("DAI_ADDR"), qtyInDAI);
 
         //Check that the account has deposited the DAI
