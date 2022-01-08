@@ -63,7 +63,7 @@ versions higher than that
 ## Testing
 
 
-## Modeling
+## Back Testing
 In a similar fashion to testing, we fork mainnet to a local hardhat network. This lets us imitate mainnet and explore 
 various scenarios given our contracts. To do this, the local network is forked at a specific block, then we deploy our 
 contracts, and finally we apply the txs found in subsequent blocks. This will model how our contract will behave given 
@@ -75,7 +75,7 @@ specify the range of blocks you want to fetch. Note that the values cannot excee
 as hardhat relies on that forked, archival block data to create the local network; from which we fetch that tx data 
 from.
 ```
-npm run block-data -- --start-block-number 13302360 --end-block-number 13302370
+npm run download_block_data -- --start-block-number 13302360 --end-block-number 13302370
 ```
 
 With the block txs downloaded, we must now configure hardhat's network to start at the appropriate block. Using the 
