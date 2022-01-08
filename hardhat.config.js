@@ -14,6 +14,9 @@ require('dotenv').config();
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
+    paths: {
+        tests: "./test/unit_tests"
+    },
     solidity: {
         compilers: [
             {
@@ -153,12 +156,12 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
     }
 });
 
-task("block-data", "Downloads and serializes tx data for a range of blocks")
+task("download_block_data", "Downloads and serializes tx data for a range of blocks")
     .addParam("startBlockNumber", "Start of the block range you want to serialize")
     .addParam("endBlockNumber", "End of the block range you want to serialize")
     .setAction(async (taskArgs, hre) => {
         const provider = hre.ethers.provider;
-        const blockDataPath = path.join(process.cwd(), "block-data");
+        const blockDataPath = path.join(process.cwd(), "block_data");
 
         const startBlockNumber = parseInt(taskArgs["startBlockNumber"]);
         const endBlockNumber = parseInt(taskArgs["endBlockNumber"]);
@@ -184,6 +187,20 @@ task("block-data", "Downloads and serializes tx data for a range of blocks")
         }
 
         console.log(`Finished writing block data`);
+    });
+
+task("test")
+    .setAction(async (taskArgs, hre, runSuper) => {
+        console.log(`Running tests within ${hre.config.paths.tests}`);
+
+        taskArgs["deployFixture"] = true;
+        return await runSuper(taskArgs);
+    });
+
+task("test:backtest")
+    .setAction(async (taskArgs, hre) => {
+        hre.config.paths.tests = path.join(path.parse(hre.config.paths.tests).dir, "back_tests");
+        return await hre.run("test");
     });
 
 /**

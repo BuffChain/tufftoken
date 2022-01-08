@@ -9,8 +9,8 @@ const {
 } = require('@openzeppelin/test-helpers');
 const hre = require("hardhat");
 
-const utils = require("./utils");
-const {consts} = require("../utils/consts");
+const utils = require("../../utils/test_utils");
+const {consts} = require("../../utils/consts");
 
 describe('AaveLPManager', function () {
     let owner;

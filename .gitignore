@@ -3,7 +3,7 @@ cache/
 artifacts/
 
 # Hardhat task files
-block-data/
+block_data/
 
 # Intellij
 .idea/
@@ -14,7 +14,6 @@ block-data/
 
 # NPM
 node_modules/
-package-lock.json
 
 # Secrets
 .secret

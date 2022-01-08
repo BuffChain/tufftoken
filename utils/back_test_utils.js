@@ -2,9 +2,10 @@
 
 const hre = require("hardhat");
 
-const testUtils = require("../test/utils");
 const path = require("path");
 const fs = require("fs/promises");
+
+const testUtils = require("./test_utils");
 
 /**
  * Deserialize the block data for a given block and send all txs from it
@@ -12,7 +13,7 @@ const fs = require("fs/promises");
  * @returns {Promise<void>}
  */
 async function sendTxsFromBlock(blockNumber) {
-    const blockDataPath = path.join(process.cwd(), "block-data", `${blockNumber}.json`);
+    const blockDataPath = path.join(process.cwd(), "block_data", `${blockNumber}.json`);
 
     let txs = []
     fs.readFile(blockDataPath)
