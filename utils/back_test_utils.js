@@ -1,8 +1,13 @@
+/*
+ * // Copyright (c) 2022.
+ * // SPDX-License-Identifier: agpl-3.0
+ */
+
 // SPDX-License-Identifier: agpl-3.0
 
 const hre = require("hardhat");
 
-const testUtils = require("../test/utils");
+const testUtils = require("./test_utils");
 const path = require("path");
 const fs = require("fs/promises");
 

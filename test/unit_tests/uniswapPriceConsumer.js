@@ -3,7 +3,7 @@
 const {expect} = require("chai");
 const hre = require("hardhat");
 
-const {consts, UNISWAP_POOL_BASE_FEE} = require("../utils/consts");
+const {consts, UNISWAP_POOL_BASE_FEE} = require("../../utils/consts");
 
 describe('UniswapPriceConsumer', function () {
 

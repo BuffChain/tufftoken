@@ -3,7 +3,7 @@
 const {expect} = require("chai");
 const hre = require("hardhat");
 
-const {CHAINLINK_PRICE_CONSUMER_ENUM, UNISWAP_PRICE_CONSUMER_ENUM} = require("../utils/consts");
+const {CHAINLINK_PRICE_CONSUMER_ENUM, UNISWAP_PRICE_CONSUMER_ENUM} = require("../../utils/consts");
 const {BN} = require("@openzeppelin/test-helpers");
 const {randomBytes} = require('crypto');
 
