@@ -1,4 +1,4 @@
-const fs = require("fs/promises");
+const fs = require("fs");
 const path = require("path");
 
 require("@nomiclabs/hardhat-waffle");
@@ -171,10 +171,10 @@ task("download_block_data", "Downloads and serializes tx data for a range of blo
         }
 
         const forkedBlockNum = hre.network.config.forking.blockNumber;
-        if (endBlockNumber > forkedBlockNum) {
-            throw `endBlockNumber: [${endBlockNumber}] occurs after forkedBlockNum: [${forkedBlockNum}] set in 
-            hardhat.config.js. The forked network thus does not have access to block ${endBlockNumber}`;
-        }
+        // if (endBlockNumber > forkedBlockNum) {
+        //     throw `endBlockNumber: [${endBlockNumber}] occurs after forkedBlockNum: [${forkedBlockNum}] set in
+        //     hardhat.config.js. The forked network thus does not have access to block ${endBlockNumber}`;
+        // }
 
         const blockCount = endBlockNumber - startBlockNumber;
         for (let i = 0; i < blockCount; i++) {
@@ -182,8 +182,12 @@ task("download_block_data", "Downloads and serializes tx data for a range of blo
             const blockData = await provider.getBlockWithTransactions(blockNumber);
 
             const blockJsonFile = path.join(blockDataPath.toString(), `${blockNumber}.json`);
-            console.log(`Writing block's [${blockNumber}] tx data...`);
-            await fs.writeFile(blockJsonFile, JSON.stringify(blockData["transactions"]));
+            fs.promises.access(blockJsonFile, fs.constants.F_OK)
+                .then(() => console.log(`${blockJsonFile} already exists. Skipping...`))
+                .catch(async function() {
+                    console.log(`Writing block's [${blockNumber}] tx data...`);
+                    await fs.promises.writeFile(blockJsonFile, JSON.stringify(blockData["transactions"]));
+                });
         }
 
         console.log(`Finished writing block data`);
@@ -198,7 +202,27 @@ task("test")
     });
 
 task("test:backtest")
+    .addOptionalParam("startBlockNumber", "Start block of the backtest, defaults to the forking block number set in " +
+        "hardhat's netowrk config")
+    .addOptionalParam("endBlockNumber", "End block of the backtest, defaults to 10 blocks after forking block number set in " +
+        "hardhat's netowrk config")
     .setAction(async (taskArgs, hre) => {
+        if (taskArgs["startBlockNumber"]) {
+            hre.config.startBlockNumber = parseInt(taskArgs["startBlockNumber"]);
+        } else {
+            hre.config.startBlockNumber = hre.network.config.forking.blockNumber;
+        }
+
+        if (taskArgs["endBlockNumber"]) {
+            hre.config.endBlockNumber = parseInt(taskArgs["endBlockNumber"]);
+        } else {
+            hre.config.endBlockNumber = hre.network.config.forking.blockNumber + 10;
+        }
+
+        if (hre.config.startBlockNumber >= hre.config.endBlockNumber) {
+            throw `startBlockNumber: [${hre.config.startBlockNumber}] is lge than endBlockNumber: [${hre.config.endBlockNumber}]`;
+        }
+
         hre.config.paths.tests = path.join(path.parse(hre.config.paths.tests).dir, "back_tests");
         return await hre.run("test");
     });
@@ -213,7 +237,7 @@ subtask(TASK_DEPLOY_MAIN, async (taskArgs, hre, runSuper) => {
 
     // Get deployedCount
     let deployedCount = 0;
-    fs.readFile(manifestPath)
+    fs.promises.readFile(manifestPath)
         .then(function (buffer) {
             let content = JSON.parse(buffer.toString());
             deployedCount = parseInt(content["deployedCount"]);
@@ -229,7 +253,7 @@ subtask(TASK_DEPLOY_MAIN, async (taskArgs, hre, runSuper) => {
         let content = JSON.stringify({
             "deployedCount": ++deployedCount
         });
-        await fs.writeFile(manifestPath, content);
+        await fs.promises.writeFile(manifestPath, content);
     }
 
     return taskResult;
