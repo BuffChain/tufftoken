@@ -5,8 +5,9 @@
   "scripts": {
     "clean": "hardhat clean",
     "compile": "hardhat compile",
-    "test": "hardhat test --deploy-fixture",
-    "test_verbose": "npm run test -- --verbose",
+    "test": "hardhat test",
+    "download_block_data": "hardhat download_block_data",
+    "back_test": "hardhat test:backtest",
     "node": "hardhat node --no-deploy",
     "deploy_hardhat": "hardhat deploy",
     "deploy_kovan": "hardhat --network kovan deploy && hardhat --network kovan etherscan-verify",

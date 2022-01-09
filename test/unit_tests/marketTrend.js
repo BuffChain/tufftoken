@@ -3,13 +3,11 @@
 const {expect} = require("chai");
 const hre = require("hardhat");
 
-const {CHAINLINK_PRICE_CONSUMER_ENUM, UNISWAP_PRICE_CONSUMER_ENUM} = require("../utils/consts");
+const {CHAINLINK_PRICE_CONSUMER_ENUM, UNISWAP_PRICE_CONSUMER_ENUM} = require("../../utils/consts");
 const {BN} = require("@openzeppelin/test-helpers");
 const {randomBytes} = require('crypto');
 
 describe('MarketTrend', function () {
-    this.timeout(5000);
-
     const nowTimeStamp = Math.floor(Date.now() / 1000);
 
     let owner;

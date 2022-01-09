@@ -43,7 +43,10 @@ contract AaveLPManager is Context {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
 
         ss.lpProviderAddr = _lendingPoolProviderAddr;
-        ss.supportedTokens = _supportedTokens;
+
+        for (uint256 i = 0; i < _supportedTokens.length; i++) {
+            addAaveSupportedToken(_supportedTokens[i]);
+        }
 
         ss.isInit = true;
     }
@@ -63,19 +66,16 @@ contract AaveLPManager is Context {
         public
         aaveInitLock
     {
-        AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
-
-        //TODO: Make address to bool mapping
-        bool _isSupportedToken = false;
-        for (uint256 i = 0; i < ss.supportedTokens.length; i++) {
-            if (ss.supportedTokens[i] == erc20TokenAddr) {
-                _isSupportedToken = true;
-                break;
-            }
-        }
+        (bool _isSupportedToken, ) = isAaveSupportedToken(erc20TokenAddr);
         require(
             _isSupportedToken,
-            "TUFF: AaveLPManager: This token is not currently supported"
+            string(
+                abi.encodePacked(
+                    AaveLPManagerLib.NAMESPACE,
+                    ": ",
+                    "This token is not currently supported"
+                )
+            )
         );
 
         IERC20(erc20TokenAddr).approve(getAaveLPAddr(), amount);
@@ -85,5 +85,82 @@ contract AaveLPManager is Context {
             address(this),
             0
         );
+    }
+
+    function isAaveSupportedToken(address tokenAddr)
+        public
+        view
+        aaveInitLock
+        returns (bool, uint256)
+    {
+        AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
+
+        bool _isSupportedToken = false;
+        uint256 _tokenIndex = ss.supportedTokens.length;
+        for (uint256 i = 0; i < ss.supportedTokens.length; i++) {
+            if (ss.supportedTokens[i] == tokenAddr) {
+                _isSupportedToken = true;
+                _tokenIndex = i;
+                break;
+            }
+        }
+
+        return (_isSupportedToken, _tokenIndex);
+    }
+
+    function addAaveSupportedToken(address tokenAddr) public {
+        AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
+
+        //Check to ensure that the token is in fact an ERC-20 token. This isn't full proof, but there is no efficient
+        // way to definitively check a contract implements all ERC-20 functions. Since balanceOf() is a view function,
+        // we use that to efficiently check if it is an ERC-20 token
+        try IERC20(tokenAddr).balanceOf(address(this)) {} catch {
+            revert("The tokenAddr supplied is not ERC20 compatible");
+        }
+
+        ss.supportedTokens.push(tokenAddr);
+    }
+
+    function removeAaveSupportedToken(address tokenAddr) public aaveInitLock {
+        AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
+
+        (bool _isSupportedToken, uint256 _tokenIndex) = isAaveSupportedToken(
+            tokenAddr
+        );
+        if (_isSupportedToken) {
+            //Remove the token without preserving order
+            ss.supportedTokens[_tokenIndex] = ss.supportedTokens[
+                ss.supportedTokens.length - 1
+            ];
+            ss.supportedTokens.pop();
+        }
+    }
+
+    function getAllAaveSupportedTokens()
+        public
+        view
+        aaveInitLock
+        returns (address[] memory)
+    {
+        AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
+        return ss.supportedTokens;
+    }
+
+    function updateAaveTokenTargetedPercentage(
+        address tokenAddr,
+        uint256 targetPercentage
+    ) public aaveInitLock {
+        AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
+        ss.tokenMetadata[tokenAddr].targetPercent = targetPercentage;
+    }
+
+    function getAaveIncome(address tokenAddr)
+        public
+        view
+        aaveInitLock
+        returns (uint256)
+    {
+        return
+            LendingPool(getAaveLPAddr()).getReserveNormalizedIncome(tokenAddr);
     }
 }

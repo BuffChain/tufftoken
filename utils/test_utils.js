@@ -5,7 +5,7 @@ const SwapRouterABI = require("@uniswap/v3-periphery/artifacts/contracts/SwapRou
 const WETH9ABI = require("@uniswap/v3-periphery/artifacts/contracts/interfaces/external/IWETH9.sol/IWETH9.json").abi;
 const IERC20ABI = require("@uniswap/v3-core/artifacts/contracts/interfaces/IERC20Minimal.sol/IERC20Minimal.json").abi;
 
-const {consts} = require("../utils/consts");
+const {consts} = require("./consts");
 
 async function getDAIContract() {
     return await hre.ethers.getContractAt(IERC20ABI, consts("DAI_ADDR"));
@@ -116,10 +116,12 @@ async function sendTokensToAddr(fromAcct, toAddr) {
     }
 }
 
-module.exports.getDAIContract = getDAIContract;
-module.exports.getWETH9Contract = getWETH9Contract;
-module.exports.getUSDCContract = getUSDCContract;
-module.exports.getADAIContract = getADAIContract;
-module.exports.transferETH = transferETH;
-module.exports.runCallbackImpersonatingAcct = runCallbackImpersonatingAcct;
-module.exports.sendTokensToAddr = sendTokensToAddr;
+module.exports = {
+    getDAIContract,
+    getWETH9Contract,
+    getUSDCContract,
+    getADAIContract,
+    transferETH,
+    runCallbackImpersonatingAcct,
+    sendTokensToAddr
+}
