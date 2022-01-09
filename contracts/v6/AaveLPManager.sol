@@ -89,8 +89,8 @@ contract AaveLPManager is Context {
 
     //TODO: Need to make sure this is locked down to only owner and approved callers (eg chainlink)
     function withdrawFromAave(address erc20TokenAddr, uint256 amount)
-    public
-    aaveInitLock
+        public
+        aaveInitLock
     {
         (bool _isSupportedToken, ) = isAaveSupportedToken(erc20TokenAddr);
         require(

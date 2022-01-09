@@ -2,16 +2,28 @@
 pragma solidity >=0.7.0;
 
 import {ISwapRouter} from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
+import {INonfungiblePositionManager} from "@uniswap/v3-periphery/contracts/interfaces/INonfungiblePositionManager.sol";
 
-library UniswapSwapperLib {
+library UniswapManagerLib {
     //IMPORTANT: You must increment this string if you add a new variable to StateStorage that is not at the end
-    string constant NAMESPACE = "io.BuffChain.TuffToken.UniswapSwapperLib.1";
+    string constant NAMESPACE = "io.BuffChain.TuffToken.UniswapManagerLib.1";
     bytes32 constant POSITION = keccak256(bytes(NAMESPACE));
 
     struct StateStorage {
         bool isInit;
         ISwapRouter swapRouter;
+        INonfungiblePositionManager nonfungiblePositionManager;
         address WETHAddress;
+        /// @dev deposits[tokenId] => Deposit
+        mapping(uint256 => Deposit) deposits;
+    }
+
+    /// @notice Represents the deposit of an NFT
+    struct Deposit {
+        address owner;
+        uint128 liquidity;
+        address token0;
+        address token1;
     }
 
     function getState()

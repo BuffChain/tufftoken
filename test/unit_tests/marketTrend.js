@@ -201,6 +201,12 @@ describe('MarketTrend', function () {
 
     it('should do buy back', async () => {
 
+        //Check that the account has deposited the DAI
+        const daiContract = await utils.getDAIContract();
+        const startingBalance = await daiContract.balanceOf(tuffTokenDiamond.address);
+
+        console.log(`starting DAI balance: ${startingBalance}`)
+
         const expectedSupply = 1000000000 * 10 ** 9
 
         const startingSupply = parseFloat(await tuffTokenDiamond.totalSupply());
@@ -208,10 +214,46 @@ describe('MarketTrend', function () {
 
         await assertInterestAccrued();
 
-        await tuffTokenDiamond.doBuyBack();
+        const qtyInDAI = 1000;
 
-        const endingSupply = parseFloat(await tuffTokenDiamond.totalSupply());
-        expect(endingSupply).to.equal(expectedSupply, "incorrect totalSupply");
+        await tuffTokenDiamond.withdrawFromAave(consts("DAI_ADDR"), qtyInDAI);
+
+        const endDaiQty = await daiContract.balanceOf(tuffTokenDiamond.address);
+
+        // const tuffQty = await tuffTokenDiamond.swapExactInputMultihop(
+        //     consts("DAI_ADDR"),
+        //     3000,
+        //     3000,
+        //     tuffTokenDiamond.address,
+        //     endDaiQty
+        // )
+
+        const weth9Contract = await utils.getWETH9Contract();
+        let wethQty = await weth9Contract.balanceOf(tuffTokenDiamond.address);
+        console.log(`starting weth balance: ${wethQty}`)
+
+        await tuffTokenDiamond.swapExactInputSingle(
+            consts("DAI_ADDR"),
+            3000,
+            consts("WETH9_ADDR"),
+            endDaiQty
+        )
+
+        wethQty = await weth9Contract.balanceOf(tuffTokenDiamond.address);
+
+        console.log(`ending weth balance: ${wethQty}`)
+
+
+        let tuffQty = await tuffTokenDiamond.balanceOf(tuffTokenDiamond.address);
+
+        console.log(`starting tuff balance: ${tuffQty}`)
+
+        await tuffTokenDiamond.swapExactInputSingle(
+            consts("WETH9_ADDR"),
+            3000,
+            tuffTokenDiamond.address,
+            wethQty
+        )
 
     });
 });

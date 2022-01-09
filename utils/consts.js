@@ -55,7 +55,7 @@ function consts(constsKey) {
 }
 
 //
-module.exports.UNISWAP_POOL_BASE_FEE = 500;
+module.exports.UNISWAP_POOL_BASE_FEE = 3000;
 
 // PriceConsumer Enums
 module.exports.CHAINLINK_PRICE_CONSUMER_ENUM = 0;
