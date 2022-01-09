@@ -78,10 +78,12 @@ contract AaveLPManager is Context {
             )
         );
 
-        LendingPool(getAaveLPAddr()).withdraw(
+        IERC20(erc20TokenAddr).approve(getAaveLPAddr(), amount);
+        LendingPool(getAaveLPAddr()).deposit(
             erc20TokenAddr,
             amount,
-            address(this)
+            address(this),
+            0
         );
     }
 
