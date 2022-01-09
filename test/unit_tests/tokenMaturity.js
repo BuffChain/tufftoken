@@ -3,8 +3,7 @@
 const {expect} = require("chai");
 const hre = require("hardhat");
 
-const {consts} = require("../utils/consts");
-const utils = require("./utils");
+const utils = require("../../utils/test_utils");
 
 describe('TokenMaturity', function () {
 
