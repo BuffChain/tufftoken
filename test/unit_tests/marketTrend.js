@@ -3,7 +3,7 @@
 const {expect} = require("chai");
 const hre = require("hardhat");
 
-const {CHAINLINK_PRICE_CONSUMER_ENUM, UNISWAP_PRICE_CONSUMER_ENUM} = require("../../utils/consts");
+const {CHAINLINK_PRICE_CONSUMER_ENUM, UNISWAP_PRICE_CONSUMER_ENUM, consts} = require("../../utils/consts");
 const {BN} = require("@openzeppelin/test-helpers");
 const {randomBytes} = require('crypto');
 
@@ -152,6 +152,65 @@ describe('MarketTrend', function () {
         await tuffTokenDiamond.createTrackingPeriod(nowTimeStamp, nowTimeStamp + 1);
 
         await tuffTokenDiamond.performUpkeep(randomBytes(0));
+
+    });
+
+    async function assertInterestAccrued() {
+        let [lastBalance, accruedInterest] = await tuffTokenDiamond.getBuyBackPool(consts("ADAI_ADDR"));
+
+        expect(lastBalance).to.equal(0, "should have 0 balance.");
+
+        expect(accruedInterest).to.equal(0, "should have 0 interest.");
+
+        await utils.sendTokensToAddr(accounts.at(-1), tuffTokenDiamond.address);
+
+        const startingQtyInDAI = 1000;
+
+        await tuffTokenDiamond.depositToAave(consts("DAI_ADDR"), startingQtyInDAI);
+
+        const adaiContract = await utils.getADAIContract();
+
+        const endAdaiQty = await adaiContract.balanceOf(tuffTokenDiamond.address);
+        expect(new BN(startingQtyInDAI.toString())).to.be.bignumber.equal(new BN(endAdaiQty.toString()));
+
+        // first call initializes buy back pools
+        await tuffTokenDiamond.addAccruedInterestToBuyBackPool();
+
+        [lastBalance, accruedInterest] = await tuffTokenDiamond.getBuyBackPool(consts("ADAI_ADDR"));
+
+        expect(lastBalance).to.equal(startingQtyInDAI, "should have positive balance after deposit.");
+        expect(accruedInterest).to.equal(0, "should have 0 interest.");
+
+        // simulate interest earned
+        const interestQtyInDAI = 10;
+        await tuffTokenDiamond.depositToAave(consts("DAI_ADDR"), interestQtyInDAI);
+
+        await tuffTokenDiamond.addAccruedInterestToBuyBackPool();
+
+        [lastBalance, accruedInterest] = await tuffTokenDiamond.getBuyBackPool(consts("ADAI_ADDR"));
+        expect(lastBalance).to.equal(startingQtyInDAI + interestQtyInDAI, "unexpected balance after interest earned.");
+        expect(accruedInterest).to.equal(interestQtyInDAI, "should have interest.");
+    }
+
+    it('should add accrued interest', async () => {
+
+        await assertInterestAccrued();
+
+    });
+
+    it('should do buy back', async () => {
+
+        const expectedSupply = 1000000000 * 10 ** 9
+
+        const startingSupply = parseFloat(await tuffTokenDiamond.totalSupply());
+        expect(startingSupply).to.equal(expectedSupply, "incorrect totalSupply");
+
+        await assertInterestAccrued();
+
+        await tuffTokenDiamond.doBuyBack();
+
+        const endingSupply = parseFloat(await tuffTokenDiamond.totalSupply());
+        expect(endingSupply).to.equal(expectedSupply, "incorrect totalSupply");
 
     });
 });
