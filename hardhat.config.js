@@ -143,7 +143,7 @@ module.exports = {
 
 extendEnvironment((hre) => {
     if (hre.hardhatArguments.verbose) {
-        console.log("Enabling hre logging")
+        console.log("Enabling hre logging");
         hre.network.config.loggingEnabled = true;
     }
 });

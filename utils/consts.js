@@ -6,6 +6,9 @@ console.log(`Using [${networkName}] network config`)
 
 let constsMap = {
     kovan: {
+        // Network related
+        BLOCKTIME: 4, //seconds
+
         // Tokens (verified tokens from https://kovan.etherscan.io)
         WETH9_ADDR: "0xd0A1E359811322d97991E03f863a0C30C2cF029C",
         DAI_ADDR: "0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa",
@@ -28,6 +31,9 @@ let constsMap = {
         CHAINLINK_AGGREGATOR_ADDR: "0x9326BFA02ADD2366b30bacB125260Af641031331",
     },
     mainnet: {
+        // Network related
+        BLOCKTIME: 13, //seconds
+
         // Tokens (verified tokens from https://etherscan.io)
         WETH9_ADDR: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
         DAI_ADDR: "0x6B175474E89094C44Da98b954EedeAC495271d0F",

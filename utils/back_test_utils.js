@@ -5,6 +5,7 @@ const hre = require("hardhat");
 const path = require("path");
 const fs = require("fs/promises");
 
+const {consts} = require("./consts");
 const testUtils = require("./test_utils");
 
 /**
@@ -57,7 +58,7 @@ async function sendTxsFromBlocks(startBlockNumber, endBlockNumber) {
  * @returns {Promise<void>}
  */
 async function mineBlock() {
-    //TODO: Increase EVM blocktime as well?
+    await hre.ethers.provider.send("evm_increaseTime", [consts("BLOCKTIME")])
     await hre.ethers.provider.send('evm_mine');
 }
 
