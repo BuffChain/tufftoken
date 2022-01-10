@@ -1,7 +1,7 @@
 pragma solidity ^0.8.0;
 import {TuffToken} from "./TuffToken.sol";
 import {TokenMaturityLib} from "./TokenMaturityLib.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts-v8/utils/math/SafeMath.sol";
 
 contract TokenMaturity {
     modifier tokenMaturityInitLock() {

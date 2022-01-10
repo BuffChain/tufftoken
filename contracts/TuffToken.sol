@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: agpl-3.0
 pragma solidity ^0.8.0;
 
-import "@openzeppelin/contracts/utils/Context.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/utils/Address.sol";
+import "@openzeppelin/contracts-v8/utils/Context.sol";
+import "@openzeppelin/contracts-v8/token/ERC20/IERC20.sol";
+import "@openzeppelin/contracts-v8/utils/math/SafeMath.sol";
+import "@openzeppelin/contracts-v8/utils/Address.sol";
 
 import {TuffTokenLib} from "./TuffTokenLib.sol";
 

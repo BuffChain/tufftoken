@@ -14,11 +14,9 @@ library UniswapManagerLib {
         ISwapRouter swapRouter;
         INonfungiblePositionManager nonfungiblePositionManager;
         address WETHAddress;
-        /// @dev deposits[tokenId] => Deposit
         mapping(uint256 => Deposit) deposits;
     }
 
-    /// @notice Represents the deposit of an NFT
     struct Deposit {
         address owner;
         uint128 liquidity;
