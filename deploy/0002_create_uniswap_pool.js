@@ -6,7 +6,7 @@ const {consts, UNISWAP_POOL_BASE_FEE} = require("../utils/consts");
 const {logDeploymentTx} = require("../utils/deployment_helpers");
 
 module.exports = async () => {
-    const {deployments} = hre;
+    const {deployments, getNamedAccounts} = hre;
 
     const tuffTokenDiamond = await deployments.get("TuffTokenDiamond");
     const uniswapV3Factory = await hre.ethers.getContractAt("UniswapV3Factory", consts("UNISWAP_V3_FACTORY_ADDR"));
@@ -42,7 +42,11 @@ module.exports = async () => {
     const token1 = tuffTokenDiamond.address;
     const amount0ToMint = 0;
     const amount1ToMint = 150000000
-    await tuffTokenDiamond.mintNewPosition(token0, amount0ToMint, token1, amount1ToMint, UNISWAP_POOL_BASE_FEE)
+
+    const {contractOwner} = await getNamedAccounts();
+    let tuffTokenDiamondContract = await hre.ethers.getContractAt(tuffTokenDiamond.abi, tuffTokenDiamond.address, contractOwner);
+
+    await tuffTokenDiamondContract.mintNewPosition(token0, amount0ToMint, token1, amount1ToMint, UNISWAP_POOL_BASE_FEE)
 
 };
 
