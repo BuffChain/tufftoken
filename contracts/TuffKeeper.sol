@@ -68,10 +68,10 @@ contract TuffKeeper is KeeperCompatibleInterface {
     }
 
     function isIntervalComplete(uint256 timestamp)
-    private
-    view
-    initTuffKeeperLock
-    returns (bool)
+        private
+        view
+        initTuffKeeperLock
+        returns (bool)
     {
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
         return (timestamp - getLastTimestamp()) >= getInterval();
@@ -95,7 +95,6 @@ contract TuffKeeper is KeeperCompatibleInterface {
         override
         initTuffKeeperLock
     {
-
         if (isIntervalComplete(block.timestamp)) {
             TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
 
@@ -106,5 +105,4 @@ contract TuffKeeper is KeeperCompatibleInterface {
             setLastTimestamp(block.timestamp);
         }
     }
-
 }
