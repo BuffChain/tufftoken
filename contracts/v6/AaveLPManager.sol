@@ -87,30 +87,6 @@ contract AaveLPManager is Context {
         );
     }
 
-    //TODO: Need to make sure this is locked down to only owner and approved callers (eg chainlink)
-    function withdrawFromAave(address erc20TokenAddr, uint256 amount)
-        public
-        aaveInitLock
-    {
-        (bool _isSupportedToken, ) = isAaveSupportedToken(erc20TokenAddr);
-        require(
-            _isSupportedToken,
-            string(
-                abi.encodePacked(
-                    AaveLPManagerLib.NAMESPACE,
-                    ": ",
-                    "This token is not currently supported"
-                )
-            )
-        );
-
-        LendingPool(getAaveLPAddr()).withdraw(
-            erc20TokenAddr,
-            amount,
-            address(this)
-        );
-    }
-
     function isAaveSupportedToken(address tokenAddr)
         public
         view
