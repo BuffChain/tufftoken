@@ -42,7 +42,7 @@ module.exports = async () => {
 
     if (!await tuffTokenDiamondContract.isTuffKeeperInit()) {
         let initTx = await tuffTokenDiamondContract.initTuffKeeper();
-        logDeploymentTx("Initialized MarketTrend:", initTx);
+        logDeploymentTx("Initialized TuffKeeper:", initTx);
     }
 
     if (!await tuffTokenDiamondContract.isTokenMaturityInit()) {
