@@ -9,8 +9,6 @@ const web3 = new Web3('wss://mainnet.infura.io/ws/v3/'  +  process.env.INFURA_KE
 
 describe('TuffKeeper', function () {
 
-    const nowTimeStamp = Math.floor(Date.now() / 1000);
-
     let owner;
     let accounts;
 

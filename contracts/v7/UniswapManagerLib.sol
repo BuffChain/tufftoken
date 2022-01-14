@@ -12,14 +12,6 @@ library UniswapManagerLib {
         bool isInit;
         ISwapRouter swapRouter;
         address WETHAddress;
-        mapping(uint256 => Deposit) deposits;
-    }
-
-    struct Deposit {
-        address owner;
-        uint128 liquidity;
-        address token0;
-        address token1;
     }
 
     function getState()
