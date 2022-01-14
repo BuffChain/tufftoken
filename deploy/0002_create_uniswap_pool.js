@@ -4,7 +4,6 @@ const hre = require("hardhat");
 
 const {consts, UNISWAP_POOL_BASE_FEE} = require("../utils/consts");
 const {logDeploymentTx} = require("../utils/deployment_helpers");
-const utils = require("../utils/test_utils");
 
 module.exports = async () => {
     const {deployments, getNamedAccounts} = hre;
@@ -25,10 +24,7 @@ module.exports = async () => {
 
     const uniswapV3Pool = await hre.ethers.getContractAt("UniswapV3Pool", tuffTokenPoolAddr);
 
-
-
-    // Current: price should be $.01, 1 DAI = 0.0003139 ETH, .01 DAI = 0.00000313875 ETH
-    const price = 0.00000313875
+    const price = consts("TUFF_STARTING_PRICE")
 
     // sqrtRatioX96 price per uniswap v3 https://docs.uniswap.org/sdk/guides/fetching-prices#understanding-sqrtprice
     const sqrtPriceX96 = BigInt(Math.sqrt(price) * 2 ** 96).toString();
