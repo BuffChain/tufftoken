@@ -4,6 +4,7 @@ pragma abicoder v2;
 
 import {TuffKeeperLib} from "./TuffKeeperLib.sol";
 import {KeeperCompatibleInterface} from "@chainlink/contracts/src/v0.8/interfaces/KeeperCompatibleInterface.sol";
+import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 
 contract TuffKeeper is KeeperCompatibleInterface {
     modifier initTuffKeeperLock() {
@@ -66,6 +67,16 @@ contract TuffKeeper is KeeperCompatibleInterface {
         return ss.lastTimeStamp;
     }
 
+    function isIntervalComplete(uint256 timestamp)
+    private
+    view
+    initTuffKeeperLock
+    returns (bool)
+    {
+        TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
+        return (timestamp - getLastTimestamp()) >= getInterval();
+    }
+
     function checkUpkeep(
         bytes calldata /* checkData */
     )
@@ -73,35 +84,27 @@ contract TuffKeeper is KeeperCompatibleInterface {
         view
         override
         initTuffKeeperLock
-        returns (
-            bool needed,
-            bytes memory /* performData */
-        )
+        returns (bool needed, bytes memory performData)
     {
-        needed = isIntervalComplete();
+        needed = isIntervalComplete(block.timestamp);
+        performData = bytes(Strings.toString(block.timestamp));
     }
 
-    function isIntervalComplete()
-        private
-        view
+    function performUpkeep(bytes calldata performData)
+        external
+        override
         initTuffKeeperLock
-        returns (bool)
     {
-        TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
-        return (block.timestamp - ss.lastTimeStamp) > ss.interval;
-    }
 
-    function performUpkeep(
-        bytes calldata /* performData */
-    ) external override initTuffKeeperLock {
-        if (isIntervalComplete()) {
+        if (isIntervalComplete(block.timestamp)) {
             TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
 
             //    todo: check contract maturity & liquidate
 
             //    todo: run self balancing / use fees collected to add to LPs
 
-            ss.lastTimeStamp = block.timestamp;
+            setLastTimestamp(block.timestamp);
         }
     }
+
 }
