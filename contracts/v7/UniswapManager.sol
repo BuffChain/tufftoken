@@ -8,7 +8,6 @@ import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 import {UniswapManagerLib} from "./UniswapManagerLib.sol";
 
 contract UniswapManager {
-
     modifier uniswapManagerInitLock() {
         require(
             isUniswapManagerInit(),
@@ -31,10 +30,9 @@ contract UniswapManager {
 
     //Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
     // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
-    function initUniswapManager(
-        ISwapRouter _swapRouter,
-        address WETHAddress
-    ) public {
+    function initUniswapManager(ISwapRouter _swapRouter, address WETHAddress)
+        public
+    {
         require(
             !isUniswapManagerInit(),
             string(
@@ -147,5 +145,4 @@ contract UniswapManager {
         // The call to `exactInputSingle` executes the swap.
         amountOut = ss.swapRouter.exactInputSingle(params);
     }
-
 }

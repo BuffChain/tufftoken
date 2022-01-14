@@ -5,18 +5,12 @@ pragma abicoder v2;
 import {TuffKeeperLib} from "./TuffKeeperLib.sol";
 import {KeeperCompatibleInterface} from "@chainlink/contracts/src/v0.8/interfaces/KeeperCompatibleInterface.sol";
 
-
 contract TuffKeeper is KeeperCompatibleInterface {
-
     modifier initTuffKeeperLock() {
         require(
             isTuffKeeperInit(),
             string(
-                abi.encodePacked(
-                    TuffKeeperLib.NAMESPACE,
-                    ": ",
-                    "UNINITIALIZED"
-                )
+                abi.encodePacked(TuffKeeperLib.NAMESPACE, ": ", "UNINITIALIZED")
             )
         );
         _;
@@ -72,7 +66,6 @@ contract TuffKeeper is KeeperCompatibleInterface {
         return ss.lastTimeStamp;
     }
 
-
     function checkUpkeep(
         bytes calldata /* checkData */
     )
@@ -102,7 +95,6 @@ contract TuffKeeper is KeeperCompatibleInterface {
         bytes calldata /* performData */
     ) external override initTuffKeeperLock {
         if (isIntervalComplete()) {
-
             TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
 
             //    todo: check contract maturity & liquidate
@@ -112,5 +104,4 @@ contract TuffKeeper is KeeperCompatibleInterface {
             ss.lastTimeStamp = block.timestamp;
         }
     }
-
 }
