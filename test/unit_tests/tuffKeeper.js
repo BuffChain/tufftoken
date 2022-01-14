@@ -2,8 +2,9 @@
 
 const {expect} = require("chai");
 const hre = require("hardhat");
+const {randomBytes} = require('crypto');
 
-describe('ChainLinkPriceConsumer', function () {
+describe('TuffKeeper', function () {
 
     let owner;
     let accounts;
@@ -23,21 +24,20 @@ describe('ChainLinkPriceConsumer', function () {
         tuffTokenDiamond = await hre.ethers.getContractAt(TuffTokenDiamond.abi, TuffTokenDiamond.address, owner);
     });
 
-    it('should get latest round data', async () => {
-        const [
-            roundId,
-            answer,
-            startedAt,
-            updatedAt,
-            answeredInRound
-        ] = await tuffTokenDiamond.getLatestRoundData();
 
-        expect(answer > 0).to.equal(true, "unexpected answer.")
+    it('should call check up keep', async () => {
+
+        let [needed, performData] = await tuffTokenDiamond.checkUpkeep(randomBytes(0));
+
+        expect(needed).to.equal(false, "should need upkeep.");
+
     });
 
-    it('should get price', async () => {
-        const price = await tuffTokenDiamond.getChainLinkPrice();
+    it('should call perform upkeep', async () => {
 
-        expect(price > 0).to.equal(true, "unexpected price.")
+
+        await tuffTokenDiamond.performUpkeep(randomBytes(0));
+
     });
+
 });

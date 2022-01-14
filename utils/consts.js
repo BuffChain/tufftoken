@@ -19,12 +19,9 @@ let constsMap = {
         // Uniswap (https://docs.uniswap.org/protocol/reference/deployments)
         UNISWAP_V3_ROUTER_ADDR: "0xE592427A0AEce92De3Edee1F18E0157C05861564",
         UNISWAP_V3_FACTORY_ADDR: "0x1F98431c8aD98523631AE4a59f267346ea31F984",
-        UNISWAP_V3_NFPM_ADDR: "0xC36442b4a4522E871399CD717aBDD847Ab11FE88", // ?
         UNISWAP_WETH_DAI_POOL_ADDR: "0x89007E48d47484245805679Ab37114DB117AfAB2",
         UNISWAP_WETH_USDC_POOL_ADDR: "0xf43261E862FF94B45600d62444dEF3AB94f2a745",
 
-        // ChainLink (https://docs.chain.link/docs/ethereum-addresses/ - ETH/USD)
-        CHAINLINK_AGGREGATOR_ADDR: "0x9326BFA02ADD2366b30bacB125260Af641031331",
     },
     mainnet: {
         // Tokens (verified tokens from https://etherscan.io)
@@ -40,12 +37,9 @@ let constsMap = {
         // Uniswap (https://docs.uniswap.org/protocol/reference/deployments)
         UNISWAP_V3_ROUTER_ADDR: "0xE592427A0AEce92De3Edee1F18E0157C05861564",
         UNISWAP_V3_FACTORY_ADDR: "0x1F98431c8aD98523631AE4a59f267346ea31F984",
-        UNISWAP_V3_NFPM_ADDR: "0xC36442b4a4522E871399CD717aBDD847Ab11FE88",
         UNISWAP_WETH_DAI_POOL_ADDR: "0x60594a405d53811d3BC4766596EFD80fd545A270",
         UNISWAP_WETH_USDC_POOL_ADDR: "0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640",
 
-        // ChainLink (https://docs.chain.link/docs/ethereum-addresses/ - Total USD Market Cap)
-        CHAINLINK_AGGREGATOR_ADDR: "0xEC8761a0A73c34329CA5B1D3Dc7eD07F30e836e2",
     }
 }
 

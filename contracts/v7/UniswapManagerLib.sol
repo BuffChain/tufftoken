@@ -2,7 +2,6 @@
 pragma solidity >=0.7.0;
 
 import {ISwapRouter} from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
-import {INonfungiblePositionManager} from "@uniswap/v3-periphery/contracts/interfaces/INonfungiblePositionManager.sol";
 
 library UniswapManagerLib {
     //IMPORTANT: You must increment this string if you add a new variable to StateStorage that is not at the end
@@ -12,7 +11,6 @@ library UniswapManagerLib {
     struct StateStorage {
         bool isInit;
         ISwapRouter swapRouter;
-        INonfungiblePositionManager nonfungiblePositionManager;
         address WETHAddress;
         mapping(uint256 => Deposit) deposits;
     }

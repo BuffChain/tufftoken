@@ -37,37 +37,6 @@ module.exports = async () => {
     console.log(`Initializing TuffToken pool. Price: ${price} ETH. sqrtPriceX96: ${sqrtPriceX96}`);
     await uniswapV3Pool.initialize(sqrtPriceX96);
 
-
-    console.log(`Minting new position on TuffToken pool`);
-    const token0 = consts("WETH9_ADDR");
-    const token1 = tuffTokenDiamond.address;
-    const amount0ToMint = 10;
-    const amount1ToMint = 10
-
-    const {contractOwner} = await getNamedAccounts();
-    let tuffTokenDiamondContract = await hre.ethers.getContractAt(tuffTokenDiamond.abi, tuffTokenDiamond.address, contractOwner);
-
-
-    console.log((await tuffTokenDiamondContract.balanceOf(contractOwner)).toString())
-
-    const weth9Contract = await utils.getWETH9Contract();
-    console.log((await weth9Contract.balanceOf(contractOwner)).toString())
-
-    console.log((await hre.ethers.provider.getBalance(contractOwner)).toString())
-
-    const qtyInWETH = hre.ethers.utils.parseEther("20");
-
-    //Convert ETH to WETH
-    const toAcct = await hre.ethers.getSigner(contractOwner);
-    await utils.runCallbackImpersonatingAcct(toAcct, async (acct) => {
-        await weth9Contract.connect(acct).approve(acct.address, qtyInWETH)
-        await weth9Contract.connect(acct).deposit({"value": qtyInWETH})
-    });
-
-    console.log((await weth9Contract.balanceOf(contractOwner)).toString())
-
-    await tuffTokenDiamondContract.mintNewPosition(token0, amount0ToMint, token1, amount1ToMint, UNISWAP_POOL_BASE_FEE)
-
 };
 
 module.exports.tags = ['v0002'];

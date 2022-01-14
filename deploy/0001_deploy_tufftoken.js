@@ -18,9 +18,7 @@ module.exports = async () => {
         facets: [
             "TuffToken",
             "AaveLPManager",
-            "UniswapPriceConsumer",
-            "ChainLinkPriceConsumer",
-            "MarketTrend",
+            "TuffKeeper",
             "TokenMaturity",
             "Governance",
             "UniswapManager"
@@ -42,18 +40,8 @@ module.exports = async () => {
         logDeploymentTx("Initialized AaveLPManager:", initTx);
     }
 
-    if (!await tuffTokenDiamondContract.isUniswapPriceConsumerInit()) {
-        let initTx = await tuffTokenDiamondContract.initUniswapPriceConsumer(consts("WETH9_ADDR"), consts("DAI_ADDR"), UNISWAP_POOL_BASE_FEE, consts("UNISWAP_V3_FACTORY_ADDR"));
-        logDeploymentTx("Initialized UniswapPriceConsumer:", initTx);
-    }
-
-    if (!await tuffTokenDiamondContract.isChainLinkPriceConsumerInit()) {
-        let initTx = await tuffTokenDiamondContract.initChainLinkPriceConsumer(consts("CHAINLINK_AGGREGATOR_ADDR"));
-        logDeploymentTx("Initialized ChainLinkPriceConsumer:", initTx);
-    }
-
-    if (!await tuffTokenDiamondContract.isMarketTrendInit()) {
-        let initTx = await tuffTokenDiamondContract.initMarketTrend(CHAINLINK_PRICE_CONSUMER_ENUM, false);
+    if (!await tuffTokenDiamondContract.isTuffKeeperInit()) {
+        let initTx = await tuffTokenDiamondContract.initTuffKeeper();
         logDeploymentTx("Initialized MarketTrend:", initTx);
     }
 
@@ -70,7 +58,6 @@ module.exports = async () => {
     if (!await tuffTokenDiamondContract.isUniswapManagerInit()) {
         let initTx = await tuffTokenDiamondContract.initUniswapManager(
             consts("UNISWAP_V3_ROUTER_ADDR"),
-            consts("UNISWAP_V3_NFPM_ADDR"),
             consts("WETH9_ADDR"));
         logDeploymentTx("Initialized UniswapManager:", initTx);
     }
