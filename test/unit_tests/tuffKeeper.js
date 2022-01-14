@@ -54,7 +54,7 @@ describe('TuffKeeper', function () {
         await mineBlock();
 
         latestBlock = await hre.ethers.provider.getBlock("latest")
-        const latestTimestamp = latestBlock.timestamp;
+        let latestTimestamp = latestBlock.timestamp;
 
         expect(latestTimestamp > startingBlockTimestamp).to.equal(true, "should have mined a block.");
 
@@ -66,7 +66,14 @@ describe('TuffKeeper', function () {
 
         const endingTimestamp = await tuffTokenDiamond.getLastTimestamp();
 
-        expect(endingTimestamp > startingTimeStamp).to.equal(true, "incorrect timestamp.");
+        expect(endingTimestamp > startingTimeStamp).to.equal(true,
+            "last timestamp that performed upkeep should greater than the starting value");
+
+        latestBlock = await hre.ethers.provider.getBlock("latest")
+        latestTimestamp = latestBlock.timestamp;
+
+        expect(latestTimestamp.toString()).to.equal(endingTimestamp,
+            "last timestamp that performed upkeep should be the latest block.");
 
     });
 
