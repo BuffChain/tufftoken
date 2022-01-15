@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: agpl-3.0
+
 pragma solidity ^0.8.0;
 import {TuffToken} from "./TuffToken.sol";
 import {TokenMaturityLib} from "./TokenMaturityLib.sol";
@@ -45,6 +47,17 @@ contract TokenMaturity {
         ss.isInit = true;
     }
 
+    /**
+    * @dev Emitted when treasury has been liquidated
+    * with the contract's ETH balance and total supply of redeemable tokens
+    */
+    event TokenMatured(uint256 balance, uint256 totalSupply);
+
+    /**
+    * @dev Emitted when holder redeems tokens for ETH
+    */
+    event Redeemed(address holder, uint256 tuffBalance, uint256 ethAmount);
+
     function isTokenMaturityInit() public view returns (bool) {
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
         return ss.isInit;
@@ -65,11 +78,11 @@ contract TokenMaturity {
         return ss.totalSupplyForRedemption;
     }
 
-    function setTotalSupplyForRedemption(uint256 totalSupplyForRedemption)
+    function setTotalSupplyForRedemption(uint256 _totalSupplyForRedemption)
         public
     {
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
-        ss.totalSupplyForRedemption = totalSupplyForRedemption;
+        ss.totalSupplyForRedemption = _totalSupplyForRedemption;
     }
 
     function getContractStartingEthBalance() public view returns (uint256) {
@@ -82,7 +95,7 @@ contract TokenMaturity {
         ss.startingEthBalance = startingEthBalance;
     }
 
-    function getRedemptionAmount(address account, uint256 ownerBalance)
+    function getRedemptionAmount(uint256 ownerBalance)
         public
         view
         returns (uint256)
@@ -119,25 +132,26 @@ contract TokenMaturity {
 
         address payable account = payable(msg.sender);
 
-        (bool hasRedeemed, ) = hasRedeemed(account);
+        (bool _hasRedeemed, ) = hasRedeemed(account);
 
-        require(!hasRedeemed, "Address can only redeem once.");
+        require(!_hasRedeemed, "Address can only redeem once.");
 
         TuffToken tuffToken = TuffToken(payable(address(this)));
         uint256 ownerBalance = tuffToken.balanceOf(account);
 
         require(ownerBalance > 0, "Owner balance needs to be greater than 0.");
 
-        uint256 redemptionAmount = getRedemptionAmount(account, ownerBalance);
+        uint256 redemptionAmount = getRedemptionAmount(ownerBalance);
 
         account.transfer(redemptionAmount);
-        //        todo: add event
 
         tuffToken.burn(account, ownerBalance);
 
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
         ss.ownersRedeemed[account] = true;
         ss.ownersRedemptionBalances[account] = redemptionAmount;
+
+        emit Redeemed(account, ownerBalance, redemptionAmount);
     }
 
     function hasRedeemed(address account) public view returns (bool, uint256) {
@@ -158,27 +172,32 @@ contract TokenMaturity {
 
     //    call via perform upkeep once current timestamp >= contract maturity timestamp
     function onTokenMaturity() public {
+
         require(
             isTokenMatured(block.timestamp),
-            "Token must have reached maturity."
+            "TUFF: Token must have reached maturity."
         );
 
         require(
-            getIsTreasuryLiquidated(),
-            "Treasury must not have been liquidated."
+            !getIsTreasuryLiquidated(),
+            "TUFF: Treasury must not have been liquidated."
         );
 
         liquidateTreasury();
 
-        setContractStartingEthBalance(getCurrentContractEthBalance());
+        uint256 ethBalance = getCurrentContractEthBalance();
+        setContractStartingEthBalance(ethBalance);
 
-        TuffToken tuffToken = TuffToken(payable(address(this)));
-        setTotalSupplyForRedemption(tuffToken.totalSupply());
+        uint256 redeemableTotalSupply = TuffToken(payable(address(this))).totalSupply();
+        setTotalSupplyForRedemption(redeemableTotalSupply);
+
+        emit TokenMatured(ethBalance, redeemableTotalSupply);
     }
 
     function liquidateTreasury() public {
         setIsTreasuryLiquidated(true);
 
         //    todo liquidate treasury to eth
+
     }
 }

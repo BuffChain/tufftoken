@@ -73,7 +73,6 @@ contract TuffKeeper is KeeperCompatibleInterface {
         initTuffKeeperLock
         returns (bool)
     {
-        TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
         return (timestamp - getLastTimestamp()) >= getInterval();
     }
 
@@ -90,13 +89,12 @@ contract TuffKeeper is KeeperCompatibleInterface {
         performData = bytes(Strings.toString(block.timestamp));
     }
 
-    function performUpkeep(bytes calldata performData)
+    function performUpkeep(bytes calldata /* performData */ )
         external
         override
         initTuffKeeperLock
     {
         if (isIntervalComplete(block.timestamp)) {
-            TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
 
             //    todo: check contract maturity & liquidate
 
@@ -105,4 +103,5 @@ contract TuffKeeper is KeeperCompatibleInterface {
             setLastTimestamp(block.timestamp);
         }
     }
+
 }
