@@ -22,8 +22,9 @@ let constsMap = {
         UNISWAP_WETH_DAI_POOL_ADDR: "0x89007E48d47484245805679Ab37114DB117AfAB2",
         UNISWAP_WETH_USDC_POOL_ADDR: "0xf43261E862FF94B45600d62444dEF3AB94f2a745",
 
-        // ChainLink (https://docs.chain.link/docs/ethereum-addresses/ - ETH/USD)
-        CHAINLINK_AGGREGATOR_ADDR: "0x9326BFA02ADD2366b30bacB125260Af641031331",
+        // Current: price should be $.01, 1 DAI = 0.0003139 ETH, .01 DAI = 0.00000313875 ETH
+        TUFF_STARTING_PRICE: 0.00000313875 // todo: LP pool may impact whether this needs to be a constant or function
+
     },
     mainnet: {
         // Tokens (verified tokens from https://etherscan.io)
@@ -42,8 +43,9 @@ let constsMap = {
         UNISWAP_WETH_DAI_POOL_ADDR: "0x60594a405d53811d3BC4766596EFD80fd545A270",
         UNISWAP_WETH_USDC_POOL_ADDR: "0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640",
 
-        // ChainLink (https://docs.chain.link/docs/ethereum-addresses/ - Total USD Market Cap)
-        CHAINLINK_AGGREGATOR_ADDR: "0xEC8761a0A73c34329CA5B1D3Dc7eD07F30e836e2",
+        // Current: price should be $.01, 1 DAI = 0.0003139 ETH, .01 DAI = 0.00000313875 ETH
+        TUFF_STARTING_PRICE: 0.00000313875 // todo: LP pool may impact whether this needs to be a constant or function
+
     }
 }
 
@@ -55,7 +57,7 @@ function consts(constsKey) {
 }
 
 //
-module.exports.UNISWAP_POOL_BASE_FEE = 500;
+module.exports.UNISWAP_POOL_BASE_FEE = 3000;
 
 // PriceConsumer Enums
 module.exports.CHAINLINK_PRICE_CONSUMER_ENUM = 0;
