@@ -89,13 +89,10 @@ contract TuffKeeper is KeeperCompatibleInterface {
         performData = bytes(Strings.toString(block.timestamp));
     }
 
-    function performUpkeep(bytes calldata /* performData */ )
-        external
-        override
-        initTuffKeeperLock
-    {
+    function performUpkeep(
+        bytes calldata /* performData */
+    ) external override initTuffKeeperLock {
         if (isIntervalComplete(block.timestamp)) {
-
             //    todo: check contract maturity & liquidate
 
             //    todo: run self balancing / use fees collected to add to LPs
@@ -103,5 +100,4 @@ contract TuffKeeper is KeeperCompatibleInterface {
             setLastTimestamp(block.timestamp);
         }
     }
-
 }
