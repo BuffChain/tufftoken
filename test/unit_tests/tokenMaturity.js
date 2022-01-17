@@ -58,7 +58,7 @@ describe('TokenMaturity', function () {
 
         expect(isLiquidated).to.equal(false, "should not have been liquidated");
 
-        await tuffTokenDiamond.liquidateTreasury();
+        await tuffTokenDiamond.setIsTreasuryLiquidated(true);
 
         isLiquidated = await tuffTokenDiamond.getIsTreasuryLiquidated();
 

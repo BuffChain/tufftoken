@@ -87,6 +87,29 @@ contract AaveLPManager is Context {
         );
     }
 
+    function withdrawFromAave(address erc20TokenAddr, uint256 amount)
+        public
+        aaveInitLock
+    {
+        (bool _isSupportedToken, ) = isAaveSupportedToken(erc20TokenAddr);
+        require(
+            _isSupportedToken,
+            string(
+                abi.encodePacked(
+                    AaveLPManagerLib.NAMESPACE,
+                    ": ",
+                    "This token is not currently supported"
+                )
+            )
+        );
+
+        LendingPool(getAaveLPAddr()).withdraw(
+            erc20TokenAddr,
+            amount,
+            address(this)
+        );
+    }
+
     function isAaveSupportedToken(address tokenAddr)
         public
         view
@@ -162,5 +185,12 @@ contract AaveLPManager is Context {
     {
         return
             LendingPool(getAaveLPAddr()).getReserveNormalizedIncome(tokenAddr);
+    }
+
+    function liquidateAaveTreasury() public aaveInitLock {
+        address[] memory supportedTokens = getAllAaveSupportedTokens();
+        for (uint256 i = 0; i < supportedTokens.length; i++) {
+            withdrawFromAave(supportedTokens[i], type(uint256).max);
+        }
     }
 }

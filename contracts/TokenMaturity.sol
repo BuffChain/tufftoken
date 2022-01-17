@@ -2,6 +2,9 @@ pragma solidity ^0.8.0;
 import {TuffToken} from "./TuffToken.sol";
 import {TokenMaturityLib} from "./TokenMaturityLib.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import {UniswapManager} from "./UniswapManager.sol";
+import {UniswapManagerLib} from "./UniswapManagerLib.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 
 contract TokenMaturity {
     modifier tokenMaturityInitLock() {
@@ -158,13 +161,14 @@ contract TokenMaturity {
 
     //    call via perform upkeep once current timestamp >= contract maturity timestamp
     function onTokenMaturity() public {
+
         require(
             isTokenMatured(block.timestamp),
             "Token must have reached maturity."
         );
 
         require(
-            getIsTreasuryLiquidated(),
+            !getIsTreasuryLiquidated(),
             "Treasury must not have been liquidated."
         );
 
@@ -176,9 +180,52 @@ contract TokenMaturity {
         setTotalSupplyForRedemption(tuffToken.totalSupply());
     }
 
-    function liquidateTreasury() public {
+    function liquidateTreasury() public tokenMaturityInitLock {
+
+        callLiquidateAaveTreasury();
+
+        address[] memory supportedTokens = callGetAllAaveSupportedTokens();
+
+        UniswapManager uniswapManager = UniswapManager(address(this));
+
+        UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
+        .getState();
+
+        for (uint256 i = 0; i < supportedTokens.length; i++) {
+            uniswapManager.swapExactInputSingle(
+                supportedTokens[i],
+                3000,
+                ss.WETHAddress,
+                IERC20(supportedTokens[i]).balanceOf(address(this))
+            );
+        }
+
+        callWithdrawWETH();
+
         setIsTreasuryLiquidated(true);
 
-        //    todo liquidate treasury to eth
+    }
+
+
+    function callLiquidateAaveTreasury() public tokenMaturityInitLock returns (bytes memory) {
+        bytes memory payload = abi.encodeWithSignature("liquidateAaveTreasury()");
+        (bool success, bytes memory returnData) = address(this).call(payload);
+        require(success, "TUFF: Aave liquidation failed.");
+        return returnData;
+    }
+
+    function callGetAllAaveSupportedTokens() public tokenMaturityInitLock returns (address[] memory) {
+        bytes memory payload = abi.encodeWithSignature("getAllAaveSupportedTokens()");
+        (bool success, bytes memory returnData) = address(this).call(payload);
+        require(success, "TUFF: Unable to get Aave supported tokens.");
+        return abi.decode(returnData, (address[]));
+    }
+
+    function callWithdrawWETH() public tokenMaturityInitLock returns (bytes memory) {
+        UniswapManagerLib.StateStorage storage ss = UniswapManagerLib.getState();
+        bytes memory payload = abi.encodeWithSignature("withdraw(uint)", IERC20(ss.WETHAddress).balanceOf(address(this)));
+        (bool success, bytes memory returnData) = address(ss.WETHAddress).call(payload);
+        require(success, "TUFF: Unable to unwrap WETH.");
+        return returnData;
     }
 }
