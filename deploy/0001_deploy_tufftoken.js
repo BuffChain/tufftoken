@@ -34,9 +34,11 @@ module.exports = async () => {
     }
 
     if (!await tuffTokenDiamondContract.isAaveInit()) {
-        let initTx = await tuffTokenDiamondContract.initAaveLPManager(consts("AAVE_LENDINGPOOL_PROVIDER_ADDR"), [
-            consts("DAI_ADDR"), consts("USDC_ADDR"), consts("USDT_ADDR")
-        ]);
+        let initTx = await tuffTokenDiamondContract.initAaveLPManager(
+            consts("AAVE_LENDINGPOOL_PROVIDER_ADDR"),
+            consts("AAVE_PROTOCOL_DATA_PROVIDER_ADDR"),
+            [consts("DAI_ADDR"), consts("USDC_ADDR"), consts("USDT_ADDR")]
+        );
         logDeploymentTx("Initialized AaveLPManager:", initTx);
     }
 

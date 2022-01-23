@@ -66,42 +66,64 @@ contract TokenMaturity {
         return ss.isInit;
     }
 
-    function setContractMaturityTimestamp(uint256 timestamp) tokenMaturityInitLock public {
+    function setContractMaturityTimestamp(uint256 timestamp)
+        public
+        tokenMaturityInitLock
+    {
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
         ss.contractMaturityTimestamp = timestamp;
     }
 
-    function isTokenMatured(uint256 timestamp) tokenMaturityInitLock public view returns (bool) {
+    function isTokenMatured(uint256 timestamp)
+        public
+        view
+        tokenMaturityInitLock
+        returns (bool)
+    {
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
         return timestamp >= ss.contractMaturityTimestamp;
     }
 
-    function totalSupplyForRedemption() tokenMaturityInitLock public view returns (uint256) {
+    function totalSupplyForRedemption()
+        public
+        view
+        tokenMaturityInitLock
+        returns (uint256)
+    {
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
         return ss.totalSupplyForRedemption;
     }
 
     function setTotalSupplyForRedemption(uint256 _totalSupplyForRedemption)
-    tokenMaturityInitLock public
+        public
+        tokenMaturityInitLock
     {
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
         ss.totalSupplyForRedemption = _totalSupplyForRedemption;
     }
 
-    function getContractStartingEthBalance() tokenMaturityInitLock public view returns (uint256) {
+    function getContractStartingEthBalance()
+        public
+        view
+        tokenMaturityInitLock
+        returns (uint256)
+    {
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
         return ss.startingEthBalance;
     }
 
-    function setContractStartingEthBalance(uint256 startingEthBalance) tokenMaturityInitLock public {
+    function setContractStartingEthBalance(uint256 startingEthBalance)
+        public
+        tokenMaturityInitLock
+    {
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
         ss.startingEthBalance = startingEthBalance;
     }
 
     function getRedemptionAmount(uint256 ownerBalance)
-    tokenMaturityInitLock
         public
         view
+        tokenMaturityInitLock
         tokenMaturityInitLock
         returns (uint256)
     {
@@ -114,17 +136,25 @@ contract TokenMaturity {
             );
     }
 
-    function getIsTreasuryLiquidated() tokenMaturityInitLock public view returns (bool) {
+    function getIsTreasuryLiquidated()
+        public
+        view
+        tokenMaturityInitLock
+        returns (bool)
+    {
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
         return ss.isTreasuryLiquidated;
     }
 
-    function setIsTreasuryLiquidated(bool _isTreasuryLiquidated) tokenMaturityInitLock public {
+    function setIsTreasuryLiquidated(bool _isTreasuryLiquidated)
+        public
+        tokenMaturityInitLock
+    {
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
         ss.isTreasuryLiquidated = _isTreasuryLiquidated;
     }
 
-    function redeem() tokenMaturityInitLock public {
+    function redeem() public tokenMaturityInitLock {
         require(
             isTokenMatured(block.timestamp),
             "Address can not redeem before expiration."
@@ -159,7 +189,12 @@ contract TokenMaturity {
         emit Redeemed(account, ownerBalance, redemptionAmount);
     }
 
-    function hasRedeemed(address account) tokenMaturityInitLock public view returns (bool, uint256) {
+    function hasRedeemed(address account)
+        public
+        view
+        tokenMaturityInitLock
+        returns (bool, uint256)
+    {
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
         return (
             ss.ownersRedeemed[account],
@@ -167,17 +202,26 @@ contract TokenMaturity {
         );
     }
 
-    function balanceOfEth(address account) tokenMaturityInitLock public view returns (uint256) {
+    function balanceOfEth(address account)
+        public
+        view
+        tokenMaturityInitLock
+        returns (uint256)
+    {
         return account.balance;
     }
 
-    function getCurrentContractEthBalance() tokenMaturityInitLock public view returns (uint256) {
+    function getCurrentContractEthBalance()
+        public
+        view
+        tokenMaturityInitLock
+        returns (uint256)
+    {
         return address(this).balance;
     }
 
     //    call via perform upkeep once current timestamp >= contract maturity timestamp
-    function onTokenMaturity() tokenMaturityInitLock public {
-
+    function onTokenMaturity() public tokenMaturityInitLock {
         require(
             isTokenMatured(block.timestamp),
             "TUFF: Token must have reached maturity."
@@ -201,7 +245,6 @@ contract TokenMaturity {
     }
 
     function liquidateTreasury() public tokenMaturityInitLock {
-
         callLiquidateAaveTreasury();
 
         address[] memory supportedTokens = callGetAllAaveSupportedTokens();
@@ -209,42 +252,65 @@ contract TokenMaturity {
         UniswapManager uniswapManager = UniswapManager(address(this));
 
         UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
-        .getState();
+            .getState();
 
         for (uint256 i = 0; i < supportedTokens.length; i++) {
-            uniswapManager.swapExactInputSingle(
-                supportedTokens[i],
-                3000,
-                ss.WETHAddress,
-                IERC20(supportedTokens[i]).balanceOf(address(this))
-            );
+            uint256 balance = IERC20(supportedTokens[i]).balanceOf(address(this));
+            if (balance > 0) {
+                uniswapManager.swapExactInputSingle(
+                    supportedTokens[i],
+                    3000,
+                    ss.WETHAddress,
+                    balance
+                );
+            }
         }
 
         callWithdrawWETH();
 
         setIsTreasuryLiquidated(true);
-
     }
 
-
-    function callLiquidateAaveTreasury() public tokenMaturityInitLock returns (bytes memory) {
-        bytes memory payload = abi.encodeWithSignature("liquidateAaveTreasury()");
+    function callLiquidateAaveTreasury()
+        public
+        tokenMaturityInitLock
+        returns (bytes memory)
+    {
+        bytes memory payload = abi.encodeWithSignature(
+            "liquidateAaveTreasury()"
+        );
         (bool success, bytes memory returnData) = address(this).call(payload);
         require(success, "TUFF: Aave liquidation failed.");
         return returnData;
     }
 
-    function callGetAllAaveSupportedTokens() public tokenMaturityInitLock returns (address[] memory) {
-        bytes memory payload = abi.encodeWithSignature("getAllAaveSupportedTokens()");
+    function callGetAllAaveSupportedTokens()
+        public
+        tokenMaturityInitLock
+        returns (address[] memory)
+    {
+        bytes memory payload = abi.encodeWithSignature(
+            "getAllAaveSupportedTokens()"
+        );
         (bool success, bytes memory returnData) = address(this).call(payload);
         require(success, "TUFF: Unable to get Aave supported tokens.");
         return abi.decode(returnData, (address[]));
     }
 
-    function callWithdrawWETH() public tokenMaturityInitLock returns (bytes memory) {
-        UniswapManagerLib.StateStorage storage ss = UniswapManagerLib.getState();
-        bytes memory payload = abi.encodeWithSignature("withdraw(uint)", IERC20(ss.WETHAddress).balanceOf(address(this)));
-        (bool success, bytes memory returnData) = address(ss.WETHAddress).call(payload);
+    function callWithdrawWETH()
+        public
+        tokenMaturityInitLock
+        returns (bytes memory)
+    {
+        UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
+            .getState();
+        bytes memory payload = abi.encodeWithSignature(
+            "withdraw(uint)",
+            IERC20(ss.WETHAddress).balanceOf(address(this))
+        );
+        (bool success, bytes memory returnData) = address(ss.WETHAddress).call(
+            payload
+        );
         require(success, "TUFF: Unable to unwrap WETH.");
         return returnData;
     }

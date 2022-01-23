@@ -5,6 +5,7 @@ import {Context} from "@openzeppelin/contracts-v6/utils/Context.sol";
 import {LendingPool} from "@aave/protocol-v2/contracts/protocol/lendingpool/LendingPool.sol";
 import {LendingPoolAddressesProvider} from "@aave/protocol-v2/contracts/protocol/configuration/LendingPoolAddressesProvider.sol";
 import {IERC20} from "@openzeppelin/contracts-v6/token/ERC20/IERC20.sol";
+import {AaveProtocolDataProvider} from "@aave/protocol-v2/contracts/misc/AaveProtocolDataProvider.sol";
 
 import {AaveLPManagerLib} from "./AaveLPManagerLib.sol";
 
@@ -27,6 +28,7 @@ contract AaveLPManager is Context {
     // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
     function initAaveLPManager(
         address _lendingPoolProviderAddr,
+        address _protocolDataProviderAddr,
         address[] memory _supportedTokens
     ) public {
         require(
@@ -43,6 +45,7 @@ contract AaveLPManager is Context {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
 
         ss.lpProviderAddr = _lendingPoolProviderAddr;
+        ss.protocolDataProviderAddr = _protocolDataProviderAddr;
 
         for (uint256 i = 0; i < _supportedTokens.length; i++) {
             addAaveSupportedToken(_supportedTokens[i]);
@@ -59,6 +62,16 @@ contract AaveLPManager is Context {
     function getAaveLPAddr() public view aaveInitLock returns (address) {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
         return LendingPoolAddressesProvider(ss.lpProviderAddr).getLendingPool();
+    }
+
+    function getProtocolDataProviderAddr()
+        public
+        view
+        aaveInitLock
+        returns (address)
+    {
+        AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
+        return ss.protocolDataProviderAddr;
     }
 
     //TODO: Need to make sure this is locked down to only owner and approved callers (eg chainlink)
@@ -90,6 +103,7 @@ contract AaveLPManager is Context {
     function withdrawFromAave(address erc20TokenAddr, uint256 amount)
         public
         aaveInitLock
+        returns (uint256)
     {
         (bool _isSupportedToken, ) = isAaveSupportedToken(erc20TokenAddr);
         require(
@@ -103,11 +117,20 @@ contract AaveLPManager is Context {
             )
         );
 
-        LendingPool(getAaveLPAddr()).withdraw(
-            erc20TokenAddr,
-            amount,
-            address(this)
-        );
+        (uint256 currentATokenBalance, , , , , , , , ) = AaveProtocolDataProvider(
+            getProtocolDataProviderAddr()
+        ).getUserReserveData(erc20TokenAddr, address(this));
+
+        if (currentATokenBalance == 0) {
+            return 0;
+        }
+
+        return
+            LendingPool(getAaveLPAddr()).withdraw(
+                erc20TokenAddr,
+                amount,
+                address(this)
+            );
     }
 
     function isAaveSupportedToken(address tokenAddr)

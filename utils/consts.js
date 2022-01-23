@@ -15,6 +15,7 @@ let constsMap = {
 
         // Aave (https://docs.aave.com/developers/deployed-contracts/deployed-contracts)
         AAVE_LENDINGPOOL_PROVIDER_ADDR: "0x88757f2f99175387aB4C6a4b3067c77A695b0349",
+        AAVE_PROTOCOL_DATA_PROVIDER_ADDR: "0x3c73A5E5785cAC854D468F727c606C07488a29D6",
 
         // Uniswap (https://docs.uniswap.org/protocol/reference/deployments)
         UNISWAP_V3_ROUTER_ADDR: "0xE592427A0AEce92De3Edee1F18E0157C05861564",
@@ -36,6 +37,7 @@ let constsMap = {
 
         // Aave (https://docs.aave.com/developers/deployed-contracts/deployed-contracts)
         AAVE_LENDINGPOOL_PROVIDER_ADDR: "0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5",
+        AAVE_PROTOCOL_DATA_PROVIDER_ADDR: "0x057835Ad21a177dbdd3090bB1CAE03EaCF78Fc6d",
 
         // Uniswap (https://docs.uniswap.org/protocol/reference/deployments)
         UNISWAP_V3_ROUTER_ADDR: "0xE592427A0AEce92De3Edee1F18E0157C05861564",

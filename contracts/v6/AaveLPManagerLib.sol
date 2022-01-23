@@ -11,6 +11,7 @@ library AaveLPManagerLib {
         address[] supportedTokens;
         mapping(address => TokenMetadata) tokenMetadata;
         address lpProviderAddr;
+        address protocolDataProviderAddr;
         address lpAddr;
     }
 
