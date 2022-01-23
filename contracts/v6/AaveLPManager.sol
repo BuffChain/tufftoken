@@ -117,9 +117,18 @@ contract AaveLPManager is Context {
             )
         );
 
-        (uint256 currentATokenBalance, , , , , , , , ) = AaveProtocolDataProvider(
-            getProtocolDataProviderAddr()
-        ).getUserReserveData(erc20TokenAddr, address(this));
+        (
+            uint256 currentATokenBalance,
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+
+        ) = AaveProtocolDataProvider(getProtocolDataProviderAddr())
+                .getUserReserveData(erc20TokenAddr, address(this));
 
         if (currentATokenBalance == 0) {
             return 0;

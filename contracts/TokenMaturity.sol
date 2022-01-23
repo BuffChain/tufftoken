@@ -255,7 +255,9 @@ contract TokenMaturity {
             .getState();
 
         for (uint256 i = 0; i < supportedTokens.length; i++) {
-            uint256 balance = IERC20(supportedTokens[i]).balanceOf(address(this));
+            uint256 balance = IERC20(supportedTokens[i]).balanceOf(
+                address(this)
+            );
             if (balance > 0) {
                 uniswapManager.swapExactInputSingle(
                     supportedTokens[i],
