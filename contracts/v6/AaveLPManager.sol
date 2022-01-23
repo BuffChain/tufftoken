@@ -217,20 +217,24 @@ contract AaveLPManager is Context {
         withdrawFromAave(asset, type(uint256).max);
     }
 
-    function getATokenBalance(address asset) public view aaveInitLock returns (uint256) {
+    function getATokenBalance(address asset)
+        public
+        view
+        aaveInitLock
+        returns (uint256)
+    {
         (
-        uint256 currentATokenBalance,
-        ,
-        ,
-        ,
-        ,
-        ,
-        ,
-        ,
+            uint256 currentATokenBalance,
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
 
         ) = AaveProtocolDataProvider(getProtocolDataProviderAddr())
-        .getUserReserveData(asset, address(this));
+                .getUserReserveData(asset, address(this));
         return currentATokenBalance;
     }
-
 }
