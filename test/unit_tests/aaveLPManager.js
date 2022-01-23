@@ -83,7 +83,7 @@ describe('AaveLPManager', function () {
             "The tokenAddr supplied is not ERC20 compatible");
     });
 
-    it("should deposit dai into aave from TuffToken's wallet", async () => {
+    async function assertDepositToAave() {
         const qtyInDAI = hre.ethers.utils.parseEther("2000");
 
         //Check that the account has enough DAI
@@ -100,16 +100,60 @@ describe('AaveLPManager', function () {
         await tuffTokenDiamond.depositToAave(consts("DAI_ADDR"), qtyInDAI);
 
         //Check that the account has deposited the DAI
-        const endDaiQty = await daiContract.balanceOf(tuffTokenDiamond.address);
-        expect(new BN(endDaiQty.toString())).to.be.bignumber.equal(new BN(startDaiQty.sub(qtyInDAI).toString()));
+        const daiQtyAfterDeposit = await daiContract.balanceOf(tuffTokenDiamond.address);
+        expect(new BN(daiQtyAfterDeposit.toString())).to.be.bignumber.equal(new BN(startDaiQty.sub(qtyInDAI).toString()),
+            "unexpected DAI balance after deposit of DAI");
 
         //Check that the account now has aDAI equal to the DAI we deposited
-        const endAdaiQty = await adaiContract.balanceOf(tuffTokenDiamond.address);
-        expect(new BN(qtyInDAI.toString())).to.be.bignumber.equal(new BN(endAdaiQty.toString()));
+        const aDaiQtyAfterDeposit = await adaiContract.balanceOf(tuffTokenDiamond.address);
+        expect(new BN(qtyInDAI.toString())).to.be.bignumber.equal(new BN(aDaiQtyAfterDeposit.toString()),
+            "unexpected ADAI balance after deposit of DAI");
+        return {startDaiQty};
+    }
+
+    it("should deposit and withdraw dai to/from aave and TuffToken's wallet", async () => {
+
+        const daiContract = await utils.getDAIContract();
+        const adaiContract = await utils.getADAIContract();
+
+        const {startDaiQty} = await assertDepositToAave();
+
+        //Make the call to withdraw all from Aave
+        await tuffTokenDiamond.withdrawAllFromAave(consts("DAI_ADDR"));
+
+        //Check that the account now has no aDAI after withdraw
+        const aDaiQtyAfterWithdraw = await adaiContract.balanceOf(tuffTokenDiamond.address);
+        expect(new BN(aDaiQtyAfterWithdraw.toString())).to.be.bignumber.equal(new BN("0"),
+            "unexpected ADAI balance after withdraw of DAI");
+
+        //Check that the account now has the same or more(if interest was gained) DAI than we started with
+        const daiQtyAfterWithdraw = await daiContract.balanceOf(tuffTokenDiamond.address);
+        expect(new BN(daiQtyAfterWithdraw.toString()) >= new BN(startDaiQty.toString())).to.equal(true,
+            "unexpected DAI balance after withdraw of DAI");
+
     });
 
     it("revert if token deposited is not supported", async () => {
         await expectRevert(tuffTokenDiamond.depositToAave(consts("WETH9_ADDR"), 0),
             "This token is not currently supported");
     });
+
+
+    it("should liquidate Aave treasury", async () => {
+
+        await assertDepositToAave();
+
+        await tuffTokenDiamond.liquidateAaveTreasury();
+
+        const tokens = await tuffTokenDiamond.getAllAaveSupportedTokens();
+
+        tokens.forEach(token => {
+            (async () => {
+                const balance = await tuffTokenDiamond.getATokenBalance(token);
+                expect(balance).to.equal(0, `unexpected aToken (${token}) balance after withdraw of all assets`);
+            })()
+        })
+
+    });
+
 });

@@ -117,20 +117,7 @@ contract AaveLPManager is Context {
             )
         );
 
-        (
-            uint256 currentATokenBalance,
-            ,
-            ,
-            ,
-            ,
-            ,
-            ,
-            ,
-
-        ) = AaveProtocolDataProvider(getProtocolDataProviderAddr())
-                .getUserReserveData(erc20TokenAddr, address(this));
-
-        if (currentATokenBalance == 0) {
+        if (getATokenBalance(erc20TokenAddr) == 0) {
             return 0;
         }
 
@@ -222,7 +209,28 @@ contract AaveLPManager is Context {
     function liquidateAaveTreasury() public aaveInitLock {
         address[] memory supportedTokens = getAllAaveSupportedTokens();
         for (uint256 i = 0; i < supportedTokens.length; i++) {
-            withdrawFromAave(supportedTokens[i], type(uint256).max);
+            withdrawAllFromAave(supportedTokens[i]);
         }
     }
+
+    function withdrawAllFromAave(address asset) public aaveInitLock {
+        withdrawFromAave(asset, type(uint256).max);
+    }
+
+    function getATokenBalance(address asset) public view aaveInitLock returns (uint256) {
+        (
+        uint256 currentATokenBalance,
+        ,
+        ,
+        ,
+        ,
+        ,
+        ,
+        ,
+
+        ) = AaveProtocolDataProvider(getProtocolDataProviderAddr())
+        .getUserReserveData(asset, address(this));
+        return currentATokenBalance;
+    }
+
 }
