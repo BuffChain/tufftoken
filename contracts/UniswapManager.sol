@@ -145,5 +145,4 @@ contract UniswapManager {
         // The call to `exactInputSingle` executes the swap.
         amountOut = ss.swapRouter.exactInputSingle(params);
     }
-
 }

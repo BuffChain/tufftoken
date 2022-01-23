@@ -244,4 +244,10 @@ describe('TokenMaturity', function () {
 
     });
 
+    it('should liquidate treasury', async () => {
+
+        await tuffTokenDiamond.liquidateTreasury();
+
+    });
+
 });
