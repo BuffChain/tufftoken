@@ -115,83 +115,87 @@ describe('TokenMaturity', function () {
         expect(isMatured).to.equal(true, "should have reached maturity");
     }
 
-    async function assertStartingTotalSupply() {
-        const startingTotalSupply = parseFloat(await tuffTokenDiamond.totalSupply());
+    async function assertStartingTuffTokenTotalSupply() {
 
+        const decimals = parseFloat(await tuffTokenDiamond.decimals());
+        const expectedDecimals = 9;
+        expect(decimals).to.equal(expectedDecimals, "incorrect total supply");
+
+        const startingTuffTokenTotalSupply = parseFloat(await tuffTokenDiamond.totalSupply());
         const supplyNoDecimals = 1000000000;
+        expect(startingTuffTokenTotalSupply).to.equal(supplyNoDecimals * 10 ** decimals, "incorrect total supply");
 
-        expect(startingTotalSupply).to.equal(supplyNoDecimals * 10 ** 9, "incorrect total supply");
-        return startingTotalSupply;
+        return {startingTuffTokenTotalSupply, decimals};
     }
 
-    async function assertSenderTransferSuccess(startingTotalSupply, desiredAmountLeftOver) {
+    async function assertSenderTransferSuccess(startingTuffTokenTotalSupply, desiredTuffTokenAmountLeftOver) {
         // Make transaction from first account to second.
         const sender = owner.address;
         const holder = accounts[0].address;
 
         const senderStartingBalance = parseFloat(await tuffTokenDiamond.balanceOf(sender));
-        expect(senderStartingBalance).to.equal(startingTotalSupply,
+        expect(senderStartingBalance).to.equal(startingTuffTokenTotalSupply,
             "Sender should have total supply to start.");
 
-        const amount = (startingTotalSupply - desiredAmountLeftOver).toString(); // 100000 TUFF left
+        const amount = (startingTuffTokenTotalSupply - desiredTuffTokenAmountLeftOver).toString(); // 100000 TUFF left
         await tuffTokenDiamond.transfer(holder, amount, {from: sender});
 
-        const senderBalanceAfterTransfer = parseFloat(await tuffTokenDiamond.balanceOf(sender));
-        expect(senderBalanceAfterTransfer).to.equal(desiredAmountLeftOver,
+        const senderTuffTokenBalanceAfterTransfer = parseFloat(await tuffTokenDiamond.balanceOf(sender));
+        expect(senderTuffTokenBalanceAfterTransfer).to.equal(desiredTuffTokenAmountLeftOver,
             "Amount wasn't correctly sent to the receiver");
-        return {sender, senderBalanceAfterTransfer};
+        return {sender, senderTuffTokenBalanceAfterTransfer};
     }
 
     async function assertTokenRedemptionSuccess(
-        desiredAmountLeftOver,
-        startingTotalSupply,
+        desiredTuffTokenAmountLeftOver,
+        startingTuffTokenTotalSupply,
         contractStartingEthBalance,
         sender,
-        senderBalanceAfterTransfer
+        senderTuffTokenBalanceAfterTransfer
     ) {
-        const holderBalanceToTotalSupplyRatio = desiredAmountLeftOver / startingTotalSupply;
-        const expectedRedemptionAmount = contractStartingEthBalance * holderBalanceToTotalSupplyRatio;
+        const holderTuffTokenBalanceToTotalSupplyRatio = desiredTuffTokenAmountLeftOver / startingTuffTokenTotalSupply;
+        const expectedETHRedemptionAmount = contractStartingEthBalance * holderTuffTokenBalanceToTotalSupplyRatio;
 
         let senderStartingEthBalance = await hre.ethers.provider.getBalance(sender);
 
         await expect(tuffTokenDiamond.redeem())
             .to.emit(tuffTokenDiamond, "Redeemed")
-            .withArgs(sender, new BN(senderBalanceAfterTransfer.toString()), new BN(expectedRedemptionAmount.toString()));
+            .withArgs(sender, new BN(senderTuffTokenBalanceAfterTransfer.toString()), new BN(expectedETHRedemptionAmount.toString()));
 
         const senderEndingEthBalance = await hre.ethers.provider.getBalance(sender);
 
         expect(senderEndingEthBalance > senderStartingEthBalance).to.equal(true,
             "Holder did not successfully receive ETH");
 
-        const senderBalanceAfterRedemption = parseFloat(await tuffTokenDiamond.balanceOf(sender));
-        expect(senderBalanceAfterRedemption).to.equal(0,
+        const senderTuffTokenBalanceAfterRedemption = parseFloat(await tuffTokenDiamond.balanceOf(sender));
+        expect(senderTuffTokenBalanceAfterRedemption).to.equal(0,
             "Holder's balance was not reset");
 
         await expectRevert(tuffTokenDiamond.redeem(),
             "Address can only redeem once.");
 
-        return expectedRedemptionAmount;
+        return expectedETHRedemptionAmount;
     }
 
-    async function assertRedemptionFunctionValues(startingTotalSupply, startingEthBalance) {
-        const endingTotalSupplyForRedemption = parseFloat(await tuffTokenDiamond.totalSupplyForRedemption());
-        expect(endingTotalSupplyForRedemption).to.equal(startingTotalSupply,
+    async function assertRedemptionFunctionValues(startingTuffTokenTotalSupply, contractStartingEthBalance) {
+        const endingTuffTokenTotalSupplyForRedemption = parseFloat(await tuffTokenDiamond.totalSupplyForRedemption());
+        expect(endingTuffTokenTotalSupplyForRedemption).to.equal(startingTuffTokenTotalSupply,
             "total supply used for redemption calculation should not have been affected by " +
             "holder redeeming (and burning) tokens");
 
         const currentContractStartingEthBalance = parseFloat(await tuffTokenDiamond.getContractStartingEthBalance());
-        expect(currentContractStartingEthBalance.toString()).to.equal(startingEthBalance.toString(),
+        expect(currentContractStartingEthBalance.toString()).to.equal(contractStartingEthBalance.toString(),
             "starting contract eth balance used for redemption calculation should not be affected by redemption");
     }
 
-    async function assertBalanceAndSupplyImpact(startingTotalSupply, desiredAmountLeftOver, startingEthBalance, expectedRedemptionAmount) {
+    async function assertBalanceAndSupplyImpact(startingTuffTokenTotalSupply, desiredTuffTokenAmountLeftOver, contractStartingEthBalance, expectedETHRedemptionAmount) {
         const totalSupplyAfterBurn = parseFloat(await tuffTokenDiamond.totalSupply());
 
-        expect(totalSupplyAfterBurn).to.equal(startingTotalSupply - desiredAmountLeftOver,
+        expect(totalSupplyAfterBurn).to.equal(startingTuffTokenTotalSupply - desiredTuffTokenAmountLeftOver,
             "incorrect total supply after burn");
 
         const currentContractEthBalance = parseFloat(await tuffTokenDiamond.getCurrentContractEthBalance());
-        expect(currentContractEthBalance.toString()).to.equal((startingEthBalance - expectedRedemptionAmount).toString(),
+        expect(currentContractEthBalance.toString()).to.equal((contractStartingEthBalance - expectedETHRedemptionAmount).toString(),
             "actual eth balance should be lower than before redemption");
     }
 
@@ -203,39 +207,39 @@ describe('TokenMaturity', function () {
 
         expect(isLiquidated).to.equal(false, "should not have been liquidated");
 
-        const startingTotalSupply = await assertStartingTotalSupply();
+        const {startingTuffTokenTotalSupply, decimals} = await assertStartingTuffTokenTotalSupply();
 
         const contractStartingEthBalance = await tuffTokenDiamond.getCurrentContractEthBalance();
 
         await expect(tuffTokenDiamond.onTokenMaturity())
             .to.emit(tuffTokenDiamond, "TokenMatured")
-            .withArgs(new BN(contractStartingEthBalance.toString()), new BN(startingTotalSupply.toString()));
+            .withArgs(new BN(contractStartingEthBalance.toString()), new BN(startingTuffTokenTotalSupply.toString()));
 
         isLiquidated = await tuffTokenDiamond.getIsTreasuryLiquidated();
 
         expect(isLiquidated).to.equal(true, "should have been liquidated");
 
-        const desiredAmountLeftOver = 100000 * 10 ** 9;
+        const desiredTuffTokenAmountLeftOver = 100000 * 10 ** decimals;
 
-        const {sender, senderBalanceAfterTransfer} = await assertSenderTransferSuccess(
-            startingTotalSupply,
-            desiredAmountLeftOver
+        const {sender, senderTuffTokenBalanceAfterTransfer} = await assertSenderTransferSuccess(
+            startingTuffTokenTotalSupply,
+            desiredTuffTokenAmountLeftOver
         );
-        const expectedRedemptionAmount = await assertTokenRedemptionSuccess(
-            desiredAmountLeftOver,
-            startingTotalSupply,
+        const expectedETHRedemptionAmount = await assertTokenRedemptionSuccess(
+            desiredTuffTokenAmountLeftOver,
+            startingTuffTokenTotalSupply,
             contractStartingEthBalance,
             sender,
-            senderBalanceAfterTransfer
+            senderTuffTokenBalanceAfterTransfer
         );
 
-        await assertRedemptionFunctionValues(startingTotalSupply, contractStartingEthBalance);
+        await assertRedemptionFunctionValues(startingTuffTokenTotalSupply, contractStartingEthBalance);
 
         await assertBalanceAndSupplyImpact(
-            startingTotalSupply,
-            desiredAmountLeftOver,
+            startingTuffTokenTotalSupply,
+            desiredTuffTokenAmountLeftOver,
             contractStartingEthBalance,
-            expectedRedemptionAmount
+            expectedETHRedemptionAmount
         );
 
     });
