@@ -40,11 +40,18 @@ describe("Governance", function () {
     it("should create an election from governance", async () => {
 
         let electionLength = await tuffTokenDiamond.getElectionLength();
-        expect(electionLength).to.equal(1, "should be length 0");
+        expect(electionLength).to.equal(1, "should be length 1");
 
-        await tuffTokenDiamond.createElection(expectedName + 1, expectedDescription, expectedAuthor, expectedElectionEnd);
+        const newElectionName = expectedName + 1;
+        const newElectionIndex = electionLength;
+
+        await expect(tuffTokenDiamond.createElection(newElectionName, expectedDescription, expectedAuthor, expectedElectionEnd))
+            .to.emit(tuffTokenDiamond, "ElectionCreated")
+            .withArgs(newElectionIndex, newElectionName);
+
+
         electionLength = await tuffTokenDiamond.getElectionLength();
-        expect(electionLength).to.equal(2, "should be length 1");
+        expect(electionLength).to.equal(2, "should be length 2");
 
         const electionIndex = electionLength - 1;
         const [name, description, author, endTime, ended] = await tuffTokenDiamond.getElectionMetaData(electionIndex);
@@ -85,9 +92,17 @@ describe("Governance", function () {
 
     it("should try to end vote", async () => {
         const expectedElectionEnd = 0;
-        await tuffTokenDiamond.createElection(expectedName + 2, expectedDescription, expectedAuthor, expectedElectionEnd);
 
-        await tuffTokenDiamond.endElection(1);
+        const expectedElectionName = expectedName + 2;
+
+        await tuffTokenDiamond.createElection(expectedElectionName, expectedDescription, expectedAuthor, expectedElectionEnd);
+
+        const expectedElectionIndex = 1;
+        const expectedElectionOutcome = true;
+
+        await expect(tuffTokenDiamond.endElection(expectedElectionIndex))
+            .to.emit(tuffTokenDiamond, "ElectionEnded")
+            .withArgs(expectedElectionIndex, expectedElectionName, expectedElectionOutcome);
 
         const [name, description, author, endTime, ended] = await tuffTokenDiamond.getElectionMetaData(1);
 

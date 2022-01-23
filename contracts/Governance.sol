@@ -38,6 +38,16 @@ contract Governance {
         ss.isInit = true;
     }
 
+    /**
+     * @dev Emitted when an election is created
+     */
+    event ElectionCreated(uint256 electionIndex, string name);
+
+    /**
+     * @dev Emitted when an election is ended
+     */
+    event ElectionEnded(uint256 electionIndex, string name, bool isSuccess);
+
     function isGovernanceInit() public view returns (bool) {
         GovernanceLib.StateStorage storage ss = GovernanceLib.getState();
         return ss.isInit;
@@ -59,6 +69,8 @@ contract Governance {
         election.description = _description;
         election.author = _author;
         election.electionEnd = _electionEnd;
+
+        emit ElectionCreated(electionIndex, _name);
     }
 
     function endElection(uint256 electionIndex)
@@ -82,8 +94,19 @@ contract Governance {
         );
 
         ss.elections[electionIndex].ended = true;
+        (
+            bool isSuccess,
+            uint256 votesApproving,
+            uint256 votesDisapproving
+        ) = isProposalSuccess(electionIndex);
 
-        return isProposalSuccess(electionIndex);
+        emit ElectionEnded(
+            electionIndex,
+            ss.elections[electionIndex].name,
+            isSuccess
+        );
+
+        return (isSuccess, votesApproving, votesDisapproving);
     }
 
     function vote(uint256 electionIndex, bool approve)
