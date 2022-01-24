@@ -125,7 +125,6 @@ contract TokenMaturity {
         public
         view
         tokenMaturityInitLock
-        tokenMaturityInitLock
         returns (uint256)
     {
         if (ownerBalance == 0) {
