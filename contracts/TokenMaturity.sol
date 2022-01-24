@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import {UniswapManager} from "./UniswapManager.sol";
 import {UniswapManagerLib} from "./UniswapManagerLib.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IWETH9} from "./IWETH9.sol";
 
 contract TokenMaturity {
     modifier tokenMaturityInitLock() {
@@ -302,18 +303,14 @@ contract TokenMaturity {
     function callWithdrawWETH()
         public
         tokenMaturityInitLock
-        returns (bytes memory)
     {
         UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
             .getState();
-        bytes memory payload = abi.encodeWithSignature(
-            "withdraw(uint)",
-            IERC20(ss.WETHAddress).balanceOf(address(this))
-        );
-        (bool success, bytes memory returnData) = address(ss.WETHAddress).call(
-            payload
-        );
-        require(success, "TUFF: Unable to unwrap WETH.");
-        return returnData;
+
+        uint256 balance = IWETH9(ss.WETHAddress).balanceOf(address(this));
+
+        IWETH9(ss.WETHAddress).withdraw(balance);
+
     }
+
 }

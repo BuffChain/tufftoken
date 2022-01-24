@@ -12,6 +12,34 @@ const hre = require("hardhat");
 const utils = require("../../utils/test_utils");
 const {consts} = require("../../utils/consts");
 
+async function assertDepositToAave(tuffTokenDiamond) {
+    const qtyInDAI = hre.ethers.utils.parseEther("2000");
+
+    //Check that the account has enough DAI
+    const daiContract = await utils.getDAIContract();
+    const startDaiQty = await daiContract.balanceOf(tuffTokenDiamond.address);
+    expect(new BN(startDaiQty.toString())).to.be.bignumber.greaterThan(new BN(qtyInDAI.toString()));
+
+    //Check that the account has no aDAI
+    const adaiContract = await utils.getADAIContract();
+    const startAdaiQty = await adaiContract.balanceOf(tuffTokenDiamond.address);
+    expect(new BN(0)).to.be.bignumber.equal(new BN(startAdaiQty.toString()));
+
+    //Make the call to deposit Aave
+    await tuffTokenDiamond.depositToAave(consts("DAI_ADDR"), qtyInDAI);
+
+    //Check that the account has deposited the DAI
+    const daiQtyAfterDeposit = await daiContract.balanceOf(tuffTokenDiamond.address);
+    expect(new BN(daiQtyAfterDeposit.toString())).to.be.bignumber.equal(new BN(startDaiQty.sub(qtyInDAI).toString()),
+        "unexpected DAI balance after deposit of DAI");
+
+    //Check that the account now has aDAI equal to the DAI we deposited
+    const aDaiQtyAfterDeposit = await adaiContract.balanceOf(tuffTokenDiamond.address);
+    expect(new BN(qtyInDAI.toString())).to.be.bignumber.equal(new BN(aDaiQtyAfterDeposit.toString()),
+        "unexpected ADAI balance after deposit of DAI");
+    return {startDaiQty};
+}
+
 describe('AaveLPManager', function () {
     let owner;
     let accounts;
@@ -83,40 +111,12 @@ describe('AaveLPManager', function () {
             "The tokenAddr supplied is not ERC20 compatible");
     });
 
-    async function assertDepositToAave() {
-        const qtyInDAI = hre.ethers.utils.parseEther("2000");
-
-        //Check that the account has enough DAI
-        const daiContract = await utils.getDAIContract();
-        const startDaiQty = await daiContract.balanceOf(tuffTokenDiamond.address);
-        expect(new BN(startDaiQty.toString())).to.be.bignumber.greaterThan(new BN(qtyInDAI.toString()));
-
-        //Check that the account has no aDAI
-        const adaiContract = await utils.getADAIContract();
-        const startAdaiQty = await adaiContract.balanceOf(tuffTokenDiamond.address);
-        expect(new BN(0)).to.be.bignumber.equal(new BN(startAdaiQty.toString()));
-
-        //Make the call to deposit Aave
-        await tuffTokenDiamond.depositToAave(consts("DAI_ADDR"), qtyInDAI);
-
-        //Check that the account has deposited the DAI
-        const daiQtyAfterDeposit = await daiContract.balanceOf(tuffTokenDiamond.address);
-        expect(new BN(daiQtyAfterDeposit.toString())).to.be.bignumber.equal(new BN(startDaiQty.sub(qtyInDAI).toString()),
-            "unexpected DAI balance after deposit of DAI");
-
-        //Check that the account now has aDAI equal to the DAI we deposited
-        const aDaiQtyAfterDeposit = await adaiContract.balanceOf(tuffTokenDiamond.address);
-        expect(new BN(qtyInDAI.toString())).to.be.bignumber.equal(new BN(aDaiQtyAfterDeposit.toString()),
-            "unexpected ADAI balance after deposit of DAI");
-        return {startDaiQty};
-    }
-
     it("should deposit and withdraw dai to/from aave and TuffToken's wallet", async () => {
 
         const daiContract = await utils.getDAIContract();
         const adaiContract = await utils.getADAIContract();
 
-        const {startDaiQty} = await assertDepositToAave();
+        const {startDaiQty} = await assertDepositToAave(tuffTokenDiamond);
 
         //Make the call to withdraw all from Aave
         await tuffTokenDiamond.withdrawAllFromAave(consts("DAI_ADDR"));
@@ -141,7 +141,7 @@ describe('AaveLPManager', function () {
 
     it("should liquidate Aave treasury", async () => {
 
-        await assertDepositToAave();
+        await assertDepositToAave(tuffTokenDiamond);
 
         await tuffTokenDiamond.liquidateAaveTreasury();
 
@@ -157,3 +157,5 @@ describe('AaveLPManager', function () {
     });
 
 });
+
+exports.assertDepositToAave = assertDepositToAave;

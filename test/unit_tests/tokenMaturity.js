@@ -5,7 +5,9 @@ const hre = require("hardhat");
 
 const utils = require("../../utils/test_utils");
 const {BN, expectRevert} = require("@openzeppelin/test-helpers");
-const {consts} = require("../../utils/consts");
+const {consts, UNISWAP_POOL_BASE_FEE} = require("../../utils/consts");
+const {assertDepositToAave} = require("./aaveLPManager");
+const {BigNumber} = require("ethers");
 
 describe('TokenMaturity', function () {
 
@@ -246,7 +248,70 @@ describe('TokenMaturity', function () {
 
     it('should liquidate treasury', async () => {
 
+        const daiContract = await utils.getDAIContract();
+        const adaiContract = await utils.getADAIContract();
+        const weth9Contract = await utils.getWETH9Contract();
+
+        await utils.sendTokensToAddr(accounts.at(-1), tuffTokenDiamond.address);
+
+        // deposits DAI to Aave
+        await assertDepositToAave(tuffTokenDiamond);
+
+        const ethBalanceAfterDeposit = await hre.ethers.provider.getBalance(tuffTokenDiamond.address);
+        const wethBalanceAfterDeposit = await weth9Contract.balanceOf(tuffTokenDiamond.address);
+        const daiBalanceAfterDeposit = await daiContract.balanceOf(tuffTokenDiamond.address);
+        const adaiBalanceAfterDeposit = await adaiContract.balanceOf(tuffTokenDiamond.address);
+
+        const uniswapQuoterContract = await utils.getUniswapQuoterContract();
+
+        const daiToWethAmountOut = await uniswapQuoterContract.methods.quoteExactInputSingle(
+            consts("DAI_ADDR"),
+            consts("WETH9_ADDR"),
+            UNISWAP_POOL_BASE_FEE,
+            daiBalanceAfterDeposit,
+            0
+        ).call();
+
+        const aDaiToWethAmountOut = await uniswapQuoterContract.methods.quoteExactInputSingle(
+            consts("DAI_ADDR"),
+            consts("WETH9_ADDR"),
+            UNISWAP_POOL_BASE_FEE,
+            adaiBalanceAfterDeposit,
+            0
+        ).call();
+
         await tuffTokenDiamond.liquidateTreasury();
+
+        const ethBalanceAfterLiquidation = await hre.ethers.provider.getBalance(tuffTokenDiamond.address);
+        const wethBalanceAfterLiquidation = await weth9Contract.balanceOf(tuffTokenDiamond.address);
+        const daiBalanceAfterLiquidation = await daiContract.balanceOf(tuffTokenDiamond.address);
+        const adaiBalanceAfterLiquidation = await adaiContract.balanceOf(tuffTokenDiamond.address);
+
+        expect(daiBalanceAfterLiquidation).to.equal(0, "DAI should have been liquidated");
+        expect(adaiBalanceAfterLiquidation).to.equal(0, "ADAI should have been liquidated");
+        expect(wethBalanceAfterLiquidation).to.equal(0, "WETH should have been unwrapped");
+
+        expect(ethBalanceAfterLiquidation >
+            BigInt(ethBalanceAfterDeposit.toString()) + BigInt(wethBalanceAfterDeposit)
+        ).to.equal(true, "unexpected ETH balance");
+
+        if (hre.hardhatArguments.verbose) {
+
+            console.log(`starting amount of ETH:                       ${ethBalanceAfterDeposit}`);
+            console.log(`starting amount of WETH:                       ${wethBalanceAfterDeposit}`);
+            console.log(`expected amount of WETH from DAI swap:          ${daiToWethAmountOut}`);
+            console.log(`expected amount of WETH from ADAI swap:          ${aDaiToWethAmountOut}`);
+
+            console.log('--------------------------------------')
+
+            const expectedEth = BigInt(daiToWethAmountOut) +
+                BigInt(aDaiToWethAmountOut) +
+                BigInt(wethBalanceAfterDeposit) +
+                BigInt(ethBalanceAfterDeposit.toString())
+
+            console.log(`expected amount of ETH after swaps and unwrapping WETH:     ${expectedEth.toString()}`);
+            console.log(`actual amount of ETH after swaps and unwrapping WETH:       ${ethBalanceAfterLiquidation.toString()}`);
+        }
 
     });
 

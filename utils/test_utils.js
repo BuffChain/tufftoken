@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: agpl-3.0
 
 const hre = require("hardhat");
+const Web3 = require('web3');
+const web3 = new Web3('wss://mainnet.infura.io/ws/v3/'  +  process.env.INFURA_KEY);
 const SwapRouterABI = require("@uniswap/v3-periphery/artifacts/contracts/SwapRouter.sol/SwapRouter.json").abi;
 const WETH9ABI = require("@uniswap/v3-periphery/artifacts/contracts/interfaces/external/IWETH9.sol/IWETH9.json").abi;
 const IERC20ABI = require("@uniswap/v3-core/artifacts/contracts/interfaces/IERC20Minimal.sol/IERC20Minimal.json").abi;
+const QuoterABI = require("@uniswap/v3-periphery/artifacts/contracts/lens/Quoter.sol/Quoter.json").abi;
 
 const {consts} = require("./consts");
 
@@ -21,6 +24,10 @@ async function getUSDCContract() {
 
 async function getADAIContract() {
     return await hre.ethers.getContractAt(IERC20ABI, consts("ADAI_ADDR"));
+}
+
+async function getUniswapQuoterContract() {
+    return new web3.eth.Contract(QuoterABI, consts("UNISWAP_QUOTER_ADDR"));
 }
 
 /**
@@ -116,6 +123,11 @@ async function sendTokensToAddr(fromAcct, toAddr) {
     }
 }
 
+function sqrtPriceX96(price) {
+    // sqrtRatioX96 price per uniswap v3 https://docs.uniswap.org/sdk/guides/fetching-prices#understanding-sqrtprice
+    return BigInt(Math.sqrt(price) * 2 ** 96).toString();
+}
+
 module.exports = {
     getDAIContract,
     getWETH9Contract,
@@ -123,5 +135,7 @@ module.exports = {
     getADAIContract,
     transferETH,
     runCallbackImpersonatingAcct,
-    sendTokensToAddr
+    sendTokensToAddr,
+    sqrtPriceX96,
+    getUniswapQuoterContract
 }
