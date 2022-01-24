@@ -23,5 +23,6 @@ jobs:
         run: |
           ALCHEMAPI_KEY=${{ secrets.ALCHEMAPI_KEY }} \
           INFURA_URL=${{ secrets.INFURA_URL }} \
+          INFURA_KEY=${{ secrets.INFURA_KEY }} \
           ETH_ACCOUNT_PRIV_KEY=${{ secrets.ETH_ACCOUNT_PRIV_KEY }} \
           yarn hardhat test
