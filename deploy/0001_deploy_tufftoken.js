@@ -60,7 +60,9 @@ module.exports = async () => {
     if (!await tuffTokenDiamondContract.isUniswapManagerInit()) {
         let initTx = await tuffTokenDiamondContract.initUniswapManager(
             consts("UNISWAP_V3_ROUTER_ADDR"),
-            consts("WETH9_ADDR"));
+            consts("WETH9_ADDR"),
+            UNISWAP_POOL_BASE_FEE
+        );
         logDeploymentTx("Initialized UniswapManager:", initTx);
     }
 

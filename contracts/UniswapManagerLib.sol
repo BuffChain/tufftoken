@@ -12,6 +12,7 @@ library UniswapManagerLib {
         bool isInit;
         ISwapRouter swapRouter;
         address WETHAddress;
+        uint24 basePoolFee;
     }
 
     function getState()

@@ -263,7 +263,7 @@ contract TokenMaturity {
             if (balance > 0) {
                 uniswapManager.swapExactInputSingle(
                     supportedTokens[i],
-                    3000,
+                    ss.basePoolFee,
                     ss.WETHAddress,
                     balance
                 );
