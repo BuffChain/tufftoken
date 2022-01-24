@@ -8,6 +8,7 @@ import {UniswapManager} from "./UniswapManager.sol";
 import {UniswapManagerLib} from "./UniswapManagerLib.sol";
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import {IWETH9} from "./IWETH9.sol";
+import {IAaveLPManager} from "./IAaveLPManager.sol";
 
 contract TokenMaturity {
     modifier tokenMaturityInitLock() {
@@ -245,9 +246,10 @@ contract TokenMaturity {
     }
 
     function liquidateTreasury() public tokenMaturityInitLock {
-        callLiquidateAaveTreasury();
+        IAaveLPManager(address(this)).liquidateAaveTreasury();
 
-        address[] memory supportedTokens = callGetAllAaveSupportedTokens();
+        address[] memory supportedTokens = IAaveLPManager(address(this))
+            .getAllAaveSupportedTokens();
 
         UniswapManager uniswapManager = UniswapManager(address(this));
 
@@ -268,48 +270,17 @@ contract TokenMaturity {
             }
         }
 
-        callWithdrawWETH();
+        unwrapWETH();
 
         setIsTreasuryLiquidated(true);
     }
 
-    function callLiquidateAaveTreasury()
-        public
-        tokenMaturityInitLock
-        returns (bytes memory)
-    {
-        bytes memory payload = abi.encodeWithSignature(
-            "liquidateAaveTreasury()"
-        );
-        (bool success, bytes memory returnData) = address(this).call(payload);
-        require(success, "TUFF: Aave liquidation failed.");
-        return returnData;
-    }
-
-    function callGetAllAaveSupportedTokens()
-        public
-        tokenMaturityInitLock
-        returns (address[] memory)
-    {
-        bytes memory payload = abi.encodeWithSignature(
-            "getAllAaveSupportedTokens()"
-        );
-        (bool success, bytes memory returnData) = address(this).call(payload);
-        require(success, "TUFF: Unable to get Aave supported tokens.");
-        return abi.decode(returnData, (address[]));
-    }
-
-    function callWithdrawWETH()
-        public
-        tokenMaturityInitLock
-    {
+    function unwrapWETH() public tokenMaturityInitLock {
         UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
             .getState();
 
         uint256 balance = IWETH9(ss.WETHAddress).balanceOf(address(this));
 
         IWETH9(ss.WETHAddress).withdraw(balance);
-
     }
-
 }
