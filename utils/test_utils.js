@@ -58,12 +58,22 @@ async function runCallbackImpersonatingAcct(acct, callbackFn) {
         params: [acct.address],
     });
 
-    await callbackFn(acct);
+    await callbackFn(acct)
+        .then(async () => {
+            await hre.network.provider.request({
+                method: "hardhat_stopImpersonatingAccount",
+                params: [acct.address],
+            });
+        })
+        .catch(async (err) => {
+            await hre.network.provider.request({
+                method: "hardhat_stopImpersonatingAccount",
+                params: [acct.address],
+            });
 
-    await hre.network.provider.request({
-        method: "hardhat_stopImpersonatingAccount",
-        params: [acct.address],
-    });
+            console.error(err);
+            throw err;
+        });
 }
 
 /**

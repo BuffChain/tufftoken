@@ -102,14 +102,16 @@ module.exports = {
                 // url: "https://cloudflare-eth.com"
 
                 //Feel free to update at any time. This is here to make local development and caching easier
-                blockNumber: 13302370
+                blockNumber: 13302360
             },
-            timeout: 30000
+            timeout: 30000,
 
-            // This is useful to imitate mainnet block processing
             // mining: {
+            //     // mempool: {
+            //     //     order: "fifo"
+            //     // },
             //     auto: false,
-            //     interval: 5000
+            //     interval: 0
             // }
         },
         mainnet_cloudflare: {
@@ -163,19 +165,7 @@ task("download_block_data", "Downloads and serializes tx data for a range of blo
         const provider = hre.ethers.provider;
         const blockDataPath = path.join(process.cwd(), "block_data");
 
-        const startBlockNumber = parseInt(taskArgs["startBlockNumber"]);
-        const endBlockNumber = parseInt(taskArgs["endBlockNumber"]);
-
-        if (startBlockNumber >= endBlockNumber) {
-            throw `startBlockNumber: [${startBlockNumber}] is lge than endBlockNumber: [${endBlockNumber}]`;
-        }
-
-        const forkedBlockNum = hre.network.config.forking.blockNumber;
-        // if (endBlockNumber > forkedBlockNum) {
-        //     throw `endBlockNumber: [${endBlockNumber}] occurs after forkedBlockNum: [${forkedBlockNum}] set in
-        //     hardhat.config.js. The forked network thus does not have access to block ${endBlockNumber}`;
-        // }
-
+        const {startBlockNumber, endBlockNumber} = getBlockParams(taskArgs);
         const blockCount = endBlockNumber - startBlockNumber;
         for (let i = 0; i < blockCount; i++) {
             const blockNumber = startBlockNumber + i;
@@ -202,30 +192,41 @@ task("test")
     });
 
 task("test:backtest")
-    .addOptionalParam("startBlockNumber", "Start block of the backtest, defaults to the forking block number set in " +
-        "hardhat's netowrk config")
-    .addOptionalParam("endBlockNumber", "End block of the backtest, defaults to 10 blocks after forking block number set in " +
-        "hardhat's netowrk config")
+    .addOptionalParam("startBlockNumber", "Start block of the backtest, defaults to one block after the forking block " +
+        "number")
+    .addOptionalParam("endBlockNumber", "End block of the backtest, defaults to 10 blocks after the startBlockNumber")
     .setAction(async (taskArgs, hre) => {
-        if (taskArgs["startBlockNumber"]) {
-            hre.config.startBlockNumber = parseInt(taskArgs["startBlockNumber"]);
-        } else {
-            hre.config.startBlockNumber = hre.network.config.forking.blockNumber;
-        }
-
-        if (taskArgs["endBlockNumber"]) {
-            hre.config.endBlockNumber = parseInt(taskArgs["endBlockNumber"]);
-        } else {
-            hre.config.endBlockNumber = hre.network.config.forking.blockNumber + 10;
-        }
-
-        if (hre.config.startBlockNumber >= hre.config.endBlockNumber) {
-            throw `startBlockNumber: [${hre.config.startBlockNumber}] is lge than endBlockNumber: [${hre.config.endBlockNumber}]`;
-        }
+        const {startBlockNumber, endBlockNumber} = getBlockParams(taskArgs);
+        // hre.network.config.forking.blockNumber = startBlockNumber - 1;
+        hre.config.startBlockNumber = startBlockNumber;
+        hre.config.endBlockNumber = endBlockNumber;
 
         hre.config.paths.tests = path.join(path.parse(hre.config.paths.tests).dir, "back_tests");
+        hre.config.mocha.timeout = Number.MAX_SAFE_INTEGER;
         return await hre.run("test");
     });
+
+function getBlockParams(taskArgs) {
+    let startBlockNumber, endBlockNumber;
+
+    if (taskArgs["startBlockNumber"]) {
+        startBlockNumber = parseInt(taskArgs["startBlockNumber"]);
+    } else {
+        startBlockNumber = hre.network.config.forking.blockNumber + 1;
+    }
+
+    if (taskArgs["endBlockNumber"]) {
+        endBlockNumber = parseInt(taskArgs["endBlockNumber"]);
+    } else {
+        endBlockNumber = startBlockNumber + 10;
+    }
+
+    if (startBlockNumber >= endBlockNumber) {
+        throw `startBlockNumber: [${startBlockNumber}] is lge than endBlockNumber: [${endBlockNumber}]`;
+    }
+
+    return {startBlockNumber, endBlockNumber};
+}
 
 /**
  * Added this hook into the hardhat deploy plugin to automatically write log output to the corresponding network's

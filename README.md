@@ -77,9 +77,11 @@ from.
 ```
 # Block number at 01/01/2021 00:00 GMT
 export START_BLOCK_NUM=11565019
+export START_BLOCK_NUM=13302360
 
 # Block number at 01/01/2022 00:00 GMT
 export END_BLOCK_NUM=13916166
+export END_BLOCK_NUM=13302372
 
 npm run download_block_data -- --start-block-number ${START_BLOCK_NUM} --end-block-number ${END_BLOCK_NUM}
 

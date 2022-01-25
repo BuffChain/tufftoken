@@ -36,6 +36,7 @@ describe('AaveLPManager', function () {
 
         await utils.sendTokensToAddr(accounts.at(-1), tuffTokenDiamond.address, daiAmt);
         aaveDaiIncome = await tuffTokenDiamond.getAaveIncome(consts("DAI_ADDR"));
+        console.log(`Starting Aave DAI normalized income [${hre.ethers.utils.formatUnits(aaveDaiIncome, 27)}]`);
     });
 
     it('should have increased income', async () => {
@@ -43,11 +44,10 @@ describe('AaveLPManager', function () {
 
         const updateAaveDaiIncome = await tuffTokenDiamond.getAaveIncome(consts("DAI_ADDR"));
         const actualIncomeDiff = updateAaveDaiIncome.sub(aaveDaiIncome);
-        const expectedDiff = hre.ethers.BigNumber.from("201398389822881933700");
-        console.log(`Expected diff is ${hre.ethers.utils.formatEther(expectedDiff)} ether`);
+        const expectedDiff = hre.ethers.BigNumber.from("235199518184764216280");
+        console.log(`Expected diff is ${hre.ethers.utils.formatUnits(expectedDiff, 27)} units of income`);
         expect(actualIncomeDiff).to.be.eq(expectedDiff);
     });
-
 
     it("should have increased aDAI amount", async () => {
         const qtyInDAI = hre.ethers.utils.parseEther(daiAmt);
@@ -70,6 +70,6 @@ describe('AaveLPManager', function () {
         //Check that we have earned aDAI
         const endAdaiQty = await adaiContract.balanceOf(tuffTokenDiamond.address);
         expect(new BN(endAdaiQty.toString())).to.be.bignumber.greaterThan(new BN(startAdaiQty.toString()));
-        console.log(`Started with ${startAdaiQty} aDAI and ended with ${endAdaiQty} aDAI`);
+        console.log(`Started with ${hre.ethers.utils.formatEther(startAdaiQty)} aDAI and ended with ${hre.ethers.utils.formatEther(endAdaiQty)} aDAI`);
     });
 });
