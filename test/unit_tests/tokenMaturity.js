@@ -262,7 +262,10 @@ describe('TokenMaturity', function () {
         const daiBalanceAfterDeposit = await daiContract.balanceOf(tuffTokenDiamond.address);
         const adaiBalanceAfterDeposit = await adaiContract.balanceOf(tuffTokenDiamond.address);
 
-        await tuffTokenDiamond.liquidateTreasury();
+        const liquidationTxResponse = await tuffTokenDiamond.liquidateTreasury();
+        const liquidationTxReceipt = await liquidationTxResponse.wait();
+        const liquidationTxGasCost = BigInt(liquidationTxReceipt.gasUsed.toString()) *
+            BigInt(liquidationTxReceipt.effectiveGasPrice.toString())
 
         const daiWethQuote = await getUniswapPriceQuote(
             consts("DAI_ADDR"),
@@ -282,10 +285,20 @@ describe('TokenMaturity', function () {
         expect(daiBalanceAfterLiquidation).to.equal(0, "DAI should have been liquidated");
         expect(adaiBalanceAfterLiquidation).to.equal(0, "ADAI should have been liquidated");
         expect(wethBalanceAfterLiquidation).to.equal(0, "WETH should have been unwrapped");
-
         expect(ethBalanceAfterLiquidation >
             BigInt(ethBalanceAfterDeposit.toString()) + BigInt(wethBalanceAfterDeposit)
         ).to.equal(true, "unexpected ETH balance");
+
+        const expectedEth =
+            BigInt(daiToWethConversion) +
+            BigInt(aDaiToWethConversion) +
+            BigInt(wethBalanceAfterDeposit) +
+            BigInt(ethBalanceAfterDeposit.toString()) -
+            liquidationTxGasCost;
+
+        const ethDiff = expectedEth - BigInt(ethBalanceAfterLiquidation.toString())
+        const buffer = .01;
+        expect(hre.ethers.utils.formatEther(ethDiff.toString()) < buffer).to.equal(true, "eth difference exceeds allowed buffer");
 
         if (hre.hardhatArguments.verbose) {
 
@@ -296,16 +309,9 @@ describe('TokenMaturity', function () {
 
             console.log('--------------------------------------')
 
-            const expectedEth = BigInt(daiToWethConversion) +
-                BigInt(aDaiToWethConversion) +
-                BigInt(wethBalanceAfterDeposit) +
-                BigInt(ethBalanceAfterDeposit.toString());
-
-            const diff = expectedEth - BigInt(ethBalanceAfterLiquidation.toString())
-
             console.log(`expected amount of ETH after swaps and unwrapping WETH:   ${hre.ethers.utils.formatEther(expectedEth.toString())}`);
             console.log(`actual amount of ETH after swaps and unwrapping WETH:     ${hre.ethers.utils.formatEther(ethBalanceAfterLiquidation.toString())}`);
-            console.log(`difference from expected to actual:                         ${hre.ethers.utils.formatEther(diff.toString())}`);
+            console.log(`difference from expected to actual:                         ${hre.ethers.utils.formatEther(ethDiff.toString())}`);
         }
 
     });
