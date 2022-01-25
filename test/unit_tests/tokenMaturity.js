@@ -5,9 +5,9 @@ const hre = require("hardhat");
 
 const utils = require("../../utils/test_utils");
 const {BN, expectRevert} = require("@openzeppelin/test-helpers");
-const {consts, UNISWAP_POOL_BASE_FEE} = require("../../utils/consts");
 const {assertDepositToAave} = require("./aaveLPManager");
-const {BigNumber} = require("ethers");
+const {getUniswapPriceQuote} = require("../../utils/test_utils");
+const {consts, UNISWAP_POOL_BASE_FEE} = require("../../utils/consts");
 
 describe('TokenMaturity', function () {
 
@@ -262,23 +262,15 @@ describe('TokenMaturity', function () {
         const daiBalanceAfterDeposit = await daiContract.balanceOf(tuffTokenDiamond.address);
         const adaiBalanceAfterDeposit = await adaiContract.balanceOf(tuffTokenDiamond.address);
 
-        const uniswapQuoterContract = await utils.getUniswapQuoterContract();
-
-        const daiToWethAmountOut = await uniswapQuoterContract.methods.quoteExactInputSingle(
+        const daiWethQuote = await getUniswapPriceQuote(
             consts("DAI_ADDR"),
             consts("WETH9_ADDR"),
             UNISWAP_POOL_BASE_FEE,
-            daiBalanceAfterDeposit,
-            0
-        ).call();
+            1
+        );
 
-        const aDaiToWethAmountOut = await uniswapQuoterContract.methods.quoteExactInputSingle(
-            consts("DAI_ADDR"),
-            consts("WETH9_ADDR"),
-            UNISWAP_POOL_BASE_FEE,
-            adaiBalanceAfterDeposit,
-            0
-        ).call();
+        const daiToWethAmountOut = daiBalanceAfterDeposit * daiWethQuote;
+        const aDaiToWethAmountOut = adaiBalanceAfterDeposit * daiWethQuote;
 
         await tuffTokenDiamond.liquidateTreasury();
 
