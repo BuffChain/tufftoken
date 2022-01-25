@@ -262,17 +262,17 @@ describe('TokenMaturity', function () {
         const daiBalanceAfterDeposit = await daiContract.balanceOf(tuffTokenDiamond.address);
         const adaiBalanceAfterDeposit = await adaiContract.balanceOf(tuffTokenDiamond.address);
 
+        await tuffTokenDiamond.liquidateTreasury();
+
         const daiWethQuote = await getUniswapPriceQuote(
             consts("DAI_ADDR"),
             consts("WETH9_ADDR"),
             UNISWAP_POOL_BASE_FEE,
-            1
+            60
         );
 
-        const daiToWethAmountOut = daiBalanceAfterDeposit * daiWethQuote;
-        const aDaiToWethAmountOut = adaiBalanceAfterDeposit * daiWethQuote;
-
-        await tuffTokenDiamond.liquidateTreasury();
+        const daiToWethConversion = daiBalanceAfterDeposit * daiWethQuote;
+        const aDaiToWethConversion = adaiBalanceAfterDeposit * daiWethQuote;
 
         const ethBalanceAfterLiquidation = await hre.ethers.provider.getBalance(tuffTokenDiamond.address);
         const wethBalanceAfterLiquidation = await weth9Contract.balanceOf(tuffTokenDiamond.address);
@@ -289,20 +289,23 @@ describe('TokenMaturity', function () {
 
         if (hre.hardhatArguments.verbose) {
 
-            console.log(`starting amount of ETH:                       ${ethBalanceAfterDeposit}`);
-            console.log(`starting amount of WETH:                       ${wethBalanceAfterDeposit}`);
-            console.log(`expected amount of WETH from DAI swap:          ${daiToWethAmountOut}`);
-            console.log(`expected amount of WETH from ADAI swap:          ${aDaiToWethAmountOut}`);
+            console.log(`starting amount of ETH:                       ${hre.ethers.utils.formatEther(ethBalanceAfterDeposit.toString())}`);
+            console.log(`starting amount of WETH:                       ${hre.ethers.utils.formatEther(wethBalanceAfterDeposit.toString())}`);
+            console.log(`expected amount of WETH from DAI swap:          ${hre.ethers.utils.formatEther(daiToWethConversion.toString())}`);
+            console.log(`expected amount of WETH from ADAI swap:         ${hre.ethers.utils.formatEther(aDaiToWethConversion.toString())}`);
 
             console.log('--------------------------------------')
 
-            const expectedEth = BigInt(daiToWethAmountOut) +
-                BigInt(aDaiToWethAmountOut) +
+            const expectedEth = BigInt(daiToWethConversion) +
+                BigInt(aDaiToWethConversion) +
                 BigInt(wethBalanceAfterDeposit) +
-                BigInt(ethBalanceAfterDeposit.toString())
+                BigInt(ethBalanceAfterDeposit.toString());
 
-            console.log(`expected amount of ETH after swaps and unwrapping WETH:     ${expectedEth.toString()}`);
-            console.log(`actual amount of ETH after swaps and unwrapping WETH:       ${ethBalanceAfterLiquidation.toString()}`);
+            const diff = expectedEth - BigInt(ethBalanceAfterLiquidation.toString())
+
+            console.log(`expected amount of ETH after swaps and unwrapping WETH:   ${hre.ethers.utils.formatEther(expectedEth.toString())}`);
+            console.log(`actual amount of ETH after swaps and unwrapping WETH:     ${hre.ethers.utils.formatEther(ethBalanceAfterLiquidation.toString())}`);
+            console.log(`difference from expected to actual:                         ${hre.ethers.utils.formatEther(diff.toString())}`);
         }
 
     });
