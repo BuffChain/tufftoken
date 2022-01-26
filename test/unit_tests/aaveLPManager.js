@@ -128,9 +128,7 @@ describe('AaveLPManager', function () {
 
         //Check that the account now has the same or more(if interest was gained) DAI than we started with
         const daiQtyAfterWithdraw = await daiContract.balanceOf(tuffTokenDiamond.address);
-        expect(new BN(daiQtyAfterWithdraw.toString()) >= new BN(startDaiQty.toString())).to.equal(true,
-            "unexpected DAI balance after withdraw of DAI");
-
+        expect(new BN(daiQtyAfterWithdraw.toString())).to.be.bignumber.greaterThan(new BN(startDaiQty.toString()));
     });
 
     it("revert if token deposited is not supported", async () => {
