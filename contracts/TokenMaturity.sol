@@ -279,7 +279,7 @@ contract TokenMaturity {
         UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
             .getState();
 
-        uint256 balance = IWETH9(ss.WETHAddress).balanceOf(address(this));
+        uint256 balance = IERC20(ss.WETHAddress).balanceOf(address(this));
 
         IWETH9(ss.WETHAddress).withdraw(balance);
     }
