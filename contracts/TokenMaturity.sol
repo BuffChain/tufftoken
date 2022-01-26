@@ -4,6 +4,11 @@ pragma solidity ^0.8.0;
 import {TuffToken} from "./TuffToken.sol";
 import {TokenMaturityLib} from "./TokenMaturityLib.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import {UniswapManager} from "./UniswapManager.sol";
+import {UniswapManagerLib} from "./UniswapManagerLib.sol";
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {IWETH9} from "./IWETH9.sol";
+import {IAaveLPManager} from "./IAaveLPManager.sol";
 
 contract TokenMaturity {
     modifier tokenMaturityInitLock() {
@@ -241,8 +246,41 @@ contract TokenMaturity {
     }
 
     function liquidateTreasury() public tokenMaturityInitLock {
-        setIsTreasuryLiquidated(true);
+        IAaveLPManager(address(this)).liquidateAaveTreasury();
 
-        //    todo liquidate treasury to eth
+        address[] memory supportedTokens = IAaveLPManager(address(this))
+            .getAllAaveSupportedTokens();
+
+        UniswapManager uniswapManager = UniswapManager(address(this));
+
+        UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
+            .getState();
+
+        for (uint256 i = 0; i < supportedTokens.length; i++) {
+            uint256 balance = IERC20(supportedTokens[i]).balanceOf(
+                address(this)
+            );
+            if (balance > 0) {
+                uniswapManager.swapExactInputSingle(
+                    supportedTokens[i],
+                    ss.basePoolFee,
+                    ss.WETHAddress,
+                    balance
+                );
+            }
+        }
+
+        unwrapWETH();
+
+        setIsTreasuryLiquidated(true);
+    }
+
+    function unwrapWETH() public tokenMaturityInitLock {
+        UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
+            .getState();
+
+        uint256 balance = IERC20(ss.WETHAddress).balanceOf(address(this));
+
+        IWETH9(ss.WETHAddress).withdraw(balance);
     }
 }

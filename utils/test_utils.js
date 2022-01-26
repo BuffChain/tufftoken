@@ -1,9 +1,10 @@
 // SPDX-License-Identifier: agpl-3.0
-
 const hre = require("hardhat");
 const SwapRouterABI = require("@uniswap/v3-periphery/artifacts/contracts/SwapRouter.sol/SwapRouter.json").abi;
 const WETH9ABI = require("@uniswap/v3-periphery/artifacts/contracts/interfaces/external/IWETH9.sol/IWETH9.json").abi;
 const IERC20ABI = require("@uniswap/v3-core/artifacts/contracts/interfaces/IERC20Minimal.sol/IERC20Minimal.json").abi;
+const IUniswapV3FactoryABI = require("@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Factory.sol/IUniswapV3Factory.json").abi;
+const IUniswapV3PoolABI = require("@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json").abi;
 
 const {consts} = require("./consts");
 
@@ -116,6 +117,28 @@ async function sendTokensToAddr(fromAcct, toAddr) {
     }
 }
 
+function sqrtPriceX96(price) {
+    // sqrtRatioX96 price per uniswap v3 https://docs.uniswap.org/sdk/guides/fetching-prices#understanding-sqrtprice
+    return BigInt(Math.sqrt(price) * 2 ** 96).toString();
+}
+
+async function getUniswapPoolContract(tokenA, tokenB, poolFee) {
+    const uniswapV3Factory = await hre.ethers.getContractAt(IUniswapV3FactoryABI, consts("UNISWAP_V3_FACTORY_ADDR"));
+    const poolAddress = await uniswapV3Factory.getPool(tokenA, tokenB, poolFee);
+    return await hre.ethers.getContractAt(IUniswapV3PoolABI, poolAddress);
+}
+
+// https://docs.uniswap.org/protocol/concepts/V3-overview/oracle#tick-accumulator
+async function getUniswapPriceQuote(tokenA, tokenB, poolFee, period) {
+    const poolContract = await getUniswapPoolContract(tokenA, tokenB, poolFee);
+    const observations = await poolContract.observe([period, 0]);
+    const tick1 = observations[0][0]
+    const tick2 = observations[0][1]
+    const avgTick = (tick2 - tick1) / period;
+    return Math.pow(1.0001, avgTick)
+}
+
+
 module.exports = {
     getDAIContract,
     getWETH9Contract,
@@ -123,5 +146,7 @@ module.exports = {
     getADAIContract,
     transferETH,
     runCallbackImpersonatingAcct,
-    sendTokensToAddr
+    sendTokensToAddr,
+    sqrtPriceX96,
+    getUniswapPriceQuote
 }
