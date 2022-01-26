@@ -56,15 +56,6 @@ module.exports = {
                         runs: 1000,
                     },
                 }
-            },
-            "contracts/v7": {
-                version: "0.7.6",
-                settings: {
-                    optimizer: {
-                        enabled: true,
-                        runs: 1000,
-                    },
-                }
             }
         }
     },
@@ -75,16 +66,13 @@ module.exports = {
                 // url: "https://cloudflare-eth.com"
 
                 //Feel free to update at any time. This is here to make local development and caching easier
-                blockNumber: 13302360
+                blockNumber: 14058640
             },
             timeout: 30000,
 
             // mining: {
-            //     mempool: {
-            //         order: "fifo"
-            //     },
-            // //     auto: false,
-            // //     interval: 0
+            //     auto: false,
+            //     interval: 5000
             // }
         },
         mainnet_cloudflare: {

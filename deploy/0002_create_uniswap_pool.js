@@ -4,6 +4,7 @@ const hre = require("hardhat");
 
 const {consts, UNISWAP_POOL_BASE_FEE} = require("../utils/consts");
 const {logDeploymentTx} = require("../utils/deployment_helpers");
+const {sqrtPriceX96} = require("../utils/test_utils");
 
 module.exports = async () => {
     const {deployments, getNamedAccounts} = hre;
@@ -26,12 +27,10 @@ module.exports = async () => {
 
     const price = consts("TUFF_STARTING_PRICE")
 
-    // sqrtRatioX96 price per uniswap v3 https://docs.uniswap.org/sdk/guides/fetching-prices#understanding-sqrtprice
-    const sqrtPriceX96 = BigInt(Math.sqrt(price) * 2 ** 96).toString();
+    const tuffTokenSqrtPriceX96 = sqrtPriceX96(price);
 
-
-    console.log(`Initializing TuffToken pool. Price: ${price} ETH. sqrtPriceX96: ${sqrtPriceX96}`);
-    await uniswapV3Pool.initialize(sqrtPriceX96);
+    console.log(`Initializing TuffToken pool. Price: ${price} ETH. sqrtPriceX96: ${tuffTokenSqrtPriceX96}`);
+    await uniswapV3Pool.initialize(tuffTokenSqrtPriceX96);
 
 };
 

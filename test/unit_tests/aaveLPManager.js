@@ -12,6 +12,34 @@ const hre = require("hardhat");
 const utils = require("../../utils/test_utils");
 const {consts} = require("../../utils/consts");
 
+async function assertDepositToAave(tuffTokenDiamond) {
+    const qtyInDAI = hre.ethers.utils.parseEther("2000");
+
+    //Check that the account has enough DAI
+    const daiContract = await utils.getDAIContract();
+    const startDaiQty = await daiContract.balanceOf(tuffTokenDiamond.address);
+    expect(new BN(startDaiQty.toString())).to.be.bignumber.greaterThan(new BN(qtyInDAI.toString()));
+
+    //Check that the account has no aDAI
+    const adaiContract = await utils.getADAIContract();
+    const startAdaiQty = await adaiContract.balanceOf(tuffTokenDiamond.address);
+    expect(new BN(0)).to.be.bignumber.equal(new BN(startAdaiQty.toString()));
+
+    //Make the call to deposit Aave
+    await tuffTokenDiamond.depositToAave(consts("DAI_ADDR"), qtyInDAI);
+
+    //Check that the account has deposited the DAI
+    const daiQtyAfterDeposit = await daiContract.balanceOf(tuffTokenDiamond.address);
+    expect(new BN(daiQtyAfterDeposit.toString())).to.be.bignumber.equal(new BN(startDaiQty.sub(qtyInDAI).toString()),
+        "unexpected DAI balance after deposit of DAI");
+
+    //Check that the account now has aDAI equal to the DAI we deposited
+    const aDaiQtyAfterDeposit = await adaiContract.balanceOf(tuffTokenDiamond.address);
+    expect(new BN(qtyInDAI.toString())).to.be.bignumber.equal(new BN(aDaiQtyAfterDeposit.toString()),
+        "unexpected ADAI balance after deposit of DAI");
+    return {startDaiQty};
+}
+
 describe('AaveLPManager', function () {
     let owner;
     let accounts;
@@ -83,33 +111,49 @@ describe('AaveLPManager', function () {
             "The tokenAddress provided is not supported by Aave");
     });
 
-    it("should deposit dai into aave from TuffToken's wallet", async () => {
-        const qtyInDAI = hre.ethers.utils.parseEther("2000");
+    it("should deposit and withdraw dai to/from aave and TuffToken's wallet", async () => {
 
-        //Check that the account has enough DAI
         const daiContract = await utils.getDAIContract();
-        const startDaiQty = await daiContract.balanceOf(tuffTokenDiamond.address);
-        expect(new BN(startDaiQty.toString())).to.be.bignumber.greaterThan(new BN(qtyInDAI.toString()));
-
-        //Check that the account has no aDAI
         const adaiContract = await utils.getADAIContract();
-        const startAdaiQty = await adaiContract.balanceOf(tuffTokenDiamond.address);
-        expect(new BN(0)).to.be.bignumber.equal(new BN(startAdaiQty.toString()));
 
-        //Make the call to deposit DAI into Aave
-        await tuffTokenDiamond.depositToAave(consts("DAI_ADDR"), qtyInDAI);
+        const {startDaiQty} = await assertDepositToAave(tuffTokenDiamond);
 
-        //Check that the account has deposited the DAI
-        const endDaiQty = await daiContract.balanceOf(tuffTokenDiamond.address);
-        expect(new BN(endDaiQty.toString())).to.be.bignumber.equal(new BN(startDaiQty.sub(qtyInDAI).toString()));
+        //Make the call to withdraw all from Aave
+        await tuffTokenDiamond.withdrawAllFromAave(consts("DAI_ADDR"));
 
-        //Check that the account now has aDAI equal to the DAI we deposited
-        const endAdaiQty = await adaiContract.balanceOf(tuffTokenDiamond.address);
-        expect(new BN(qtyInDAI.toString())).to.be.bignumber.equal(new BN(endAdaiQty.toString()));
+        //Check that the account now has no aDAI after withdraw
+        const aDaiQtyAfterWithdraw = await adaiContract.balanceOf(tuffTokenDiamond.address);
+        expect(new BN(aDaiQtyAfterWithdraw.toString())).to.be.bignumber.equal(new BN("0"),
+            "unexpected ADAI balance after withdraw of DAI");
+
+        //Check that the account now has the same or more(if interest was gained) DAI than we started with
+        const daiQtyAfterWithdraw = await daiContract.balanceOf(tuffTokenDiamond.address);
+        expect(new BN(daiQtyAfterWithdraw.toString())).to.be.bignumber.greaterThan(new BN(startDaiQty.toString()));
     });
 
     it("revert if token deposited is not supported", async () => {
         await expectRevert(tuffTokenDiamond.depositToAave(consts("WETH9_ADDR"), 0),
             "This token is currently not supported");
     });
+
+
+    it("should liquidate Aave treasury", async () => {
+
+        await assertDepositToAave(tuffTokenDiamond);
+
+        await tuffTokenDiamond.liquidateAaveTreasury();
+
+        const tokens = await tuffTokenDiamond.getAllAaveSupportedTokens();
+
+        tokens.forEach(token => {
+            (async () => {
+                const balance = await tuffTokenDiamond.getATokenBalance(token);
+                expect(balance).to.equal(0, `unexpected aToken (${token}) balance after withdraw of all assets`);
+            })()
+        })
+
+    });
+
 });
+
+exports.assertDepositToAave = assertDepositToAave;

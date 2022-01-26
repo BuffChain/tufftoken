@@ -30,9 +30,11 @@ contract UniswapManager {
 
     //Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
     // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
-    function initUniswapManager(ISwapRouter _swapRouter, address WETHAddress)
-        public
-    {
+    function initUniswapManager(
+        ISwapRouter _swapRouter,
+        address WETHAddress,
+        uint24 basePoolFee
+    ) public {
         require(
             !isUniswapManagerInit(),
             string(
@@ -49,7 +51,7 @@ contract UniswapManager {
 
         ss.swapRouter = _swapRouter;
         ss.WETHAddress = WETHAddress;
-
+        ss.basePoolFee = basePoolFee;
         ss.isInit = true;
     }
 

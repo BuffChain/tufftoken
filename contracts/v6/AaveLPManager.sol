@@ -59,6 +59,16 @@ contract AaveLPManager is Context {
         return LendingPoolAddressesProvider(ss.lpProviderAddr).getLendingPool();
     }
 
+    function getProtocolDataProviderAddr()
+        public
+        view
+        aaveInitLock
+        returns (address)
+    {
+        AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
+        return ss.protocolDataProviderAddr;
+    }
+
     //TODO: Need to make sure this is locked down to only owner and approved callers (eg chainlink)
     function depositToAave(address erc20TokenAddr, uint256 amount)
         public
@@ -83,6 +93,35 @@ contract AaveLPManager is Context {
             address(this),
             0
         );
+    }
+
+    function withdrawFromAave(address erc20TokenAddr, uint256 amount)
+        public
+        aaveInitLock
+        returns (uint256)
+    {
+        (bool _isSupportedToken, ) = isAaveSupportedToken(erc20TokenAddr);
+        require(
+            _isSupportedToken,
+            string(
+                abi.encodePacked(
+                    AaveLPManagerLib.NAMESPACE,
+                    ": ",
+                    "This token is not currently supported"
+                )
+            )
+        );
+
+        if (getATokenBalance(erc20TokenAddr) == 0) {
+            return 0;
+        }
+
+        return
+            LendingPool(getAaveLPAddr()).withdraw(
+                erc20TokenAddr,
+                amount,
+                address(this)
+            );
     }
 
     function isAaveSupportedToken(address tokenAddr)
@@ -162,6 +201,38 @@ contract AaveLPManager is Context {
     {
         return
             LendingPool(getAaveLPAddr()).getReserveNormalizedIncome(tokenAddr);
+    }
+
+    function liquidateAaveTreasury() public aaveInitLock {
+        address[] memory supportedTokens = getAllAaveSupportedTokens();
+        for (uint256 i = 0; i < supportedTokens.length; i++) {
+            withdrawAllFromAave(supportedTokens[i]);
+        }
+    }
+
+    function withdrawAllFromAave(address asset) public aaveInitLock {
+        withdrawFromAave(asset, type(uint256).max);
+    }
+
+    function getATokenBalance(address asset)
+        public
+        view
+        aaveInitLock
+        returns (uint256)
+    {
+        (
+            uint256 currentATokenBalance,
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+
+        ) = AaveProtocolDataProvider(getProtocolDataProviderAddr())
+                .getUserReserveData(asset, address(this));
+        return currentATokenBalance;
     }
 
     //"lite-balance"
