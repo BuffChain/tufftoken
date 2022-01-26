@@ -18,11 +18,10 @@ module.exports = async () => {
         facets: [
             "TuffToken",
             "AaveLPManager",
-            "UniswapPriceConsumer",
-            "ChainLinkPriceConsumer",
-            "MarketTrend",
+            "TuffKeeper",
             "TokenMaturity",
-            "Governance"
+            "Governance",
+            "UniswapManager"
         ],
         log: true
     });
@@ -50,19 +49,9 @@ module.exports = async () => {
         logDeploymentTx("Added USDT support to AaveLPManager:", tx);
     }
 
-    if (!await tuffTokenDiamondContract.isUniswapPriceConsumerInit()) {
-        let initTx = await tuffTokenDiamondContract.initUniswapPriceConsumer(consts("WETH9_ADDR"), consts("DAI_ADDR"), UNISWAP_POOL_BASE_FEE, consts("UNISWAP_V3_FACTORY_ADDR"));
-        logDeploymentTx("Initialized UniswapPriceConsumer:", initTx);
-    }
-
-    if (!await tuffTokenDiamondContract.isChainLinkPriceConsumerInit()) {
-        let initTx = await tuffTokenDiamondContract.initChainLinkPriceConsumer(consts("CHAINLINK_AGGREGATOR_ADDR"));
-        logDeploymentTx("Initialized ChainLinkPriceConsumer:", initTx);
-    }
-
-    if (!await tuffTokenDiamondContract.isMarketTrendInit()) {
-        let initTx = await tuffTokenDiamondContract.initMarketTrend(CHAINLINK_PRICE_CONSUMER_ENUM, false);
-        logDeploymentTx("Initialized MarketTrend:", initTx);
+    if (!await tuffTokenDiamondContract.isTuffKeeperInit()) {
+        let initTx = await tuffTokenDiamondContract.initTuffKeeper();
+        logDeploymentTx("Initialized TuffKeeper:", initTx);
     }
 
     if (!await tuffTokenDiamondContract.isTokenMaturityInit()) {
@@ -73,6 +62,13 @@ module.exports = async () => {
     if (!await tuffTokenDiamondContract.isGovernanceInit()) {
         let initTx = await tuffTokenDiamondContract.initGovernance();
         logDeploymentTx("Initialized Governance:", initTx);
+    }
+
+    if (!await tuffTokenDiamondContract.isUniswapManagerInit()) {
+        let initTx = await tuffTokenDiamondContract.initUniswapManager(
+            consts("UNISWAP_V3_ROUTER_ADDR"),
+            consts("WETH9_ADDR"));
+        logDeploymentTx("Initialized UniswapManager:", initTx);
     }
 
 };
