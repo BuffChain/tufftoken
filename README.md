@@ -87,7 +87,7 @@ npm run download_block_data -- --start-block-number ${START_BLOCK_NUM} --end-blo
 
 pip3 install ethereum-etl
 
-ethereumetl export_blocks_and_transactions --start-block ${START_BLOCK_NUM} --end-block ${END_BLOCK_NUM} --provider-uri https://mainnet.infura.io/v3/0feb75e50f9a4dc2ae2d4333d4707333 --transactions-output transactions.csv
+ethereumetl export_blocks_and_transactions --start-block ${START_BLOCK_NUM} --end-block ${END_BLOCK_NUM} --provider-uri https://mainnet.infura.io/v3/0feb75e50f9a4dc2ae2d4333d4707333 --transactions-output ./block_data/transactions.csv
 ```
 
 With the block txs downloaded, we must now configure hardhat's network to start at the appropriate block. Using the 

@@ -44,7 +44,7 @@ describe('AaveLPManager', function () {
 
         const updateAaveDaiIncome = await tuffTokenDiamond.getAaveIncome(consts("DAI_ADDR"));
         const actualIncomeDiff = updateAaveDaiIncome.sub(aaveDaiIncome);
-        const expectedDiff = hre.ethers.BigNumber.from("235199518184764216280");
+        const expectedDiff = hre.ethers.BigNumber.from("267592266198234737084");
         console.log(`Expected diff is ${hre.ethers.utils.formatUnits(expectedDiff, 27)} units of income`);
         expect(actualIncomeDiff).to.be.eq(expectedDiff);
     });

@@ -107,11 +107,11 @@ module.exports = {
             timeout: 30000,
 
             // mining: {
-            //     // mempool: {
-            //     //     order: "fifo"
-            //     // },
-            //     auto: false,
-            //     interval: 0
+            //     mempool: {
+            //         order: "fifo"
+            //     },
+            // //     auto: false,
+            // //     interval: 0
             // }
         },
         mainnet_cloudflare: {
@@ -159,20 +159,26 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
 });
 
 task("download_block_data", "Downloads and serializes tx data for a range of blocks")
-    .addParam("startBlockNumber", "Start of the block range you want to serialize")
-    .addParam("endBlockNumber", "End of the block range you want to serialize")
+    .addOptionalParam("startBlockNumber", "Start of the block range you want to serialize, inclusive")
+    .addOptionalParam("endBlockNumber", "End of the block range you want to serialize, inclusive")
     .setAction(async (taskArgs, hre) => {
-        const provider = hre.ethers.provider;
         const blockDataPath = path.join(process.cwd(), "block_data");
-
         const {startBlockNumber, endBlockNumber} = getBlockParams(taskArgs);
-        const blockCount = endBlockNumber - startBlockNumber;
-        for (let i = 0; i < blockCount; i++) {
+        console.log(`Downloading blocks [${startBlockNumber},${endBlockNumber}]`);
+
+        //Update forking blockNumber so the provider has access to all previous block info,
+        // ending at endBlockNumber (inclusive)
+        hre.network.config.forking.blockNumber = endBlockNumber + 1;
+
+        //Plus one for inclusive range of [startBlockNumber,endBlockNumber]
+        const numOfBlocks = endBlockNumber - startBlockNumber + 1;
+        for (let i = 0; i < numOfBlocks; i++) {
             const blockNumber = startBlockNumber + i;
-            const blockData = await provider.getBlockWithTransactions(blockNumber);
+            const blockData = await hre.ethers.provider.getBlockWithTransactions(blockNumber);
+            // console.dir(blockData);
 
             const blockJsonFile = path.join(blockDataPath.toString(), `${blockNumber}.json`);
-            fs.promises.access(blockJsonFile, fs.constants.F_OK)
+            await fs.promises.access(blockJsonFile, fs.constants.F_OK)
                 .then(() => console.log(`${blockJsonFile} already exists. Skipping...`))
                 .catch(async function() {
                     console.log(`Writing block's [${blockNumber}] tx data...`);
