@@ -8,6 +8,7 @@ const IUniswapV3FactoryABI = require("@uniswap/v3-core/artifacts/contracts/inter
 const IUniswapV3PoolABI = require("@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json").abi;
 
 const {consts} = require("./consts");
+const {BigNumber} = require("ethers");
 
 async function getDAIContract() {
     return await hre.ethers.getContractAt(IERC20ABI, consts("DAI_ADDR"));
@@ -172,12 +173,11 @@ async function getUniswapPoolContract(tokenA, tokenB, poolFee) {
 async function getUniswapPriceQuote(tokenA, tokenB, poolFee, period) {
     const poolContract = await getUniswapPoolContract(tokenA, tokenB, poolFee);
     const observations = await poolContract.observe([period, 0]);
-    const tick1 = observations[0][0]
-    const tick2 = observations[0][1]
+    const tick1 = observations[0][0];
+    const tick2 = observations[0][1];
     const avgTick = (tick2 - tick1) / period;
-    return Math.pow(1.0001, avgTick)
+    return Math.pow(1.0001, avgTick);
 }
-
 
 module.exports = {
     getDAIContract,

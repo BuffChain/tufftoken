@@ -3,10 +3,11 @@
 const {expect} = require("chai");
 const hre = require("hardhat");
 
-const utils = require("../../utils/test_utils");
 const {BN, expectRevert} = require("@openzeppelin/test-helpers");
+const {BigNumber, FixedNumber} = require("ethers");
+
+const utils = require("../../utils/test_utils");
 const {assertDepositToAave} = require("./aaveLPManager");
-const {getUniswapPriceQuote} = require("../../utils/test_utils");
 const {consts, UNISWAP_POOL_BASE_FEE} = require("../../utils/consts");
 
 describe('TokenMaturity', function () {
@@ -31,14 +32,14 @@ describe('TokenMaturity', function () {
         const {TuffTokenDiamond} = await hre.deployments.fixture();
         tuffTokenDiamond = await hre.ethers.getContractAt(TuffTokenDiamond.abi, TuffTokenDiamond.address, owner);
 
-        const fromAccount = owner;
-        const toAddr = TuffTokenDiamond.address;
-        const amount = "100";
-        await utils.transferETH(
-            fromAccount,
-            toAddr,
-            amount
-        )
+        // const fromAccount = owner;
+        // const toAddr = TuffTokenDiamond.address;
+        // const amount = "100";
+        // await utils.transferETH(
+        //     fromAccount,
+        //     toAddr,
+        //     amount
+        // )
     });
 
 
@@ -165,9 +166,7 @@ describe('TokenMaturity', function () {
             .withArgs(sender, new BN(senderTuffTokenBalanceAfterTransfer.toString()), new BN(expectedETHRedemptionAmount.toString()));
 
         const senderEndingEthBalance = await hre.ethers.provider.getBalance(sender);
-
-        expect(senderEndingEthBalance > senderStartingEthBalance).to.equal(true,
-            "Holder did not successfully receive ETH");
+        expect(senderEndingEthBalance).to.be.gt(senderStartingEthBalance, "Holder did not successfully receive ETH");
 
         const senderTuffTokenBalanceAfterRedemption = parseFloat(await tuffTokenDiamond.balanceOf(sender));
         expect(senderTuffTokenBalanceAfterRedemption).to.equal(0,
@@ -259,14 +258,13 @@ describe('TokenMaturity', function () {
         const ethBalanceAfterDeposit = await hre.ethers.provider.getBalance(tuffTokenDiamond.address);
         const wethBalanceAfterDeposit = await weth9Contract.balanceOf(tuffTokenDiamond.address);
         const daiBalanceAfterDeposit = await daiContract.balanceOf(tuffTokenDiamond.address);
-        const adaiBalanceAfterDeposit = await adaiContract.balanceOf(tuffTokenDiamond.address);
+        const aDaiBalanceAfterDeposit = await adaiContract.balanceOf(tuffTokenDiamond.address);
 
         const liquidationTxResponse = await tuffTokenDiamond.liquidateTreasury();
         const liquidationTxReceipt = await liquidationTxResponse.wait();
-        const liquidationTxGasCost = BigInt(liquidationTxReceipt.gasUsed.toString()) *
-            BigInt(liquidationTxReceipt.effectiveGasPrice.toString())
+        const liquidationTxGasCost = liquidationTxReceipt.gasUsed.mul(liquidationTxReceipt.effectiveGasPrice);
 
-        const daiWethQuote = await getUniswapPriceQuote(
+        const daiWethQuote = await utils.getUniswapPriceQuote(
             consts("DAI_ADDR"),
             consts("WETH9_ADDR"),
             UNISWAP_POOL_BASE_FEE,
@@ -274,7 +272,7 @@ describe('TokenMaturity', function () {
         );
 
         const daiToWethConversion = daiBalanceAfterDeposit * daiWethQuote;
-        const aDaiToWethConversion = adaiBalanceAfterDeposit * daiWethQuote;
+        const aDaiToWethConversion = aDaiBalanceAfterDeposit * daiWethQuote;
 
         const ethBalanceAfterLiquidation = await hre.ethers.provider.getBalance(tuffTokenDiamond.address);
         const wethBalanceAfterLiquidation = await weth9Contract.balanceOf(tuffTokenDiamond.address);
@@ -284,28 +282,27 @@ describe('TokenMaturity', function () {
         expect(daiBalanceAfterLiquidation).to.equal(0, "DAI should have been liquidated");
         expect(adaiBalanceAfterLiquidation).to.equal(0, "ADAI should have been liquidated");
         expect(wethBalanceAfterLiquidation).to.equal(0, "WETH should have been unwrapped");
-        expect(ethBalanceAfterLiquidation >
-            BigInt(ethBalanceAfterDeposit.toString()) + BigInt(wethBalanceAfterDeposit)
-        ).to.equal(true, "unexpected ETH balance");
+        expect(ethBalanceAfterLiquidation).to.be.gt(ethBalanceAfterDeposit.add(wethBalanceAfterDeposit),
+            "unexpected ETH balance");
 
         const expectedEth =
             BigInt(daiToWethConversion) +
             BigInt(aDaiToWethConversion) +
             BigInt(wethBalanceAfterDeposit) +
-            BigInt(ethBalanceAfterDeposit.toString()) -
-            liquidationTxGasCost;
+            BigInt(ethBalanceAfterDeposit) -
+            BigInt(liquidationTxGasCost);
 
-        const ethDiff = expectedEth - BigInt(ethBalanceAfterLiquidation.toString())
-        const buffer = .01;
-        expect(new BN(ethDiff.toString())).to.be.bignumber.lessThan(new BN(buffer.toString()), "eth difference exceeds allowed buffer");
+        const ethDiff = BigNumber.from(expectedEth).sub(ethBalanceAfterLiquidation);
+        const buffer = hre.ethers.utils.parseEther('0.012');
+        expect(ethDiff).to.be.lte(buffer, "eth difference exceeds allowed buffer");
 
-        if (hre.hardhatArguments.verbose) {
+        if (true) {
             console.log(`starting amount of ETH:                       ${hre.ethers.utils.formatEther(ethBalanceAfterDeposit.toString())}`);
             console.log(`starting amount of WETH:                       ${hre.ethers.utils.formatEther(wethBalanceAfterDeposit.toString())}`);
             console.log(`expected amount of WETH from DAI swap:          ${hre.ethers.utils.formatEther(daiToWethConversion.toString())}`);
             console.log(`expected amount of WETH from ADAI swap:         ${hre.ethers.utils.formatEther(aDaiToWethConversion.toString())}`);
 
-            console.log('--------------------------------------')
+            console.log('--------------------------------------');
 
             console.log(`expected amount of ETH after swaps and unwrapping WETH:   ${hre.ethers.utils.formatEther(expectedEth.toString())}`);
             console.log(`actual amount of ETH after swaps and unwrapping WETH:     ${hre.ethers.utils.formatEther(ethBalanceAfterLiquidation.toString())}`);

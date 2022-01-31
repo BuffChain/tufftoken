@@ -101,6 +101,9 @@ module.exports = {
                 artifacts: "node_modules/@uniswap/v3-core/artifacts",
             }
         ]
+    },
+    mocha: {
+        timeout: 30000
     }
 };
 
