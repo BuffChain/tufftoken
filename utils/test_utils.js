@@ -8,7 +8,6 @@ const IUniswapV3FactoryABI = require("@uniswap/v3-core/artifacts/contracts/inter
 const IUniswapV3PoolABI = require("@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json").abi;
 
 const {consts} = require("./consts");
-const {BigNumber} = require("ethers");
 
 async function getDAIContract() {
     return await hre.ethers.getContractAt(IERC20ABI, consts("DAI_ADDR"));

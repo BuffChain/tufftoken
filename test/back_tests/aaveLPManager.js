@@ -36,6 +36,9 @@ describe('AaveLPManager', function () {
 
         await utils.sendTokensToAddr(accounts.at(-1), tuffTokenDiamond.address, daiAmt);
         aaveDaiIncome = await tuffTokenDiamond.getAaveIncome(consts("DAI_ADDR"));
+
+        //Aave formats this unit based on 27 places
+        // https://docs.aave.com/developers/v/2.0/the-core-protocol/lendingpool#getreservenormalizedincome
         console.log(`Starting Aave DAI normalized income [${hre.ethers.utils.formatUnits(aaveDaiIncome, 27)}]`);
     });
 
@@ -45,6 +48,9 @@ describe('AaveLPManager', function () {
         const updateAaveDaiIncome = await tuffTokenDiamond.getAaveIncome(consts("DAI_ADDR"));
         const actualIncomeDiff = updateAaveDaiIncome.sub(aaveDaiIncome);
         const expectedDiff = hre.ethers.BigNumber.from("267592266198234737084");
+
+        //Aave formats this unit based on 27 places
+        // https://docs.aave.com/developers/v/2.0/the-core-protocol/lendingpool#getreservenormalizedincome
         console.log(`Expected diff is ${hre.ethers.utils.formatUnits(expectedDiff, 27)} units of income`);
         expect(actualIncomeDiff).to.be.eq(expectedDiff);
     });

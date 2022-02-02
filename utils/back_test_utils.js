@@ -5,7 +5,6 @@ const hre = require("hardhat");
 const path = require("path");
 // const fs = require("fs");
 const fs = require("fs/promises");
-const Papa = require("papaparse");
 
 const {consts} = require("./consts");
 const testUtils = require("./test_utils");
