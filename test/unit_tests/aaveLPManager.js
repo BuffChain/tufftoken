@@ -75,11 +75,19 @@ describe('AaveLPManager', function () {
 
     it('should have the correct tokens supported at launch', async () => {
         const supportedTokens = await tuffTokenDiamond.getAllAaveSupportedTokens();
-
         expect(supportedTokens.length).to.equal(3);
+
         expect(supportedTokens).to.contain(consts("DAI_ADDR"));
+        let actualTokenTargetPercent = await tuffTokenDiamond.getAaveTokenTargetedPercentage(consts("DAI_ADDR"));
+        expect(actualTokenTargetPercent).to.equal(5000);
+
         expect(supportedTokens).to.contain(consts("USDC_ADDR"));
+        actualTokenTargetPercent = await tuffTokenDiamond.getAaveTokenTargetedPercentage(consts("USDC_ADDR"));
+        expect(actualTokenTargetPercent).to.equal(2500);
+
         expect(supportedTokens).to.contain(consts("USDT_ADDR"));
+        actualTokenTargetPercent = await tuffTokenDiamond.getAaveTokenTargetedPercentage(consts("USDT_ADDR"));
+        expect(actualTokenTargetPercent).to.equal(2500);
     });
 
     it('should add a token', async () => {
@@ -106,13 +114,23 @@ describe('AaveLPManager', function () {
         expect(supportedTokens).to.not.contain(consts("DAI_ADDR"));
     });
 
+    it('should update a tokens target percentage', async () => {
+        let actualTokenTargetPercent = await tuffTokenDiamond.getAaveTokenTargetedPercentage(consts("DAI_ADDR"));
+        expect(actualTokenTargetPercent).to.equal(5000);
+
+        const newTargetPercentage = actualTokenTargetPercent * 2;
+        await tuffTokenDiamond.setAaveTokenTargetedPercentage(consts("DAI_ADDR"), newTargetPercentage);
+
+        actualTokenTargetPercent = await tuffTokenDiamond.getAaveTokenTargetedPercentage(consts("DAI_ADDR"));
+        expect(actualTokenTargetPercent).to.equal(newTargetPercentage);
+    });
+
     it('reverts if adding a unsupported aave token', async () => {
         await expectRevert(tuffTokenDiamond.addAaveSupportedToken(consts("UNISWAP_V3_ROUTER_ADDR"), 2500),
             "The tokenAddress provided is not supported by Aave");
     });
 
     it("should deposit and withdraw dai to/from aave and TuffToken's wallet", async () => {
-
         const daiContract = await utils.getDAIContract();
         const adaiContract = await utils.getADAIContract();
 
@@ -136,24 +154,19 @@ describe('AaveLPManager', function () {
             "This token is currently not supported");
     });
 
-
     it("should liquidate Aave treasury", async () => {
-
         await assertDepositToAave(tuffTokenDiamond);
 
         await tuffTokenDiamond.liquidateAaveTreasury();
 
         const tokens = await tuffTokenDiamond.getAllAaveSupportedTokens();
-
         tokens.forEach(token => {
             (async () => {
                 const balance = await tuffTokenDiamond.getATokenBalance(token);
                 expect(balance).to.equal(0, `unexpected aToken (${token}) balance after withdraw of all assets`);
             })()
         })
-
     });
-
 });
 
 exports.assertDepositToAave = assertDepositToAave;
