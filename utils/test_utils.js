@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: agpl-3.0
+
 const hre = require("hardhat");
 const SwapRouterABI = require("@uniswap/v3-periphery/artifacts/contracts/SwapRouter.sol/SwapRouter.json").abi;
 const WETH9ABI = require("@uniswap/v3-periphery/artifacts/contracts/interfaces/external/IWETH9.sol/IWETH9.json").abi;
@@ -34,16 +35,16 @@ async function getADAIContract() {
  */
 async function transferETH(fromAccount, toAddr, amount = "100") {
     if (hre.hardhatArguments.verbose) {
-        console.log(`[${fromAccount.address}] has [${hre.ethers.utils.formatEther(await hre.ethers.provider.getBalance(fromAccount.address))}]`);
-        console.log(`[${toAddr}] has [${hre.ethers.utils.formatEther(await hre.ethers.provider.getBalance(toAddr))}]`);
+        console.log(`[${fromAccount.address}] has [${hre.ethers.utils.formatEther(await hre.ethers.provider.getBalance(fromAccount.address))}] ETH`);
+        console.log(`[${toAddr}] has [${hre.ethers.utils.formatEther(await hre.ethers.provider.getBalance(toAddr))}] ETH`);
     }
     const transactionHash = await fromAccount.sendTransaction({
         to: toAddr,
         value: hre.ethers.utils.parseEther(amount),
     });
     if (hre.hardhatArguments.verbose) {
-        console.log(`[${fromAccount.address}] has [${hre.ethers.utils.formatEther(await hre.ethers.provider.getBalance(fromAccount.address))}]`);
-        console.log(`[${toAddr}] has [${hre.ethers.utils.formatEther(await hre.ethers.provider.getBalance(toAddr))}]`);
+        console.log(`[${fromAccount.address}] has [${hre.ethers.utils.formatEther(await hre.ethers.provider.getBalance(fromAccount.address))}] ETH`);
+        console.log(`[${toAddr}] has [${hre.ethers.utils.formatEther(await hre.ethers.provider.getBalance(toAddr))}] ETH`);
     }
 }
 
@@ -59,25 +60,36 @@ async function runCallbackImpersonatingAcct(acct, callbackFn) {
         params: [acct.address],
     });
 
-    await callbackFn(acct);
+    await callbackFn(acct)
+        .then(async () => {
+            await hre.network.provider.request({
+                method: "hardhat_stopImpersonatingAccount",
+                params: [acct.address],
+            });
+        })
+        .catch(async (err) => {
+            await hre.network.provider.request({
+                method: "hardhat_stopImpersonatingAccount",
+                params: [acct.address],
+            });
 
-    await hre.network.provider.request({
-        method: "hardhat_stopImpersonatingAccount",
-        params: [acct.address],
-    });
+            console.error(err);
+            throw err;
+        });
 }
 
 /**
  * General method to procure ETH, WETH, and DAI to a specific address
  * @param fromAcct:
  * @param toAddr
+ * @param daiAmount
  * @returns {Promise<void>}
  */
-async function sendTokensToAddr(fromAcct, toAddr) {
+async function sendTokensToAddr(fromAcct, toAddr, daiAmount="") {
     //Set up accounts and variables
     const toAcct = await hre.ethers.getSigner(toAddr);
     await transferETH(fromAcct, toAddr);
-    const expiryDate = Math.floor(Date.now() / 1000) + 60 * 20; // 20 minutes from the current Unix time
+    const expiryDate = Math.floor(Date.now() / 1000) + 60 * 20; //20 minutes from the current Unix time
     const qtyInWETH = hre.ethers.utils.parseEther("20");
 
     //Get smart contracts
@@ -90,31 +102,59 @@ async function sendTokensToAddr(fromAcct, toAddr) {
 
     //Convert ETH to WETH
     await runCallbackImpersonatingAcct(toAcct, async (acct) => {
-        await weth9Contract.connect(acct).approve(acct.address, qtyInWETH)
-        await weth9Contract.connect(acct).deposit({"value": qtyInWETH})
+        await weth9Contract.connect(acct).approve(acct.address, qtyInWETH);
+        await weth9Contract.connect(acct).deposit({"value": qtyInWETH});
+
+        //Approve uniswap to transfer all WETH, if needed
+        await weth9Contract.connect(acct).approve(uniswapSwapRouterContract.address, qtyInWETH);
     });
 
-    //Swap half of the WETH to DAI with uniswap_v3
-    const params = {
-        tokenIn: consts("WETH9_ADDR"),
-        tokenOut: consts("DAI_ADDR"),
-        fee: 3000,
-        recipient: toAddr,
-        deadline: expiryDate,
-        amountIn: qtyInWETH.div(2),
-        amountOutMinimum: 0,
-        sqrtPriceLimitX96: 0,
-    };
-    await runCallbackImpersonatingAcct(toAcct, async (acct) => {
-        await weth9Contract.connect(acct).approve(uniswapSwapRouterContract.address, qtyInWETH);
-        await uniswapSwapRouterContract.connect(acct).exactInputSingle(params);
-    });
+    //If test specifies DAI amount, then give exact DAI amount, otherwise default to half of the WETH
+    if (daiAmount) {
+        const outDAIQty = hre.ethers.utils.parseEther(daiAmount);
+        await uniswapExactOutputSingle(weth9Contract, uniswapSwapRouterContract, toAcct, expiryDate, outDAIQty);
+    } else {
+        const inWETHQty = qtyInWETH.div(2);
+        await uniswapExactInputSingle(weth9Contract, uniswapSwapRouterContract, toAcct, expiryDate, inWETHQty);
+    }
 
     if (hre.hardhatArguments.verbose) {
         console.log(`[${toAddr}] balance of ETH is [${hre.ethers.utils.formatEther(await hre.ethers.provider.getBalance(toAddr))}]`);
         console.log(`[${toAddr}] balance of WETH is [${hre.ethers.utils.formatEther(await weth9Contract.balanceOf(toAddr))}]`);
         console.log(`[${toAddr}] balance of DAI is [${hre.ethers.utils.formatEther(await daiContract.balanceOf(toAddr))}]`);
     }
+}
+
+async function uniswapExactOutputSingle(weth9Contract, uniswapSwapRouterContract, toAcct, expiryDate, outDAIQty) {
+    const params = {
+        tokenIn: consts("WETH9_ADDR"),
+        tokenOut: consts("DAI_ADDR"),
+        fee: 3000,
+        recipient: toAcct.address,
+        deadline: expiryDate,
+        sqrtPriceLimitX96: 0,
+        amountOut: outDAIQty,
+        amountInMaximum: hre.ethers.constants.MaxUint256,
+    };
+    await runCallbackImpersonatingAcct(toAcct, async (acct) => {
+        await uniswapSwapRouterContract.connect(acct).exactOutputSingle(params);
+    });
+}
+
+async function uniswapExactInputSingle(weth9Contract, uniswapSwapRouterContract, toAcct, expiryDate, inWETHQty) {
+    const params = {
+        tokenIn: consts("WETH9_ADDR"),
+        tokenOut: consts("DAI_ADDR"),
+        fee: 3000,
+        recipient: toAcct.address,
+        deadline: expiryDate,
+        sqrtPriceLimitX96: 0,
+        amountIn: inWETHQty,
+        amountOutMinimum: 0,
+    };
+    await runCallbackImpersonatingAcct(toAcct, async (acct) => {
+        await uniswapSwapRouterContract.connect(acct).exactInputSingle(params);
+    });
 }
 
 function sqrtPriceX96(price) {
@@ -132,12 +172,11 @@ async function getUniswapPoolContract(tokenA, tokenB, poolFee) {
 async function getUniswapPriceQuote(tokenA, tokenB, poolFee, period) {
     const poolContract = await getUniswapPoolContract(tokenA, tokenB, poolFee);
     const observations = await poolContract.observe([period, 0]);
-    const tick1 = observations[0][0]
-    const tick2 = observations[0][1]
+    const tick1 = observations[0][0];
+    const tick2 = observations[0][1];
     const avgTick = (tick2 - tick1) / period;
-    return Math.pow(1.0001, avgTick)
+    return Math.pow(1.0001, avgTick);
 }
-
 
 module.exports = {
     getDAIContract,

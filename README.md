@@ -75,7 +75,19 @@ specify the range of blocks you want to fetch. Note that the values cannot excee
 as hardhat relies on that forked, archival block data to create the local network; from which we fetch that tx data 
 from.
 ```
-npm run download_block_data -- --start-block-number 13302360 --end-block-number 13302370
+# Block number at 01/01/2021 00:00 GMT
+export START_BLOCK_NUM=11565019
+export START_BLOCK_NUM=13302360
+
+# Block number at 01/01/2022 00:00 GMT
+export END_BLOCK_NUM=13916166
+export END_BLOCK_NUM=13302372
+
+npm run download_block_data -- --start-block-number ${START_BLOCK_NUM} --end-block-number ${END_BLOCK_NUM}
+
+pip3 install ethereum-etl
+
+ethereumetl export_blocks_and_transactions --start-block ${START_BLOCK_NUM} --end-block ${END_BLOCK_NUM} --provider-uri https://mainnet.infura.io/v3/0feb75e50f9a4dc2ae2d4333d4707333 --transactions-output ./block_data/transactions.csv
 ```
 
 With the block txs downloaded, we must now configure hardhat's network to start at the appropriate block. Using the 

@@ -12,12 +12,12 @@ library AaveLPManagerLib {
         mapping(address => TokenMetadata) tokenMetadata;
         address lpProviderAddr;
         address protocolDataProviderAddr;
-        address lpAddr;
     }
 
     struct TokenMetadata {
         uint256 targetPercent;
         uint256 actualPercent;
+        address aToken;
     }
 
     function getState()

@@ -1,4 +1,4 @@
-const fs = require("fs/promises");
+const fs = require("fs");
 const path = require("path");
 
 require("@nomiclabs/hardhat-waffle");
@@ -68,9 +68,8 @@ module.exports = {
                 //Feel free to update at any time. This is here to make local development and caching easier
                 blockNumber: 14058640
             },
-            timeout: 30000
+            timeout: 30000,
 
-            // This is useful to imitate mainnet block processing
             // mining: {
             //     auto: false,
             //     interval: 5000
@@ -102,12 +101,15 @@ module.exports = {
                 artifacts: "node_modules/@uniswap/v3-core/artifacts",
             }
         ]
+    },
+    mocha: {
+        timeout: 30000
     }
 };
 
 extendEnvironment((hre) => {
     if (hre.hardhatArguments.verbose) {
-        console.log("Enabling hre logging")
+        console.log("Enabling hre logging");
         hre.network.config.loggingEnabled = true;
     }
 });
@@ -121,33 +123,31 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
 });
 
 task("download_block_data", "Downloads and serializes tx data for a range of blocks")
-    .addParam("startBlockNumber", "Start of the block range you want to serialize")
-    .addParam("endBlockNumber", "End of the block range you want to serialize")
+    .addOptionalParam("startBlockNumber", "Start of the block range you want to serialize, inclusive")
+    .addOptionalParam("endBlockNumber", "End of the block range you want to serialize, inclusive")
     .setAction(async (taskArgs, hre) => {
-        const provider = hre.ethers.provider;
         const blockDataPath = path.join(process.cwd(), "block_data");
+        const {startBlockNumber, endBlockNumber} = getBlockParams(taskArgs);
+        console.log(`Downloading blocks [${startBlockNumber},${endBlockNumber}]`);
 
-        const startBlockNumber = parseInt(taskArgs["startBlockNumber"]);
-        const endBlockNumber = parseInt(taskArgs["endBlockNumber"]);
+        //Update forking blockNumber so the provider has access to all previous block info,
+        // ending at endBlockNumber (inclusive)
+        hre.network.config.forking.blockNumber = endBlockNumber + 1;
 
-        if (startBlockNumber >= endBlockNumber) {
-            throw `startBlockNumber: [${startBlockNumber}] is lge than endBlockNumber: [${endBlockNumber}]`;
-        }
-
-        const forkedBlockNum = hre.network.config.forking.blockNumber;
-        if (endBlockNumber > forkedBlockNum) {
-            throw `endBlockNumber: [${endBlockNumber}] occurs after forkedBlockNum: [${forkedBlockNum}] set in 
-            hardhat.config.js. The forked network thus does not have access to block ${endBlockNumber}`;
-        }
-
-        const blockCount = endBlockNumber - startBlockNumber;
-        for (let i = 0; i < blockCount; i++) {
+        //Plus one for inclusive range of [startBlockNumber,endBlockNumber]
+        const numOfBlocks = endBlockNumber - startBlockNumber + 1;
+        for (let i = 0; i < numOfBlocks; i++) {
             const blockNumber = startBlockNumber + i;
-            const blockData = await provider.getBlockWithTransactions(blockNumber);
+            const blockData = await hre.ethers.provider.getBlockWithTransactions(blockNumber);
+            // console.dir(blockData);
 
             const blockJsonFile = path.join(blockDataPath.toString(), `${blockNumber}.json`);
-            console.log(`Writing block's [${blockNumber}] tx data...`);
-            await fs.writeFile(blockJsonFile, JSON.stringify(blockData["transactions"]));
+            await fs.promises.access(blockJsonFile, fs.constants.F_OK)
+                .then(() => console.log(`${blockJsonFile} already exists. Skipping...`))
+                .catch(async function() {
+                    console.log(`Writing block's [${blockNumber}] tx data...`);
+                    await fs.promises.writeFile(blockJsonFile, JSON.stringify(blockData["transactions"]));
+                });
         }
 
         console.log(`Finished writing block data`);
@@ -162,10 +162,41 @@ task("test")
     });
 
 task("test:backtest")
+    .addOptionalParam("startBlockNumber", "Start block of the backtest, defaults to one block after the forking block " +
+        "number")
+    .addOptionalParam("endBlockNumber", "End block of the backtest, defaults to 10 blocks after the startBlockNumber")
     .setAction(async (taskArgs, hre) => {
+        const {startBlockNumber, endBlockNumber} = getBlockParams(taskArgs);
+        // hre.network.config.forking.blockNumber = startBlockNumber - 1;
+        hre.config.startBlockNumber = startBlockNumber;
+        hre.config.endBlockNumber = endBlockNumber;
+
         hre.config.paths.tests = path.join(path.parse(hre.config.paths.tests).dir, "back_tests");
+        hre.config.mocha.timeout = Number.MAX_SAFE_INTEGER;
         return await hre.run("test");
     });
+
+function getBlockParams(taskArgs) {
+    let startBlockNumber, endBlockNumber;
+
+    if (taskArgs["startBlockNumber"]) {
+        startBlockNumber = parseInt(taskArgs["startBlockNumber"]);
+    } else {
+        startBlockNumber = hre.network.config.forking.blockNumber + 1;
+    }
+
+    if (taskArgs["endBlockNumber"]) {
+        endBlockNumber = parseInt(taskArgs["endBlockNumber"]);
+    } else {
+        endBlockNumber = startBlockNumber + 10;
+    }
+
+    if (startBlockNumber >= endBlockNumber) {
+        throw `startBlockNumber: [${startBlockNumber}] is lge than endBlockNumber: [${endBlockNumber}]`;
+    }
+
+    return {startBlockNumber, endBlockNumber};
+}
 
 /**
  * Added this hook into the hardhat deploy plugin to automatically write log output to the corresponding network's
@@ -177,7 +208,7 @@ subtask(TASK_DEPLOY_MAIN, async (taskArgs, hre, runSuper) => {
 
     // Get deployedCount
     let deployedCount = 0;
-    fs.readFile(manifestPath)
+    fs.promises.readFile(manifestPath)
         .then(function (buffer) {
             let content = JSON.parse(buffer.toString());
             deployedCount = parseInt(content["deployedCount"]);
@@ -193,7 +224,7 @@ subtask(TASK_DEPLOY_MAIN, async (taskArgs, hre, runSuper) => {
         let content = JSON.stringify({
             "deployedCount": ++deployedCount
         });
-        await fs.writeFile(manifestPath, content);
+        await fs.promises.writeFile(manifestPath, content);
     }
 
     return taskResult;
