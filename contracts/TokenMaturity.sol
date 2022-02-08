@@ -246,41 +246,71 @@ contract TokenMaturity {
     }
 
     function liquidateTreasury() public tokenMaturityInitLock {
-        IAaveLPManager(address(this)).liquidateAaveTreasury();
+
+        bool allAssetsLiquidated = true;
+
+        if (!IAaveLPManager(address(this)).liquidateAaveTreasury()) {
+            allAssetsLiquidated = false;
+        }
 
         address[] memory supportedTokens = IAaveLPManager(address(this))
             .getAllAaveSupportedTokens();
 
-        UniswapManager uniswapManager = UniswapManager(address(this));
-
-        UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
-            .getState();
-
         for (uint256 i = 0; i < supportedTokens.length; i++) {
+
             uint256 balance = IERC20(supportedTokens[i]).balanceOf(
                 address(this)
             );
-            if (balance > 0) {
-                uniswapManager.swapExactInputSingle(
-                    supportedTokens[i],
-                    ss.basePoolFee,
-                    ss.WETHAddress,
-                    balance
-                );
+
+            if (balance == 0) {
+                continue;
             }
+
+            if (swapForWETH(supportedTokens[i], balance) > 0) {
+                allAssetsLiquidated = false;
+            }
+
         }
 
-        unwrapWETH();
+        if (unwrapWETH() > 0) {
+            allAssetsLiquidated = false;
+        }
 
-        setIsTreasuryLiquidated(true);
+        if (allAssetsLiquidated) {
+            setIsTreasuryLiquidated(true);
+        }
+
     }
 
-    function unwrapWETH() public tokenMaturityInitLock {
+    //    swaps for WETH and returns new asset balance
+    function swapForWETH(address token, uint256 amount) public tokenMaturityInitLock returns (uint256) {
+
+        UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
+        .getState();
+
+        UniswapManager uniswapManager = UniswapManager(address(this));
+
+        uniswapManager.swapExactInputSingle(
+            token,
+            ss.basePoolFee,
+            ss.WETHAddress,
+            amount
+        );
+
+        return IERC20(token).balanceOf(
+            address(this)
+        );
+    }
+
+    //    unwraps WETH and returns remaining WETH balance
+    function unwrapWETH() public tokenMaturityInitLock returns (uint256) {
         UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
             .getState();
 
         uint256 balance = IERC20(ss.WETHAddress).balanceOf(address(this));
 
         IWETH9(ss.WETHAddress).withdraw(balance);
+
+        return IERC20(ss.WETHAddress).balanceOf(address(this));
     }
 }

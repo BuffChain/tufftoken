@@ -203,11 +203,17 @@ contract AaveLPManager is Context {
             LendingPool(getAaveLPAddr()).getReserveNormalizedIncome(tokenAddr);
     }
 
-    function liquidateAaveTreasury() public aaveInitLock {
+    function liquidateAaveTreasury() public aaveInitLock returns (bool) {
         address[] memory supportedTokens = getAllAaveSupportedTokens();
+        bool allTokensWithdrawn = true;
         for (uint256 i = 0; i < supportedTokens.length; i++) {
             withdrawAllFromAave(supportedTokens[i]);
+            uint256 remainingAmount = getATokenBalance(supportedTokens[i]);
+            if (remainingAmount > 0) {
+                allTokensWithdrawn = false;
+            }
         }
+        return allTokensWithdrawn;
     }
 
     function withdrawAllFromAave(address asset) public aaveInitLock {
