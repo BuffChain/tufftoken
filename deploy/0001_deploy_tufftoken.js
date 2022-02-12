@@ -20,13 +20,13 @@ module.exports = async () => {
             "AaveLPManager",
             "TuffKeeper",
             "TokenMaturity",
-            "Governance",
             "UniswapManager"
         ],
         log: true
     });
     let tuffTokenDiamondContract = await hre.ethers.getContractAt(tuffTokenDiamond.abi, tuffTokenDiamond.address, contractOwner);
-    console.log(`TuffTokenDiamond address [${await tuffTokenDiamondContract.address}]`);
+    const tuffTokenAddress = await tuffTokenDiamondContract.address;
+    console.log(`TuffTokenDiamond address [${tuffTokenAddress}]`);
 
     if (!await tuffTokenDiamondContract.isTuffTokenInit()) {
         let initTx = await tuffTokenDiamondContract.initTuffToken(contractOwner);
@@ -59,11 +59,6 @@ module.exports = async () => {
         logDeploymentTx("Initialized TokenMaturity:", initTx);
     }
 
-    if (!await tuffTokenDiamondContract.isGovernanceInit()) {
-        let initTx = await tuffTokenDiamondContract.initGovernance();
-        logDeploymentTx("Initialized Governance:", initTx);
-    }
-
     if (!await tuffTokenDiamondContract.isUniswapManagerInit()) {
         let initTx = await tuffTokenDiamondContract.initUniswapManager(
             consts("UNISWAP_V3_ROUTER_ADDR"),
@@ -72,6 +67,31 @@ module.exports = async () => {
         );
         logDeploymentTx("Initialized UniswapManager:", initTx);
     }
+
+    let tuffGovToken = await deployments.deploy('TuffGovToken', {
+        from: deployer,
+        args: [tuffTokenAddress],
+        log: true
+    });
+
+    console.log(`TuffGovToken address [${tuffGovToken.address}]`);
+
+    let timelockController = await deployments.deploy('TimelockController', {
+        from: deployer,
+        args: [60, [contractOwner], [contractOwner]],
+        log: true
+    });
+
+    console.log(`TimelockController address [${timelockController.address}]`);
+
+    let tuffGovernor = await deployments.deploy('TuffGovernor', {
+        from: deployer,
+        args: [tuffGovToken.address, timelockController.address],
+        log: true
+    });
+
+    console.log(`TuffGovernor address [${await tuffGovernor.address}]`);
+
 
 };
 
