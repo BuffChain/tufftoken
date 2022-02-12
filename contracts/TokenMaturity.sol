@@ -234,6 +234,10 @@ contract TokenMaturity {
         );
 
         liquidateTreasury();
+        
+        if (!getIsTreasuryLiquidated()) {
+            return;
+        }
 
         uint256 ethBalance = getCurrentContractEthBalance();
         setContractStartingEthBalance(ethBalance);
