@@ -5,13 +5,20 @@ import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Wrapper.sol";
+import "hardhat/console.sol";
+
 
 contract TuffGovToken is ERC20, ERC20Permit, ERC20Votes, ERC20Wrapper {
-    constructor(IERC20 wrappedToken)
+
+    IERC20 wrappedToken;
+
+    constructor(IERC20 _wrappedToken)
         ERC20("TuffGovToken", "TUFFGOV")
         ERC20Permit("TuffGovToken")
-        ERC20Wrapper(wrappedToken)
-    {}
+        ERC20Wrapper(_wrappedToken)
+    {
+        wrappedToken = _wrappedToken;
+    }
 
     // The functions below are overrides required by Solidity.
 
@@ -35,5 +42,22 @@ contract TuffGovToken is ERC20, ERC20Permit, ERC20Votes, ERC20Wrapper {
         override(ERC20, ERC20Votes)
     {
         super._burn(account, amount);
+    }
+
+    function wrap(uint256 amount) external {
+        _wrap(msg.sender, amount);
+    }
+
+    function unWrap(uint256 amount) external {
+        _unWrap(msg.sender, amount);
+    }
+
+    function _wrap(address account, uint256 amount) internal {
+        wrappedToken.approve(address(this), amount);
+        super.depositFor(account, amount);
+    }
+
+    function _unWrap(address account, uint256 amount) internal {
+        super.withdrawTo(account, amount);
     }
 }

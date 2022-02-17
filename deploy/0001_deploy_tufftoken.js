@@ -70,6 +70,7 @@ module.exports = async () => {
 
     let tuffGovToken = await deployments.deploy('TuffGovToken', {
         from: deployer,
+        owner: contractOwner,
         args: [tuffTokenAddress],
         log: true
     });
@@ -78,6 +79,7 @@ module.exports = async () => {
 
     let timelockController = await deployments.deploy('TimelockController', {
         from: deployer,
+        owner: contractOwner,
         args: [60, [contractOwner], [contractOwner]],
         log: true
     });
@@ -86,6 +88,7 @@ module.exports = async () => {
 
     let tuffGovernor = await deployments.deploy('TuffGovernor', {
         from: deployer,
+        owner: contractOwner,
         args: [tuffGovToken.address, timelockController.address],
         log: true
     });
