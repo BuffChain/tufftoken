@@ -19,7 +19,6 @@ contract TuffGovernor is
     GovernorVotesQuorumFraction,
     GovernorTimelockControl
 {
-
     uint256 _votingDelay;
     uint256 _votingPeriod;
     uint256 _proposalThreshold;
@@ -27,15 +26,13 @@ contract TuffGovernor is
     constructor(ERC20Votes _token, TimelockController _timelock)
         Governor("TuffGovernor")
         GovernorVotes(_token)
-
         // GovernorVotesQuorumFraction which works together with ERC20Votes to define quorum as a percentage of
         // the total supply at the block a proposal’s voting power is retrieved. (4%)
         GovernorVotesQuorumFraction(4)
-
         GovernorTimelockControl(_timelock)
     {
         _votingDelay = 6575; // 1 day
-        _votingPeriod = 46027;  // 1 week
+        _votingPeriod = 46027; // 1 week
         _proposalThreshold = 0; // how much voting power is needed to create a proposal
     }
 
