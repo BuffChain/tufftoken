@@ -8,6 +8,13 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Wrapper.sol";
 import "hardhat/console.sol";
 
 
+/**
+ * Implementation of openzepplin governance https://docs.openzeppelin.com/contracts/4.x/governance
+ * In order to have voting power, a holder of TuffToken must deposit (wrap) their tokens to get the equal amount
+ * of TuffGovToken. They must also delegate themselves (or another holder if they so choose) to be granted voting power.
+ * Voting power is determined simply by token balance.
+ */
+
 contract TuffGovToken is ERC20, ERC20Permit, ERC20Votes, ERC20Wrapper {
 
     IERC20 wrappedToken;

@@ -14,20 +14,9 @@ describe("TuffGovToken", function () {
     let accounts;
 
     let tuffTokenDiamond;
-
-    let tuffGovTokenFactory;
     let tuffGovToken;
 
-    let tuffGovernorFactory;
-    let tuffGovernor;
-
-    let timelockControllerFactory;
-    let timelockController;
-
     before(async function () {
-        tuffGovTokenFactory = await hre.ethers.getContractFactory("TuffGovToken");
-        tuffGovernorFactory = await hre.ethers.getContractFactory("TuffGovernor");
-        timelockControllerFactory = await hre.ethers.getContractFactory("TimelockController");
 
         const {contractOwner} = await hre.getNamedAccounts();
         owner = await hre.ethers.getSigner(contractOwner);
@@ -35,39 +24,38 @@ describe("TuffGovToken", function () {
         //Per `hardhat.config.js`, the 0 and 1 index accounts are named accounts. They are reserved for deployment uses
         [, , ...accounts] = await hre.ethers.getSigners();
         
-        const {TuffTokenDiamond, TuffGovToken, TimelockController, TuffGovernor} = await hre.deployments.fixture();
+        const {TuffTokenDiamond, TuffGovToken} = await hre.deployments.fixture();
         tuffTokenDiamond = await hre.ethers.getContractAt(TuffTokenDiamond.abi, TuffTokenDiamond.address, owner);
 
         tuffGovToken = await hre.ethers.getContractAt(TuffGovToken.abi, TuffGovToken.address, owner);
 
-        timelockController = await hre.ethers.getContractAt(TimelockController.abi, TimelockController.address, owner);
-
-        tuffGovernor = await hre.ethers.getContractAt(TuffGovernor.abi, TuffGovernor.address, owner);
     });
 
-    async function assertTuffWasWrapped() {
-        const sender = owner.address;
+    async function assertTuffWasWrapped(account, amount) {
 
-        const tuffTotalSupply = await tuffTokenDiamond.totalSupply();
+        const startingTuffBalance = await tuffTokenDiamond.balanceOf(account);
+        expect(startingTuffBalance).to.equal(amount, "Unexpected tuff starting balance");
 
-        const startingTuffBalance = await tuffTokenDiamond.balanceOf(sender);
-        expect(startingTuffBalance).to.equal(tuffTotalSupply, "Unexpected tuff starting balance");
-
-        const startingTuffGovBalance = await tuffGovToken.balanceOf(sender);
+        const startingTuffGovBalance = await tuffGovToken.balanceOf(account);
         expect(startingTuffGovBalance).to.equal(0, "Unexpected gov starting balance");
 
-        await wrapTuff(sender, startingTuffBalance.toString());
+        await wrapTuff(account, amount.toString());
 
-        const tuffBalanceAfterWrap = await tuffTokenDiamond.balanceOf(sender);
+        const tuffBalanceAfterWrap = await tuffTokenDiamond.balanceOf(account);
         expect(tuffBalanceAfterWrap).to.equal(startingTuffGovBalance, "Unexpected tuff balance after wrap");
 
-        const tuffGovBalanceAfterWrap = await tuffGovToken.balanceOf(sender);
+        const tuffGovBalanceAfterWrap = await tuffGovToken.balanceOf(account);
         expect(tuffGovBalanceAfterWrap).to.equal(startingTuffBalance, "Unexpected tuff gov balance after wrap");
-        return {sender, startingTuffBalance, startingTuffGovBalance};
+
     }
 
     async function assertTuffGovConversions() {
-        const {sender, startingTuffBalance, startingTuffGovBalance} = await assertTuffWasWrapped();
+
+        const sender = owner.address;
+        const startingTuffBalance = await tuffTokenDiamond.balanceOf(sender);
+        const startingTuffGovBalance = await tuffGovToken.balanceOf(sender);
+
+        await assertTuffWasWrapped(sender, startingTuffBalance);
 
         await unWrapTuff(sender, startingTuffBalance.toString());
 
@@ -99,97 +87,40 @@ describe("TuffGovToken", function () {
     //     await tuffGovToken.unWrap(amount)
     // }
 
-    async function assertProposalCreated(description) {
-        const tokenAddress = tuffTokenDiamond.address
-        const token = await hre.ethers.getContractAt('ERC20', tokenAddress);
-        const receiverAccount = accounts[1].address;
-        const grantAmount = 100000;
-        const transferCalldata = token.interface.encodeFunctionData('transfer', [receiverAccount, grantAmount]);
 
-        const targets = [tokenAddress];
-        const values = [0];
-        const calldatas = [transferCalldata];
+    it("should modify voting power", async () => {
 
-        await tuffGovernor.setVotingDelay(0);
+        const sender = owner.address;
+        const tuffBalance = await tuffTokenDiamond.balanceOf(sender);
 
-        const proposalTx = await tuffGovernor._propose(
-            [tokenAddress],
-            [0],
-            [transferCalldata],
-            description,
-        );
+        await assertTuffWasWrapped(sender, tuffBalance);
 
-        const proposalReceipt = await proposalTx.wait();
-        const proposalCreatedEvent = proposalReceipt.events.find(event => event.event === 'ProposalCreated');
+        let delegate = await tuffGovToken.delegates(sender);
 
-        const emittedProposalId = proposalCreatedEvent.args[0].toString()
+        const zeroAddress = '0x0000000000000000000000000000000000000000'
+        expect(delegate).to.equal(zeroAddress, "Should not have delegate set");
 
-        const descriptionHash = hre.ethers.utils.id(description);
-        const proposalId = await tuffGovernor.hashProposal(targets, values, calldatas, descriptionHash);
+        let checkPoints = await tuffGovToken.numCheckpoints(sender);
+        expect(checkPoints).to.equal(0, "Should not have reached any checkpoints");
 
-        expect(emittedProposalId).to.equal(proposalId, "Unexpected proposal id");
-        return proposalId;
-    }
+        let weight = await tuffGovToken.getVotes(sender);
+        expect(weight).to.equal(0, "Should not have any voting power");
 
-    it("should create proposal", async () => {
-        const proposalId = await assertProposalCreated("Proposal #1: Give grant to receiver");
-    });
+        await tuffGovToken.delegate(sender);
 
-    async function assertVoteCast(proposalId) {
+        delegate = await tuffGovToken.delegates(sender);
+        expect(delegate).to.equal(sender, "Should have delegated self");
 
-        let state = await tuffGovernor.state(proposalId)
-        const pendingState = 0;
+        checkPoints = await tuffGovToken.numCheckpoints(sender);
+        expect(checkPoints).to.equal(1, "Should have reached checkpoint");
 
-        state = await tuffGovernor.state(proposalId);
-        const activeState = 1;
-        expect(state).to.equal(activeState, "Proposal should be in active state");
+        weight = await tuffGovToken.getVotes(sender);
+        expect(weight).to.equal(tuffBalance.toString(), "Should have voting power equal to balance of wrapped token");
 
-        await tuffGovernor.castVote(proposalId, 0);
+        await unWrapTuff(sender, tuffBalance)
 
-        await expectRevert(tuffGovernor.castVote(proposalId, 1), "GovernorCompatibilityBravo: vote already cast");
-
-    }
-
-    it("should cast vote on proposal", async () => {
-        const proposalId = await assertProposalCreated("Proposal #2: Give grant to receiver some more");
-
-        const {sender, startingTuffBalance, startingTuffGovBalance} = await assertTuffWasWrapped();
-
-        await assertVoteCast(proposalId);
-
-        await unWrapTuff(sender, startingTuffBalance)
-    });
-
-    it("should get votes weight", async () => {
-        const {sender, startingTuffBalance, startingTuffGovBalance} = await assertTuffWasWrapped();
-
-        const latestBlock = (await hre.ethers.provider.getBlock("latest")).number - 1;
-        // const weight = await tuffGovToken.getVotes(accounts[0].address);
-        const weight = await tuffGovernor.getVotes(accounts[0].address, latestBlock);
-        console.log(weight.toString())
-        await unWrapTuff(sender, startingTuffBalance)
-    });
-
-    it("should get proposal details", async () => {
-        const {sender, startingTuffBalance, startingTuffGovBalance} = await assertTuffWasWrapped();
-
-        const proposalId = await assertProposalCreated("Proposal #3: Give grant to receiver again");
-
-        const latestBlock = (await hre.ethers.provider.getBlock("latest")).number - 1;
-        const weight = await tuffGovernor.getVotes(accounts[0].address, latestBlock);
-        console.log(weight.toString())
-
-        const [id, proposer, eta, startBlock, endBlock, forVotes, againstVotes, abstainVotes, canceled, executed] =
-            await tuffGovernor.proposals(proposalId);
-
-        console.log(latestBlock)
-        console.log(startBlock.toString())
-        console.log(endBlock.toString())
-        console.log(forVotes.toString())
-        console.log(againstVotes.toString())
-        console.log(abstainVotes.toString())
-
-        await unWrapTuff(sender, startingTuffBalance)
+        weight = await tuffGovToken.getVotes(sender);
+        expect(weight).to.equal(0, "Should not have any voting power");
 
     });
 

@@ -178,6 +178,8 @@ async function getUniswapPriceQuote(tokenA, tokenB, poolFee, period) {
     return Math.pow(1.0001, avgTick);
 }
 
+const TUFF_TOTAL_SUPPLY = 1000000000 * 10 ** 9;
+
 module.exports = {
     getDAIContract,
     getWETH9Contract,
@@ -187,5 +189,6 @@ module.exports = {
     runCallbackImpersonatingAcct,
     sendTokensToAddr,
     sqrtPriceX96,
-    getUniswapPriceQuote
+    getUniswapPriceQuote,
+    TUFF_TOTAL_SUPPLY
 }

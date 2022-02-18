@@ -2,6 +2,7 @@
 
 const {expect} = require("chai");
 const hre = require("hardhat");
+const {TUFF_TOTAL_SUPPLY} = require('../../utils/test_utils')
 
 describe("TuffToken", function () {
 
@@ -60,7 +61,7 @@ describe("TuffToken", function () {
 
     it('should get totalSupply', async () => {
         const totalSupply = parseFloat(await tuffTokenDiamond.totalSupply());
-        expect(totalSupply).to.equal(1000000000 * 10 ** 9, "incorrect totalSupply");
+        expect(totalSupply).to.equal(TUFF_TOTAL_SUPPLY, "incorrect totalSupply");
     });
 
     it('should have TuffToken in the owner account', async () => {

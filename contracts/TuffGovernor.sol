@@ -8,6 +8,10 @@ import "@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFractio
 import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
 
+/**
+ * Implementation of openzepplin governance https://docs.openzeppelin.com/contracts/4.x/governance#governor
+ */
+
 contract TuffGovernor is
     Governor,
     GovernorCompatibilityBravo,
@@ -23,16 +27,20 @@ contract TuffGovernor is
     constructor(ERC20Votes _token, TimelockController _timelock)
         Governor("TuffGovernor")
         GovernorVotes(_token)
+
+        // GovernorVotesQuorumFraction which works together with ERC20Votes to define quorum as a percentage of
+        // the total supply at the block a proposal’s voting power is retrieved. (4%)
         GovernorVotesQuorumFraction(4)
+
         GovernorTimelockControl(_timelock)
     {
-        _votingDelay = 6575;
-        _votingPeriod = 46027;
-        _proposalThreshold = 0;
+        _votingDelay = 6575; // 1 day
+        _votingPeriod = 46027;  // 1 week
+        _proposalThreshold = 0; // how much voting power is needed to create a proposal
     }
 
     function votingDelay() public view override returns (uint256) {
-        return _votingDelay; // 1 day
+        return _votingDelay;
     }
 
     function setVotingDelay(uint256 delay) public {
@@ -40,11 +48,19 @@ contract TuffGovernor is
     }
 
     function votingPeriod() public view override returns (uint256) {
-        return _votingPeriod; // 1 week
+        return _votingPeriod;
+    }
+
+    function setVotingPeriod(uint256 period) public {
+        _votingPeriod = period;
     }
 
     function proposalThreshold() public view override returns (uint256) {
         return _proposalThreshold;
+    }
+
+    function setProposalThreshold(uint256 threshold) public {
+        _proposalThreshold = threshold;
     }
 
     // The functions below are overrides required by Solidity.
