@@ -39,7 +39,7 @@ describe("TuffGovToken", function () {
         const startingTuffGovBalance = await tuffGovToken.balanceOf(account);
         expect(startingTuffGovBalance).to.equal(0, "Unexpected gov starting balance");
 
-        await wrapTuff(account, amount.toString());
+        await wrapTuff(amount.toString());
 
         const tuffBalanceAfterWrap = await tuffTokenDiamond.balanceOf(account);
         expect(tuffBalanceAfterWrap).to.equal(startingTuffGovBalance, "Unexpected tuff balance after wrap");
@@ -57,7 +57,7 @@ describe("TuffGovToken", function () {
 
         await assertTuffWasWrapped(sender, startingTuffBalance);
 
-        await unWrapTuff(sender, startingTuffBalance.toString());
+        await unWrapTuff(startingTuffBalance.toString());
 
         const tuffBalanceAfterUnwrap = await tuffTokenDiamond.balanceOf(sender);
         expect(tuffBalanceAfterUnwrap).to.equal(startingTuffBalance, "Unexpected tuff balance after unwrap");
@@ -70,23 +70,14 @@ describe("TuffGovToken", function () {
         await assertTuffGovConversions();
     });
 
-    async function wrapTuff(account, amount) {
+    async function wrapTuff(amount) {
         await tuffTokenDiamond.approve(tuffGovToken.address, amount);
-        await tuffGovToken.depositFor(account, amount)
+        await tuffGovToken.deposit(amount)
     }
 
-    async function unWrapTuff(account, amount) {
-        await tuffGovToken.withdrawTo(account, amount)
+    async function unWrapTuff(amount) {
+        await tuffGovToken.withdraw(amount)
     }
-
-    // async function wrapTuff(amount) {
-    //     await tuffGovToken.wrap(amount)
-    // }
-    //
-    // async function unWrapTuff(amount) {
-    //     await tuffGovToken.unWrap(amount)
-    // }
-
 
     it("should modify voting power", async () => {
 
@@ -117,7 +108,7 @@ describe("TuffGovToken", function () {
         weight = await tuffGovToken.getVotes(sender);
         expect(weight).to.equal(tuffBalance.toString(), "Should have voting power equal to balance of wrapped token");
 
-        await unWrapTuff(sender, tuffBalance)
+        await unWrapTuff(tuffBalance)
 
         weight = await tuffGovToken.getVotes(sender);
         expect(weight).to.equal(0, "Should not have any voting power");

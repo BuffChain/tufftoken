@@ -49,20 +49,12 @@ contract TuffGovToken is ERC20, ERC20Permit, ERC20Votes, ERC20Wrapper {
         super._burn(account, amount);
     }
 
-    function wrap(uint256 amount) external {
-        _wrap(msg.sender, amount);
+    function deposit(uint256 amount) external {
+        super.depositFor(msg.sender, amount);
     }
 
-    function unWrap(uint256 amount) external {
-        _unWrap(msg.sender, amount);
+    function withdraw(uint256 amount) external {
+        super.withdrawTo(msg.sender, amount);
     }
 
-    function _wrap(address account, uint256 amount) internal {
-        wrappedToken.approve(address(this), amount);
-        super.depositFor(account, amount);
-    }
-
-    function _unWrap(address account, uint256 amount) internal {
-        super.withdrawTo(account, amount);
-    }
 }
