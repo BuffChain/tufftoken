@@ -68,34 +68,6 @@ module.exports = async () => {
         logDeploymentTx("Initialized UniswapManager:", initTx);
     }
 
-    let tuffGovToken = await deployments.deploy('TuffGovToken', {
-        from: deployer,
-        owner: contractOwner,
-        args: [tuffTokenAddress],
-        log: true
-    });
-
-    console.log(`TuffGovToken address [${tuffGovToken.address}]`);
-
-    let timelockController = await deployments.deploy('TimelockController', {
-        from: deployer,
-        owner: contractOwner,
-        args: [60, [contractOwner], [contractOwner]],
-        log: true
-    });
-
-    console.log(`TimelockController address [${timelockController.address}]`);
-
-    let tuffGovernor = await deployments.deploy('TuffGovernor', {
-        from: deployer,
-        owner: contractOwner,
-        args: [tuffGovToken.address, timelockController.address],
-        log: true
-    });
-
-    console.log(`TuffGovernor address [${await tuffGovernor.address}]`);
-
-
 };
 
 module.exports.tags = ['v0001'];
