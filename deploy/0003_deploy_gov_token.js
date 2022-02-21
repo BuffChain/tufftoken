@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: agpl-3.0
 
 const hre = require("hardhat");
+const AccessControlABI = require('../artifacts/@openzeppelin/contracts/access/AccessControl.sol/AccessControl.json').abi;
+
 
 module.exports = async () => {
 
@@ -24,8 +26,8 @@ module.exports = async () => {
     let timelockController = await deployments.deploy('TimelockController', {
         from: deployer,
         owner: contractOwner,
-        // TODO: decide access roles
-        args: [60, [contractOwner], [contractOwner]],
+        // access control: https://docs.openzeppelin.com/contracts/4.x/governance#timelock
+        args: [0, [], []],
         log: true
     });
 
@@ -40,6 +42,17 @@ module.exports = async () => {
 
     console.log(`TuffGovernor address [${await tuffGovernor.address}]`);
 
+    //https://docs.openzeppelin.com/defender/guide-timelock-roles
+    const proposerRole = '0xb09aa5aeb3702cfd50b6b62bc4532604938f21248a27a1d5ca736082b6819cc1';
+    const executorRole = '0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63';
+    const adminRole = '0x5f58e3a2316349923ce3780f8d587db2d72378aed66a8261c916544fa6846ca5';
+
+    let accessControl = await hre.ethers.getContractAt(AccessControlABI, timelockController.address, deployer);
+
+    // access control: https://docs.openzeppelin.com/contracts/4.x/governance#timelock
+    await accessControl.grantRole(proposerRole, tuffGovernor.address);
+    await accessControl.grantRole(executorRole, tuffGovernor.address);
+    await accessControl.revokeRole(adminRole, deployer);
 
 };
 

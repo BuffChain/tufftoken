@@ -33,7 +33,7 @@ contract TuffGovernor is
     {
         _votingDelay = 6575; // 1 day
         _votingPeriod = 46027; // 1 week
-        _proposalThreshold = 0; // how much voting power is needed to create a proposal
+        _proposalThreshold = 1; // how much voting power is needed to create a proposal
     }
 
     function votingDelay() public view override returns (uint256) {
@@ -102,21 +102,6 @@ contract TuffGovernor is
         return super.propose(targets, values, calldatas, description);
     }
 
-    function _propose(
-        address[] memory targets,
-        uint256[] memory values,
-        bytes[] memory calldatas,
-        string memory description
-    )
-        public
-        returns (
-            //        override(Governor, GovernorCompatibilityBravo, IGovernor)
-            uint256
-        )
-    {
-        return super.propose(targets, values, calldatas, description);
-    }
-
     function _execute(
         uint256 proposalId,
         address[] memory targets,
@@ -152,5 +137,32 @@ contract TuffGovernor is
         returns (bool)
     {
         return super.supportsInterface(interfaceId);
+    }
+
+    function doPropose(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas,
+        string memory description
+    ) public returns (uint256) {
+        return propose(targets, values, calldatas, description);
+    }
+
+    function doQueue(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas,
+        bytes32 descriptionHash
+    ) public returns (uint256) {
+        return super.queue(targets, values, calldatas, descriptionHash);
+    }
+
+    function doExecute(
+        address[] memory targets,
+        uint256[] memory values,
+        bytes[] memory calldatas,
+        bytes32 descriptionHash
+    ) public payable returns (uint256) {
+        return super.execute(targets, values, calldatas, descriptionHash);
     }
 }

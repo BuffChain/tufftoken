@@ -9,6 +9,8 @@ const IUniswapV3PoolABI = require("@uniswap/v3-core/artifacts/contracts/interfac
 
 const {consts} = require("./consts");
 
+const TUFF_TOTAL_SUPPLY = 1000000000 * 10 ** 9;
+
 async function getDAIContract() {
     return await hre.ethers.getContractAt(IERC20ABI, consts("DAI_ADDR"));
 }
@@ -178,9 +180,17 @@ async function getUniswapPriceQuote(tokenA, tokenB, poolFee, period) {
     return Math.pow(1.0001, avgTick);
 }
 
-const TUFF_TOTAL_SUPPLY = 1000000000 * 10 ** 9;
+const wrapTuffToGov = async (tuffToken, tuffGovToken, amount) => {
+    await tuffToken.approve(tuffGovToken.address, amount);
+    await tuffGovToken.deposit(amount)
+}
+
+const unwrapGovToTuff = async (tuffGovToken, amount) => {
+    await tuffGovToken.withdraw(amount)
+}
 
 module.exports = {
+    TUFF_TOTAL_SUPPLY,
     getDAIContract,
     getWETH9Contract,
     getUSDCContract,
@@ -190,5 +200,6 @@ module.exports = {
     sendTokensToAddr,
     sqrtPriceX96,
     getUniswapPriceQuote,
-    TUFF_TOTAL_SUPPLY
+    wrapTuffToGov,
+    unwrapGovToTuff
 }

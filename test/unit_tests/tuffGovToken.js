@@ -39,7 +39,7 @@ describe("TuffGovToken", function () {
         const startingTuffGovBalance = await tuffGovToken.balanceOf(account);
         expect(startingTuffGovBalance).to.equal(0, "Unexpected gov starting balance");
 
-        await wrapTuff(amount.toString());
+        await utils.wrapTuffToGov(tuffTokenDiamond, tuffGovToken, amount.toString());
 
         const tuffBalanceAfterWrap = await tuffTokenDiamond.balanceOf(account);
         expect(tuffBalanceAfterWrap).to.equal(startingTuffGovBalance, "Unexpected tuff balance after wrap");
@@ -57,7 +57,7 @@ describe("TuffGovToken", function () {
 
         await assertTuffWasWrapped(sender, startingTuffBalance);
 
-        await unWrapTuff(startingTuffBalance.toString());
+        await utils.unwrapGovToTuff(tuffGovToken, startingTuffBalance.toString());
 
         const tuffBalanceAfterUnwrap = await tuffTokenDiamond.balanceOf(sender);
         expect(tuffBalanceAfterUnwrap).to.equal(startingTuffBalance, "Unexpected tuff balance after unwrap");
@@ -69,15 +69,6 @@ describe("TuffGovToken", function () {
     it("should conversion between Tuff and TuffGov", async () => {
         await assertTuffGovConversions();
     });
-
-    async function wrapTuff(amount) {
-        await tuffTokenDiamond.approve(tuffGovToken.address, amount);
-        await tuffGovToken.deposit(amount)
-    }
-
-    async function unWrapTuff(amount) {
-        await tuffGovToken.withdraw(amount)
-    }
 
     it("should modify voting power", async () => {
 
@@ -108,7 +99,7 @@ describe("TuffGovToken", function () {
         weight = await tuffGovToken.getVotes(sender);
         expect(weight).to.equal(tuffBalance.toString(), "Should have voting power equal to balance of wrapped token");
 
-        await unWrapTuff(tuffBalance)
+        await utils.unwrapGovToTuff(tuffGovToken, tuffBalance)
 
         weight = await tuffGovToken.getVotes(sender);
         expect(weight).to.equal(0, "Should not have any voting power");

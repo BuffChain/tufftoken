@@ -45,36 +45,28 @@ describe("TuffGovernor", function () {
 
         const amount = await tuffTokenDiamond.balanceOf(owner.address);
 
-        await wrapTuff(owner.address, amount);
+        await utils.wrapTuffToGov(tuffTokenDiamond, tuffGovToken, amount);
 
     });
-
-    async function wrapTuff(account, amount) {
-        await tuffTokenDiamond.approve(tuffGovToken.address, amount);
-        await tuffGovToken.depositFor(account, amount)
-    }
-
-    async function unWrapTuff(account, amount) {
-        await tuffGovToken.withdrawTo(account, amount)
-    }
 
     async function assertProposalCreated(description) {
         const tokenAddress = tuffTokenDiamond.address
         const token = await hre.ethers.getContractAt('ERC20', tokenAddress);
         const receiverAccount = accounts[1].address;
         const grantAmount = 100000;
-        const transferCalldata = token.interface.encodeFunctionData('transfer', [receiverAccount, grantAmount]);
+        const calldata = token.interface.encodeFunctionData('name', []);
 
         const targets = [tokenAddress];
         const values = [0];
-        const calldatas = [transferCalldata];
+
+        const calldatas = [calldata];
 
         await tuffGovernor.setVotingDelay(0);
 
-        const proposalTx = await tuffGovernor._propose(
+        const proposalTx = await tuffGovernor.doPropose(
             [tokenAddress],
             [0],
-            [transferCalldata],
+            calldatas,
             description,
         );
 
@@ -87,11 +79,11 @@ describe("TuffGovernor", function () {
         const proposalId = await tuffGovernor.hashProposal(targets, values, calldatas, descriptionHash);
 
         expect(emittedProposalId).to.equal(proposalId, "Unexpected proposal id");
-        return proposalId;
+        return {proposalId, targets, values, calldatas, descriptionHash};
     }
 
     it("should create proposal", async () => {
-        const proposalId = await assertProposalCreated("Proposal #1: Give grant to receiver");
+        const {proposalId} = await assertProposalCreated("Proposal #1: Give grant to receiver");
     });
 
     async function assertVoteCast(proposalId) {
@@ -112,15 +104,18 @@ describe("TuffGovernor", function () {
     }
 
     it("should cast vote on proposal", async () => {
-        const proposalId = await assertProposalCreated("Proposal #2: Give grant to receiver some more");
+        const {proposalId} = await assertProposalCreated("Proposal #2: Give grant to receiver some more");
 
         await assertVoteCast(proposalId);
 
     });
 
-    it("should get proposal details", async () => {
+    it("should execute proposal", async () => {
 
-        const proposalId = await assertProposalCreated("Proposal #3: Give grant to receiver again");
+        await tuffGovernor.setVotingPeriod(3)
+
+        const {proposalId, targets, values, calldatas, descriptionHash} =
+            await assertProposalCreated("Proposal #3: Give grant to receiver again");
 
         let state = await tuffGovernor.state(proposalId)
         const pendingState = 0;
@@ -151,8 +146,32 @@ describe("TuffGovernor", function () {
 
         expect(forVotes).to.equal(holderVotingPower, "Votes 'for' should equal sender's voting power");
 
+        state = await expireVotingPeriod(proposalId);
+        const succeededState = 4;
+        expect(state).to.equal(succeededState, "Proposal should have succeeded");
+
+        await tuffGovernor.doQueue(targets, values, calldatas, descriptionHash);
+
+        state = await tuffGovernor.state(proposalId);
+        const queuedState = 5;
+        expect(state).to.equal(queuedState, "Proposal should have been queued");
+
+        await tuffGovernor.doExecute(targets, values, calldatas, descriptionHash);
+
+        state = await tuffGovernor.state(proposalId);
+        const executedState = 7;
+        expect(state).to.equal(executedState, "Proposal should have been executed");
 
     });
+
+    async function expireVotingPeriod(proposalId) {
+        let state = await tuffGovernor.state(proposalId);
+        while (state === 1) {
+            await mineBlock();
+            state = await tuffGovernor.state(proposalId);
+        }
+        return state;
+    }
 
 
 });
