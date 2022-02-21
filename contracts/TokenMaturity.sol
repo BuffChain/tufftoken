@@ -228,11 +228,6 @@ contract TokenMaturity {
             "TUFF: Token must have reached maturity."
         );
 
-        require(
-            !getIsTreasuryLiquidated(),
-            "TUFF: Treasury must not have been liquidated."
-        );
-
         liquidateTreasury();
         
         if (!getIsTreasuryLiquidated()) {
