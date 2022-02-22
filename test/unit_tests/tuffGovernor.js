@@ -14,14 +14,8 @@ describe("TuffGovernor", function () {
     let accounts;
 
     let tuffTokenDiamond;
-
-    let tuffGovTokenFactory;
     let tuffGovToken;
-
-    let tuffGovernorFactory;
     let tuffGovernor;
-
-    let timelockControllerFactory;
     let timelockController;
 
     before(async function () {
@@ -52,8 +46,6 @@ describe("TuffGovernor", function () {
     async function assertProposalCreated(description) {
         const tokenAddress = tuffTokenDiamond.address
         const token = await hre.ethers.getContractAt('ERC20', tokenAddress);
-        const receiverAccount = accounts[1].address;
-        const grantAmount = 100000;
         const calldata = token.interface.encodeFunctionData('name', []);
 
         const targets = [tokenAddress];
@@ -90,6 +82,7 @@ describe("TuffGovernor", function () {
 
         let state = await tuffGovernor.state(proposalId)
         const pendingState = 0;
+        expect(state).to.equal(pendingState, "Proposal should be in pending state");
 
         await mineBlock()
 
@@ -119,6 +112,7 @@ describe("TuffGovernor", function () {
 
         let state = await tuffGovernor.state(proposalId)
         const pendingState = 0;
+        expect(state).to.equal(pendingState, "Proposal should be in pending state");
 
         await mineBlock()
 
