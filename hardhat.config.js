@@ -63,7 +63,6 @@ module.exports = {
         hardhat: {
             forking: {
                 url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMAPI_KEY}`,
-                // url: "https://cloudflare-eth.com"
 
                 //Feel free to update at any time. This is here to make local development and caching easier
                 blockNumber: 14058640

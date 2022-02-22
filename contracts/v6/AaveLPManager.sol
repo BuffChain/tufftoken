@@ -10,6 +10,7 @@ import {IUniswapV3Pool} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Po
 import {IERC20} from "@openzeppelin/contracts-v6/token/ERC20/IERC20.sol";
 
 import {AaveLPManagerLib} from "./AaveLPManagerLib.sol";
+import {IUniswapPriceConsumer} from "./IUniswapPriceConsumer.sol";
 
 contract AaveLPManager is Context {
     modifier aaveInitLock() {
@@ -262,6 +263,8 @@ contract AaveLPManager is Context {
         public
         aaveInitLock
     {
+        AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
+
         address[] memory supportedTokens = getAllAaveSupportedTokens();
 
         uint256[] memory aTokenBalances = new uint256[](supportedTokens.length);
@@ -272,28 +275,14 @@ contract AaveLPManager is Context {
         //TODO: Make this a class variable? Updated during each addition and removal of a supportedToken?
         uint256 totalTargetWeight = 0;
 
-
         for (uint256 i = 0; i < supportedTokens.length; i++) {
             aTokenBalances[i] = getATokenBalance(supportedTokens[i]);
 
-            // Get the value of each token in the same terms, WETH for example
-            uint256 poolFee = 3000;
-            uint256 period = 60;
-            address poolAddress = IUniswapV3Factory(ss.uniswapV3FactoryAddr).getPool(ss.wethAddr, supportedTokens[i], poolFee);
-            (int56[] memory tickCumulatives, uint160[] memory secondsPerLiquidityCumulativeX128s) =
-                IUniswapV3Pool(poolAddress).observe([period, 0]);
-
-            int56 tick1 = observations[0][0];
-            int56 tick2 = observations[0][1];
-            int56 avgTick = (tick2 - tick1) / period;
-
-            aggergatedWethBalance += aTokenBalances[i];
-
-
-            tokenTargetWeights[i] = getAaveTokenTargetedPercentage(supportedTokens[i]);
-
-
-            totalTargetPercentage += tokenTargetWeights[i];
+            // Get the value of each token in the same denomination, in this case WETH
+            uint24 poolFee = 3000;
+            uint32 period = 60;
+            uint256 quoteAmount = IUniswapPriceConsumer(address(this))
+                .getUniswapQuote(ss.wethAddr, supportedTokens[i], poolFee, period);
         }
 
         for (uint256 i = 0; i < supportedTokens.length; i++) {

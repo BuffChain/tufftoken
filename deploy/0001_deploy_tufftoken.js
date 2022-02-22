@@ -21,7 +21,8 @@ module.exports = async () => {
             "TuffKeeper",
             "TokenMaturity",
             "Governance",
-            "UniswapManager"
+            "UniswapManager",
+            "UniswapPriceConsumer"
         ],
         log: true
     });
@@ -73,6 +74,11 @@ module.exports = async () => {
         logDeploymentTx("Initialized UniswapManager:", initTx);
     }
 
+
+    if (!await tuffTokenDiamondContract.isUniswapPriceConsumerInit()) {
+        let initTx = await tuffTokenDiamondContract.initUniswapPriceConsumer(consts("UNISWAP_V3_FACTORY_ADDR"));
+        logDeploymentTx("Initialized UniswapPriceConsumer:", initTx);
+    }
 };
 
 module.exports.tags = ['v0001'];

@@ -31,7 +31,6 @@ module.exports = async () => {
 
     console.log(`Initializing TuffToken pool. Price: ${price} ETH. sqrtPriceX96: ${tuffTokenSqrtPriceX96}`);
     await uniswapV3Pool.initialize(tuffTokenSqrtPriceX96);
-
 };
 
 module.exports.tags = ['v0002'];

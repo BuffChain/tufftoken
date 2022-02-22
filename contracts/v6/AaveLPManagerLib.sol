@@ -12,6 +12,7 @@ library AaveLPManagerLib {
         mapping(address => TokenMetadata) tokenMetadata;
         address lpProviderAddr;
         address protocolDataProviderAddr;
+        address wethAddr;
     }
 
     struct TokenMetadata {
