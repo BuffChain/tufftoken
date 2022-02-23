@@ -23,6 +23,10 @@ module.exports = async () => {
 
     console.log(`TuffGovToken address [${tuffGovToken.address}]`);
 
+    const tuffTokenDiamondContract = await hre.ethers.getContractAt(tuffTokenDiamond.abi, tuffTokenDiamond.address, contractOwner);
+
+    await tuffTokenDiamondContract.excludeFromFee(tuffGovToken.address);
+
     let timelockController = await deployments.deploy('TimelockController', {
         from: deployer,
         owner: contractOwner,

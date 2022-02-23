@@ -75,6 +75,16 @@ describe("TuffGovToken", function () {
         const sender = owner.address;
         const tuffBalance = await tuffTokenDiamond.balanceOf(sender);
 
+        let isExcludedFromFee = await tuffTokenDiamond.isExcludedFromFee(sender);
+
+        expect(isExcludedFromFee).to.equal(true, "Should be excluded from fee");
+
+        await tuffTokenDiamond.includeInFee(sender);
+
+        isExcludedFromFee = await tuffTokenDiamond.isExcludedFromFee(sender);
+
+        expect(isExcludedFromFee).to.equal(false, "Should not be excluded from fee");
+
         await assertTuffWasWrapped(sender, tuffBalance);
 
         let delegate = await tuffGovToken.delegates(sender);
