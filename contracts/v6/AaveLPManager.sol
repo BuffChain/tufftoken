@@ -145,11 +145,19 @@ contract AaveLPManager is Context {
         return (_isSupportedToken, _tokenIndex);
     }
 
-    function addAaveSupportedToken(address tokenAddr, uint256 targetPercentage) public aaveInitLock {
+    function addAaveSupportedToken(address tokenAddr, uint256 targetPercentage)
+        public
+        aaveInitLock
+    {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
 
-        (address aTokenAddr,,) = AaveProtocolDataProvider(ss.protocolDataProviderAddr).getReserveTokensAddresses(tokenAddr);
-        require(aTokenAddr != address(0), "The tokenAddress provided is not supported by Aave");
+        (address aTokenAddr, , ) = AaveProtocolDataProvider(
+            ss.protocolDataProviderAddr
+        ).getReserveTokensAddresses(tokenAddr);
+        require(
+            aTokenAddr != address(0),
+            "The tokenAddress provided is not supported by Aave"
+        );
 
         //TODO: All targetPercentages should add up to 100%
 
@@ -242,16 +250,11 @@ contract AaveLPManager is Context {
     function balanceAaveLendingPoolWithTuffToken(address tokenAddr)
         public
         aaveInitLock
-    {
-    }
+    {}
 
     //"full-balance"
     //This will be called from a keeper when actualPercentage deviates too far from targetPercentage. We will first
     // need to calculate, current/actual percentages, then determine which tokens are over/under-invested, and finally
     // swap and deposit to balance the tokens based on their targetedPercentages
-    function balanceAaveLendingPool(address tokenAddr)
-        public
-        aaveInitLock
-    {
-    }
+    function balanceAaveLendingPool(address tokenAddr) public aaveInitLock {}
 }

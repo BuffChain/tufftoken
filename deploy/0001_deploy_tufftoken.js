@@ -20,13 +20,13 @@ module.exports = async () => {
             "AaveLPManager",
             "TuffKeeper",
             "TokenMaturity",
-            "Governance",
             "UniswapManager"
         ],
         log: true
     });
     let tuffTokenDiamondContract = await hre.ethers.getContractAt(tuffTokenDiamond.abi, tuffTokenDiamond.address, contractOwner);
-    console.log(`TuffTokenDiamond address [${await tuffTokenDiamondContract.address}]`);
+    const tuffTokenAddress = await tuffTokenDiamondContract.address;
+    console.log(`TuffTokenDiamond address [${tuffTokenAddress}]`);
 
     if (!await tuffTokenDiamondContract.isTuffTokenInit()) {
         let initTx = await tuffTokenDiamondContract.initTuffToken(contractOwner);
@@ -57,11 +57,6 @@ module.exports = async () => {
     if (!await tuffTokenDiamondContract.isTokenMaturityInit()) {
         let initTx = await tuffTokenDiamondContract.initTokenMaturity();
         logDeploymentTx("Initialized TokenMaturity:", initTx);
-    }
-
-    if (!await tuffTokenDiamondContract.isGovernanceInit()) {
-        let initTx = await tuffTokenDiamondContract.initGovernance();
-        logDeploymentTx("Initialized Governance:", initTx);
     }
 
     if (!await tuffTokenDiamondContract.isUniswapManagerInit()) {
