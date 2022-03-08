@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: agpl-3.0
 pragma solidity ^0.6.0;
 
+import "@openzeppelin/contracts-v6/math/SafeMath.sol";
 import {Context} from "@openzeppelin/contracts-v6/utils/Context.sol";
 import {LendingPool} from "@aave/protocol-v2/contracts/protocol/lendingpool/LendingPool.sol";
 import {LendingPoolAddressesProvider} from "@aave/protocol-v2/contracts/protocol/configuration/LendingPoolAddressesProvider.sol";
@@ -27,11 +28,14 @@ contract AaveLPManager is Context {
         _;
     }
 
+    using SafeMath for uint256;
+
     //Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
     // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
     function initAaveLPManager(
         address _lendingPoolProviderAddr,
-        address _protocolDataProviderAddr
+        address _protocolDataProviderAddr,
+        address _wethAddr
     ) public {
         require(
             !isAaveInit(),
@@ -48,6 +52,7 @@ contract AaveLPManager is Context {
 
         ss.lpProviderAddr = _lendingPoolProviderAddr;
         ss.protocolDataProviderAddr = _protocolDataProviderAddr;
+        ss.wethAddr = _wethAddr;
 
         ss.isInit = true;
     }
@@ -119,11 +124,17 @@ contract AaveLPManager is Context {
         return (_isSupportedToken, _tokenIndex);
     }
 
-    function addAaveSupportedToken(address tokenAddr, uint256 targetPercentage) public aaveInitLock {
+    function addAaveSupportedToken(address tokenAddr, uint256 targetPercentage)
+        public
+        aaveInitLock
+    {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
 
-        (address aTokenAddr,,) = AaveProtocolDataProvider(ss.protocolDataProviderAddr).getReserveTokensAddresses(tokenAddr);
-        require(aTokenAddr != address(0), "The tokenAddress provided is not supported by Aave");
+        address aTokenAddr = getATokenAddress(tokenAddr);
+        require(
+            aTokenAddr != address(0),
+            "The tokenAddress provided is not supported by Aave"
+        );
 
         //TODO: All targetPercentages should add up to 100%
 
@@ -167,9 +178,12 @@ contract AaveLPManager is Context {
         ss.tokenMetadata[tokenAddr].targetPercent = targetPercentage;
     }
 
-    function getAaveTokenTargetedPercentage(
-        address tokenAddr
-    ) public view aaveInitLock returns (uint256) {
+    function getAaveTokenTargetedPercentage(address tokenAddr)
+        public
+        view
+        aaveInitLock
+        returns (uint256)
+    {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
         return ss.tokenMetadata[tokenAddr].targetPercent;
     }
@@ -213,11 +227,11 @@ contract AaveLPManager is Context {
         }
 
         return
-        LendingPool(getAaveLPAddr()).withdraw(
-            erc20TokenAddr,
-            amount,
-            address(this)
-        );
+            LendingPool(getAaveLPAddr()).withdraw(
+                erc20TokenAddr,
+                amount,
+                address(this)
+            );
     }
 
     function withdrawAllFromAave(address asset) public aaveInitLock {
@@ -245,6 +259,18 @@ contract AaveLPManager is Context {
         return currentATokenBalance;
     }
 
+    function getATokenAddress(address asset)
+        public
+        view
+        aaveInitLock
+        returns (address)
+    {
+        (address aTokenAddress, , ) = AaveProtocolDataProvider(
+            getProtocolDataProviderAddr()
+        ).getReserveTokensAddresses(asset);
+        return aTokenAddress;
+    }
+
     //"lite-balance"
     //This will be called from a keeper when our fee holdings have reached a threshold. We will first need to calculate
     // current/actual percentages, then determine which tokens are over/under-invested, and finally swap and deposit to
@@ -252,43 +278,84 @@ contract AaveLPManager is Context {
     function balanceAaveLendingPoolWithTuffToken(address tokenAddr)
         public
         aaveInitLock
-    {
-    }
+    {}
 
     //"full-balance"
     //This will be called from a keeper when actualPercentage deviates too far from targetPercentage. We will first
     // need to calculate current/actual percentages, then determine which tokens are over/under-invested, and finally
     // swap and deposit to balance the tokens based on their targetedPercentages
-    function balanceAaveLendingPool(address tokenAddr)
-        public
-        aaveInitLock
-    {
+
+    //Note from meeting: Only buy tokens to balance instead of trying to balance by selling first then buying. This means
+    //  we do not have to sort and only balance as much as possible
+    function balanceAaveLendingPool() public aaveInitLock {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
 
         address[] memory supportedTokens = getAllAaveSupportedTokens();
+        uint256[] memory tokensValueInWeth = new uint256[](
+            supportedTokens.length
+        );
+        uint256[] memory tokensTargetWeight = new uint256[](
+            supportedTokens.length
+        );
 
-        uint256[] memory aTokenBalances = new uint256[](supportedTokens.length);
-        uint256 totalTokenBalance = 0;
-
-        uint256[] memory tokenTargetWeights = new uint256[](supportedTokens.length);
-
+        uint256 totalBalanceInWeth = 0;
         //TODO: Make this a class variable? Updated during each addition and removal of a supportedToken?
         uint256 totalTargetWeight = 0;
 
+        // First loop through all tokens to aggregate their collective value and weights
         for (uint256 i = 0; i < supportedTokens.length; i++) {
-            aTokenBalances[i] = getATokenBalance(supportedTokens[i]);
+            uint256 aTokenBalance = getATokenBalance(supportedTokens[i]);
 
             // Get the value of each token in the same denomination, in this case WETH
             uint24 poolFee = 3000;
+            //TODO: Make 3600?
             uint32 period = 60;
-            uint256 quoteAmount = IUniswapPriceConsumer(address(this))
-                .getUniswapQuote(ss.wethAddr, supportedTokens[i], poolFee, period);
+
+            uint256 wethQuote = IUniswapPriceConsumer(address(this))
+                .getUniswapQuote(
+                    ss.wethAddr,
+                    supportedTokens[i],
+                    poolFee,
+                    period
+                );
+
+            //Track balances
+            tokensValueInWeth[i] = SafeMath.mul(aTokenBalance, wethQuote);
+            totalBalanceInWeth = SafeMath.add(
+                totalBalanceInWeth,
+                tokensValueInWeth[i]
+            );
+
+            //Track weights
+            tokensTargetWeight[i] = getAaveTokenTargetedPercentage(
+                supportedTokens[i]
+            );
+            totalTargetWeight = SafeMath.add(
+                totalTargetWeight,
+                tokensTargetWeight[i]
+            );
         }
 
-        for (uint256 i = 0; i < supportedTokens.length; i++) {
-            aTokenBalances[i] = getATokenBalance(supportedTokens[i]);
-            tokenTargetPercentages[i] = getAaveTokenTargetedPercentage(supportedTokens[i]);
-            totalTargetPercentage += tokenTargetPercentages[i];
-        }
+        //        uint256[] memory sortedWethValues = insertionSort(tokensValueInWeth);
+        //
+        //        //Then, loop through again to balance tokens
+        //        for (uint256 i = 0; i < supportedTokens.length; i++) {
+        //            //TODO: Add buffer, we don't want to swap if we are within spec
+        //
+        //            uint256 tokenTargetPercentage = SafeMath.div(tokensTargetWeight[i], totalTargetWeight);
+        //            uint256 tokenActualPercentage = SafeMath.div(sortedWethValues[i], totalBalanceInWeth);
+        //
+        //            //The percentage that we have to balance out
+        //            uint256 percentageDiff = SafeMath.sub(tokenTargetPercentage, tokenActualPercentage);
+        //
+        //            //Convert percentage to WETH value
+        //            uint256 balanceOutAmountInWeth = SafeMath.sub(totalBalanceInWeth, percentageDiff);
+        //
+        //            //TODO: Update totalBalanceInWeth? Intuitively not, but leaving this here just in case
+        //            //totalBalanceInWeth = SafeMath.sub(totalBalanceInWeth, tokensValueInWeth[i]);
+        //            //totalBalanceInWeth = SafeMath.add(totalBalanceInWeth, balanceOutAmountInWeth);
+        //
+        //            //TODO: Add event when balance swap occurs
+        //        }
     }
 }

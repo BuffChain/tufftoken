@@ -6,56 +6,58 @@ console.log(`Using [${networkName}] network config`)
 
 let constsMap = {
     kovan: {
-        // Network related
+        //Network related
         BLOCKTIME: 4, //seconds
 
-        // Tokens (verified tokens from https://kovan.etherscan.io)
+        //Tokens (verified tokens from https://kovan.etherscan.io)
         WETH9_ADDR: "0xd0A1E359811322d97991E03f863a0C30C2cF029C",
-        DAI_ADDR: "0x4F96Fe3b7A6Cf9725f59d353F723c1bDb64CA6Aa",
-        USDC_ADDR: "0xb7a4F3E9097C08dA09517b5aB877F7a917224ede",
-        USDT_ADDR: "0x07de306FF27a2B630B1141956844eB1552B956B5",
-        CRV_ADDR: "",
-        ADAI_ADDR: "0xdcf0af9e59c002fa3aa091a46196b37530fd48a8",
+        DAI_ADDR: "0xFf795577d9AC8bD7D90Ee22b6C1703490b6512FD",
+        USDC_ADDR: "0xe22da380ee6B445bb8273C81944ADEB6E8450422",
+        USDT_ADDR: "0x13512979ADE267AB5100878E2e0f485B568328a4",
+        // https://aave.github.io/aave-addresses/kovan.json, these are subject to change
+        ADAI_ADDR: "0xdCf0aF9e59C002FA3AA091a46196b37530FD48a8",
+        AUSDC_ADDR: "0xe12AFeC5aa12Cf614678f9bFeeB98cA9Bb95b5B0",
+        AUSDT_ADDR: "0xFF3c8bc103682FA918c954E84F5056aB4DD5189d",
 
-        // Aave (https://docs.aave.com/developers/deployed-contracts/deployed-contracts)
+        //Aave (https://docs.aave.com/developers/deployed-contracts/deployed-contracts)
         AAVE_LENDINGPOOL_PROVIDER_ADDR: "0x88757f2f99175387aB4C6a4b3067c77A695b0349",
-        AAVE_PROTOCOL_DATA_PROVIDER_ADDR: "0x3c73a5e5785cac854d468f727c606c07488a29d6",
+        AAVE_PROTOCOL_DATA_PROVIDER_ADDR: "0x3c73A5E5785cAC854D468F727c606C07488a29D6",
 
-        // Uniswap (https://docs.uniswap.org/protocol/reference/deployments)
+        //Uniswap (https://docs.uniswap.org/protocol/reference/deployments)
         UNISWAP_V3_ROUTER_ADDR: "0xE592427A0AEce92De3Edee1F18E0157C05861564",
         UNISWAP_V3_FACTORY_ADDR: "0x1F98431c8aD98523631AE4a59f267346ea31F984",
         UNISWAP_WETH_DAI_POOL_ADDR: "0x89007E48d47484245805679Ab37114DB117AfAB2",
         UNISWAP_WETH_USDC_POOL_ADDR: "0xf43261E862FF94B45600d62444dEF3AB94f2a745",
 
-        // Current: price should be $.01, 1 DAI = 0.0003139 ETH, .01 DAI = 0.00000313875 ETH
+        //Current: price should be $.01, 1 DAI = 0.0003139 ETH, .01 DAI = 0.00000313875 ETH
         TUFF_STARTING_PRICE: 0.00000313875 // todo: LP pool may impact whether this needs to be a constant or function
-
     },
     mainnet: {
-        // Network related
+        //Network related
         BLOCKTIME: 13, //seconds
 
-        // Tokens (verified tokens from https://etherscan.io)
+        //Tokens (verified tokens from https://etherscan.io)
         WETH9_ADDR: "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
         DAI_ADDR: "0x6B175474E89094C44Da98b954EedeAC495271d0F",
         USDC_ADDR: "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
         USDT_ADDR: "0xdAC17F958D2ee523a2206206994597C13D831ec7",
-        CRV_ADDR: "0xD533a949740bb3306d119CC777fa900bA034cd52",
+        // https://aave.github.io/aave-addresses/mainnet.json
         ADAI_ADDR: "0x028171bCA77440897B824Ca71D1c56caC55b68A3",
+        AUSDC_ADDR: "0xBcca60bB61934080951369a648Fb03DF4F96263C",
+        AUSDT_ADDR: "0x3Ed3B47Dd13EC9a98b44e6204A523E766B225811",
 
-        // Aave (https://docs.aave.com/developers/deployed-contracts/deployed-contracts)
+        //Aave (https://docs.aave.com/developers/deployed-contracts/deployed-contracts)
         AAVE_LENDINGPOOL_PROVIDER_ADDR: "0xB53C1a33016B2DC2fF3653530bfF1848a515c8c5",
         AAVE_PROTOCOL_DATA_PROVIDER_ADDR: "0x057835Ad21a177dbdd3090bB1CAE03EaCF78Fc6d",
 
-        // Uniswap (https://docs.uniswap.org/protocol/reference/deployments)
+        //Uniswap (https://docs.uniswap.org/protocol/reference/deployments)
         UNISWAP_V3_ROUTER_ADDR: "0xE592427A0AEce92De3Edee1F18E0157C05861564",
         UNISWAP_V3_FACTORY_ADDR: "0x1F98431c8aD98523631AE4a59f267346ea31F984",
         UNISWAP_WETH_DAI_POOL_ADDR: "0x60594a405d53811d3BC4766596EFD80fd545A270",
         UNISWAP_WETH_USDC_POOL_ADDR: "0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640",
 
-        // Current: price should be $.01, 1 DAI = 0.0003139 ETH, .01 DAI = 0.00000313875 ETH
+        //Current: price should be $.01, 1 DAI = 0.0003139 ETH, .01 DAI = 0.00000313875 ETH
         TUFF_STARTING_PRICE: 0.00000313875 // todo: LP pool may impact whether this needs to be a constant or function
-
     }
 }
 
@@ -66,11 +68,7 @@ function consts(constsKey) {
     return constsMap[networkKey][constsKey];
 }
 
-//
+//Network agnostic constants
 module.exports.UNISWAP_POOL_BASE_FEE = 3000;
-
-// PriceConsumer Enums
-module.exports.CHAINLINK_PRICE_CONSUMER_ENUM = 0;
-module.exports.UNISWAP_PRICE_CONSUMER_ENUM = 1;
 
 module.exports.consts = consts;

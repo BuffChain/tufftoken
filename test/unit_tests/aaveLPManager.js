@@ -93,13 +93,13 @@ describe('AaveLPManager', function () {
     it('should add a token', async () => {
         let supportedTokens = await tuffTokenDiamond.getAllAaveSupportedTokens();
         expect(supportedTokens.length).to.equal(3);
-        expect(supportedTokens).to.not.contain(consts("CRV_ADDR"));
+        expect(supportedTokens).to.not.contain(consts("WETH9_ADDR"));
 
-        await tuffTokenDiamond.addAaveSupportedToken(consts("CRV_ADDR"), 2500);
+        await tuffTokenDiamond.addAaveSupportedToken(consts("WETH9_ADDR"), 2500);
 
         supportedTokens = await tuffTokenDiamond.getAllAaveSupportedTokens();
         expect(supportedTokens.length).to.equal(4);
-        expect(supportedTokens).to.contain(consts("CRV_ADDR"));
+        expect(supportedTokens).to.contain(consts("WETH9_ADDR"));
     });
 
     it('should remove a token', async () => {
@@ -166,6 +166,24 @@ describe('AaveLPManager', function () {
                 expect(balance).to.equal(0, `unexpected aToken (${token}) balance after withdraw of all assets`);
             })()
         })
+    });
+
+    it("should balance a single underbalanced token in Aave holdings", async () => {
+        //First, get how much token we have before balancing
+        const tokenAddr = consts("DAI_ADDR");
+        const startingATokenBal = await tuffTokenDiamond.getATokenAddress(tokenAddr);
+
+        //Next, set a token to a higher target percentage s.t. it is now underbalanced
+        let actualTokenTargetPercent = await tuffTokenDiamond.getAaveTokenTargetedPercentage(tokenAddr);
+        const newTargetPercentage = actualTokenTargetPercent * 2;
+        await tuffTokenDiamond.setAaveTokenTargetedPercentage(tokenAddr, newTargetPercentage);
+
+        //Run the balancing
+        await tuffTokenDiamond.balanceAaveLendingPool();
+
+        //Finally, confirm that we improved the underbalanced token's situation
+        const endingATokenBal = await tuffTokenDiamond.getATokenAddress(tokenAddr);
+        expect(new BN(endingATokenBal.toString())).to.be.bignumber.greaterThan(new BN(startingATokenBal.toString()));
     });
 });
 

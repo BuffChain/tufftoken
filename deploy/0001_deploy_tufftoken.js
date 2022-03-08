@@ -2,7 +2,7 @@
 
 const hre = require("hardhat");
 
-const {consts, UNISWAP_POOL_BASE_FEE, CHAINLINK_PRICE_CONSUMER_ENUM} = require("../utils/consts");
+const {consts, UNISWAP_POOL_BASE_FEE} = require("../utils/consts");
 const {logDeploymentTx} = require("../utils/deployment_helpers");
 
 module.exports = async () => {
@@ -36,7 +36,8 @@ module.exports = async () => {
 
     if (!await tuffTokenDiamondContract.isAaveInit()) {
         let tx = await tuffTokenDiamondContract.initAaveLPManager(
-            consts("AAVE_LENDINGPOOL_PROVIDER_ADDR"),  consts("AAVE_PROTOCOL_DATA_PROVIDER_ADDR")
+            consts("AAVE_LENDINGPOOL_PROVIDER_ADDR"),  consts("AAVE_PROTOCOL_DATA_PROVIDER_ADDR"),
+            consts("WETH9_ADDR")
         );
         logDeploymentTx("Initialized AaveLPManager:", tx);
 
