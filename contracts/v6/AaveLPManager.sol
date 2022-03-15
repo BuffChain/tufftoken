@@ -290,13 +290,11 @@ contract AaveLPManager is Context {
         return aTokenAddress;
     }
 
-    //"full-balance"
     //This will be called from a keeper when actualPercentage deviates too far from targetPercentage. We will first
     // need to calculate current/actual percentages, then determine which tokens are over/under-invested, and finally
     // swap and deposit to balance the tokens based on their targetedPercentages
-    //
-    //Note from meeting: Only buy tokens to balance instead of trying to balance by selling first then buying. This means
-    //  we do not have to sort and only balance as much as possible
+    //Note: Only buy tokens to balance instead of trying to balance by selling first then buying. This means
+    // we do not have to sort, which helps saves on gas
     function balanceAaveLendingPool() public aaveInitLock {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
 
@@ -344,15 +342,8 @@ contract AaveLPManager is Context {
             //Calculate actual percentage
             uint256 tokenActualPercentage = SafeMath.div(tokensValueInWeth[i], totalBalanceInWeth);
 
-            if (tokenTargetPercentage >= uint(-1)) {
-                //Cannot cast - out of range of int max
-                //TODO: Revert
-            }
-
-            if (tokenActualPercentage >= uint(-1)) {
-                //Cannot cast - out of range of int max
-                //TODO: Revert
-            }
+            require(tokenTargetPercentage < uint(-1), "Cannot cast tokenTargetPercentage - out of range of int max");
+            require(tokenActualPercentage < uint(-1), "Cannot cast tokenActualPercentage - out of range of int max");
 
             //Only balance if token is under-allocated more than our buffer amount
             int256 iPercentageDiff = int(tokenTargetPercentage) - int(tokenActualPercentage);

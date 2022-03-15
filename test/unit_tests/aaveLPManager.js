@@ -11,6 +11,7 @@ const hre = require("hardhat");
 
 const utils = require("../../utils/test_utils");
 const {consts} = require("../../utils/consts");
+const {BigNumber} = require("ethers");
 
 async function assertDepositToAave(tuffTokenDiamond, daiToDeposit="2000", isEtherBased=false) {
     let qtyInDAI;
@@ -263,6 +264,19 @@ describe('AaveLPManager', function () {
         const tokenAddr = consts("DAI_ADDR");
         const qtyInDAI = hre.ethers.utils.parseEther("2000");
         await assertDepositToAave(tuffTokenDiamond, qtyInDAI, true);
+
+        //First, get how much token we have before balancing
+        const startingATokenBal = await tuffTokenDiamond.getATokenBalance(tokenAddr);
+
+        //Run the balancing
+        await tuffTokenDiamond.balanceAaveLendingPool();
+
+        //Since everything is already balanced, confirm that tokens haven't changed amount. (other than a buffer for
+        // interest made during this time)
+        const interestBuffer = hre.ethers.utils.parseEther('0.00001');
+        const endingATokenBal = await tuffTokenDiamond.getATokenBalance(tokenAddr);
+        const tokenBalanceDiff = BigNumber.from(endingATokenBal).sub(startingATokenBal);
+        expect(tokenBalanceDiff).to.be.lte(interestBuffer);
     });
 });
 
