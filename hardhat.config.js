@@ -65,7 +65,7 @@ module.exports = {
                 url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMAPI_KEY}`,
 
                 //Feel free to update at any time. This is here to make local development and caching easier
-                blockNumber: 14058640
+                blockNumber: 14411890
             },
             timeout: 30000,
 
