@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: agpl-3.0
 pragma solidity ^0.6.0;
 
-import "hardhat/console.sol";
-
 import "@openzeppelin/contracts-v6/math/SafeMath.sol";
 import {Context} from "@openzeppelin/contracts-v6/utils/Context.sol";
 import {LendingPool} from "@aave/protocol-v2/contracts/protocol/lendingpool/LendingPool.sol";
@@ -13,6 +11,7 @@ import {IUniswapV3Pool} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Po
 import {IERC20} from "@openzeppelin/contracts-v6/token/ERC20/IERC20.sol";
 
 import {AaveLPManagerLib} from "./AaveLPManagerLib.sol";
+import {IUniswapManager} from "./IUniswapManager.sol";
 import {IUniswapPriceConsumer} from "./IUniswapPriceConsumer.sol";
 
 contract AaveLPManager is Context {
@@ -310,16 +309,14 @@ contract AaveLPManager is Context {
         );
 
         uint256 totalBalanceInWeth = 0;
+        uint24 poolFee = 3000;
 
         // First loop through all tokens to aggregate their collective value and weights
         for (uint256 i = 0; i < supportedTokens.length; i++) {
             uint256 aTokenBalance = getATokenBalance(supportedTokens[i]);
 
             // Get the value of each token in the same denomination, in this case WETH
-            uint24 poolFee = 3000;
-            //TODO: Make 3600?
-            uint32 period = 60;
-
+            uint32 period = 60; //TODO: Make 3600?
             uint256 wethQuote = IUniswapPriceConsumer(address(this))
                 .getUniswapQuote(
                     ss.wethAddr,
@@ -328,20 +325,14 @@ contract AaveLPManager is Context {
                     period
                 );
 
-            console.log("aTokenBalance: %s", aTokenBalance);
-            console.log("wethQuote: %s", wethQuote);
-
             //Track balances
             uint256 tokenValueInWeth = SafeMath.mul(aTokenBalance, wethQuote);
             tokensValueInWeth[i] = tokenValueInWeth;
 
-            console.log("tokenValueInWeth: %s", tokenValueInWeth);
-            console.log("before totalBalanceInWeth: %s", totalBalanceInWeth);
             totalBalanceInWeth = SafeMath.add(
                 totalBalanceInWeth,
                 tokenValueInWeth
             );
-            console.log("after totalBalanceInWeth: %s", totalBalanceInWeth);
         }
 
         //Then, loop through again to balance tokens
@@ -353,20 +344,30 @@ contract AaveLPManager is Context {
             //Calculate actual percentage
             uint256 tokenActualPercentage = SafeMath.div(tokensValueInWeth[i], totalBalanceInWeth);
 
-            //The percentage that we have to balance out
-            uint256 percentageDiff = SafeMath.sub(tokenTargetPercentage, tokenActualPercentage);
+            if (tokenTargetPercentage >= uint(-1)) {
+                //Cannot cast - out of range of int max
+                //TODO: Revert
+            }
 
-            //TODO: Add buffer
+            if (tokenActualPercentage >= uint(-1)) {
+                //Cannot cast - out of range of int max
+                //TODO: Revert
+            }
+
             //Only balance if token is under-allocated more than our buffer amount
-            if (percentageDiff > 0) {
+            int256 iPercentageDiff = int(tokenTargetPercentage) - int(tokenActualPercentage);
+            if (iPercentageDiff > 0) {
                 //Convert percentage to WETH value
-                uint256 balanceOutAmountInWeth = SafeMath.sub(totalBalanceInWeth, percentageDiff);
+                uint256 balanceOutAmountInWeth = SafeMath.mul(totalBalanceInWeth, uint(iPercentageDiff));
+
+                IUniswapManager(address(this)).swapExactInputSingle(
+                    supportedTokens[i],
+                    poolFee,
+                    ss.wethAddr,
+                    balanceOutAmountInWeth
+                );
 
                 //TODO: Add event when balance swap occurs
-
-                //TODO: Update totalBalanceInWeth? Intuitively not, but leaving this here just in case
-                //totalBalanceInWeth = SafeMath.sub(totalBalanceInWeth, tokensValueInWeth[i]);
-                //totalBalanceInWeth = SafeMath.add(totalBalanceInWeth, balanceOutAmountInWeth);
             }
         }
     }

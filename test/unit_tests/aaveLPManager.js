@@ -186,7 +186,7 @@ describe('AaveLPManager', function () {
         startingATokenBal = await adaiContract.balanceOf(tuffTokenDiamond.address);
         expect(new BN(startingATokenBal.toString())).to.be.bignumber.equal(new BN("0"));
 
-        //Then, deposit DAI into Aave
+        //Then, deposit DAI into Aave, which gives us aDAI
         const qtyInDAI = hre.ethers.utils.parseEther("2000");
         await assertDepositToAave(tuffTokenDiamond, qtyInDAI, true);
 
@@ -201,9 +201,10 @@ describe('AaveLPManager', function () {
         const daiContract = await utils.getDAIContract();
         const adaiContract = await utils.getADAIContract();
 
+        //First, deposit
         const {startDaiQty} = await assertDepositToAave(tuffTokenDiamond);
 
-        //Make the call to withdraw all from Aave
+        //Then, withdraw
         await tuffTokenDiamond.withdrawAllFromAave(consts("DAI_ADDR"));
 
         //Check that the account now has no aDAI after withdraw
@@ -235,9 +236,13 @@ describe('AaveLPManager', function () {
         })
     });
 
-    it("should balance a single underbalanced token in Aave holdings", async () => {
-        //First, get how much token we have before balancing
+    it("should balance a single underbalanced token", async () => {
+        //Setup
         const tokenAddr = consts("DAI_ADDR");
+        const qtyInDAI = hre.ethers.utils.parseEther("2000");
+        await assertDepositToAave(tuffTokenDiamond, qtyInDAI, true);
+
+        //First, get how much token we have before balancing
         const startingATokenBal = await tuffTokenDiamond.getATokenBalance(tokenAddr);
 
         //Next, set a token to a higher target percentage s.t. it is now underbalanced
@@ -249,8 +254,15 @@ describe('AaveLPManager', function () {
         await tuffTokenDiamond.balanceAaveLendingPool();
 
         //Finally, confirm that we improved the underbalanced token's situation
-        const endingATokenBal = await tuffTokenDiamond.getATokenAddress(tokenAddr);
+        const endingATokenBal = await tuffTokenDiamond.getATokenBalance(tokenAddr);
         expect(new BN(endingATokenBal.toString())).to.be.bignumber.greaterThan(new BN(startingATokenBal.toString()));
+    });
+
+    it("should not balance tokens when all are within buffer range", async () => {
+        //Setup
+        const tokenAddr = consts("DAI_ADDR");
+        const qtyInDAI = hre.ethers.utils.parseEther("2000");
+        await assertDepositToAave(tuffTokenDiamond, qtyInDAI, true);
     });
 });
 
