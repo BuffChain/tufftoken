@@ -289,7 +289,7 @@ describe('TokenMaturity', function () {
 
         //TODO: This buffer is likely from the poolFee that uniswap charges, this test needs to be updated to account
         // for that
-        const buffer = hre.ethers.utils.parseEther('0.013');
+        const buffer = hre.ethers.utils.parseEther('0.02');
         const ethDiff = BigNumber.from(expectedEth).sub(ethBalanceAfterLiquidation);
         expect(ethDiff).to.be.lte(buffer, "eth difference exceeds allowed buffer");
 
