@@ -13,6 +13,7 @@ library AaveLPManagerLib {
         address lpProviderAddr;
         address protocolDataProviderAddr;
         address wethAddr;
+        uint256 totalTargetWeight;
     }
 
     struct TokenMetadata {
