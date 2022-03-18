@@ -147,4 +147,61 @@ contract UniswapManager {
         // The call to `exactInputSingle` executes the swap.
         amountOut = ss.swapRouter.exactInputSingle(params);
     }
+
+    /// @notice swapExactOutputSingle swaps a minimum possible amount of DAI for a fixed amount of WETH.
+    /// @dev The calling address must approve this contract to spend its DAI for this function to succeed. As the amount of input DAI is variable,
+    ///  the calling address will need to approve for a slightly higher amount, anticipating some variance.
+    /// @param amountOut The exact amount of WETH9 to receive from the swap.
+    /// @param amountInMaximum The amount of DAI we are willing to spend to receive the specified amount of WETH9.
+    /// @return amountIn The amount of DAI actually spent in the swap.
+    function swapExactOutputSingle(
+        address inputToken,
+        address outputToken,
+        uint24 poolFee,
+        uint256 amountOut,
+        uint256 amountInMaximum
+    )
+    external returns (uint256 amountIn) {
+        UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
+            .getState();
+
+        //Transfer the specified amount of `inputToken` to this contract
+        TransferHelper.safeTransferFrom(
+            inputToken,
+            address(this),
+            address(this),
+            amountInMaximum
+        );
+
+        //Approve the router to spend the specified `amountInMaximum` of `inputToken`
+        TransferHelper.safeApprove(inputToken, address(ss.swapRouter), amountInMaximum);
+        TransferHelper.safeApprove(
+            inputToken,
+            address(ss.swapRouter),
+            amountInMaximum
+        );
+
+        ISwapRouter.ExactOutputSingleParams memory params =
+            ISwapRouter.ExactOutputSingleParams({
+                tokenIn: inputToken,
+                tokenOut: outputToken,
+                fee: poolFee,
+                recipient: address(this),
+                deadline: block.timestamp,
+                amountOut: amountOut,
+                amountInMaximum: 0,
+                sqrtPriceLimitX96: 0
+            });
+
+        //Executes the swap returning the amountIn needed to spend to receive the desired amountOut.
+        amountIn = ss.swapRouter.exactOutputSingle(params);
+
+        //For exact output swaps, the amountInMaximum may not have all been spent.
+        // If the actual amount spent (amountIn) is less than the specified maximum amount, we must refund the
+        // msg.sender and approve the swapRouter to spend 0.
+        if (amountIn < amountInMaximum) {
+            TransferHelper.safeApprove(inputToken, address(ss.swapRouter), 0);
+            TransferHelper.safeTransfer(inputToken, address(this), amountInMaximum - amountIn);
+        }
+    }
 }

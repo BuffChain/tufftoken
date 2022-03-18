@@ -244,6 +244,7 @@ describe('AaveLPManager', function () {
         await assertDepositToAave(tuffTokenDiamond, qtyInDAI, true);
 
         //First, get how much token we have before balancing
+        const startingTreasuryAmount = await tuffTokenDiamond.balanceOf(tuffTokenDiamond.address);
         const startingATokenBal = await tuffTokenDiamond.getATokenBalance(tokenAddr);
 
         //Next, set a token to a higher target percentage s.t. it is now underbalanced
@@ -252,11 +253,19 @@ describe('AaveLPManager', function () {
         await tuffTokenDiamond.setAaveTokenTargetedPercentage(tokenAddr, newTargetPercentage);
 
         //Run the balancing
-        await tuffTokenDiamond.balanceAaveLendingPool();
+        // await tuffTokenDiamond.balanceAaveLendingPool();
+        const balancingTxResponse = await tuffTokenDiamond.balanceAaveLendingPool();
+        const balancingTxReceipt = await balancingTxResponse.wait();
 
-        //Finally, confirm that we improved the underbalanced token's situation
+        //Finally, confirm that we added to the under-balanced token (other than a buffer for interest made during
+        // this time)
+        expectEvent(balancingTxReceipt, "AaveLPManagerBalanceSwap")
+
+        const interestBuffer = hre.ethers.utils.parseEther('0.00001');
+        // const interestBuffer = hre.ethers.utils.formatEther('10000000000000');
         const endingATokenBal = await tuffTokenDiamond.getATokenBalance(tokenAddr);
-        expect(new BN(endingATokenBal.toString())).to.be.bignumber.greaterThan(new BN(startingATokenBal.toString()));
+        const tokenBalanceDiff = BigNumber.from(endingATokenBal).sub(startingATokenBal);
+        expect(tokenBalanceDiff).to.be.gt(interestBuffer);
     });
 
     it("should not balance tokens when all are within buffer range", async () => {
