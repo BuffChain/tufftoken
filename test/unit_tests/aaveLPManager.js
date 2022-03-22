@@ -11,9 +11,15 @@ const hre = require("hardhat");
 
 const utils = require("../../utils/test_utils");
 const {consts} = require("../../utils/consts");
+const {BigNumber} = require("ethers");
 
-async function assertDepositToAave(tuffTokenDiamond) {
-    const qtyInDAI = hre.ethers.utils.parseEther("2000");
+async function assertDepositToAave(tuffTokenDiamond, daiToDeposit="2000", isEtherBased=false) {
+    let qtyInDAI;
+    if (isEtherBased) {
+        qtyInDAI = daiToDeposit;
+    } else {
+        qtyInDAI = hre.ethers.utils.parseEther(daiToDeposit);
+    }
 
     //Check that the account has enough DAI
     const daiContract = await utils.getDAIContract();
@@ -73,37 +79,97 @@ describe('AaveLPManager', function () {
         expect(address).to.equal("0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9");
     });
 
-    it('should have the correct tokens supported at launch', async () => {
-        const supportedTokens = await tuffTokenDiamond.getAllAaveSupportedTokens();
-
-        expect(supportedTokens.length).to.equal(3);
-        expect(supportedTokens).to.contain(consts("DAI_ADDR"));
-        expect(supportedTokens).to.contain(consts("USDC_ADDR"));
-        expect(supportedTokens).to.contain(consts("USDT_ADDR"));
+    it('should get the correct aDai address', async () => {
+        const tokenAddr = consts("DAI_ADDR");
+        const aTokenAddr = await tuffTokenDiamond.getATokenAddress(tokenAddr);
+        expect(aTokenAddr).to.equal(consts("ADAI_ADDR"));
     });
 
-    it('should add a token', async () => {
+    it('should get the correct aUSDC address', async () => {
+        const tokenAddr = consts("USDC_ADDR");
+        const aTokenAddr = await tuffTokenDiamond.getATokenAddress(tokenAddr);
+        expect(aTokenAddr).to.equal(consts("AUSDC_ADDR"));
+    });
+
+    it('should get the correct aUSDT address', async () => {
+        const tokenAddr = consts("USDT_ADDR");
+        const aTokenAddr = await tuffTokenDiamond.getATokenAddress(tokenAddr);
+        expect(aTokenAddr).to.equal(consts("AUSDT_ADDR"));
+    });
+
+    it('should have the correct tokens supported at launch', async () => {
+        const supportedTokens = await tuffTokenDiamond.getAllAaveSupportedTokens();
+        expect(supportedTokens.length).to.equal(3);
+
+        expect(supportedTokens).to.contain(consts("DAI_ADDR"));
+        let actualTokenTargetPercent = await tuffTokenDiamond.getAaveTokenTargetedPercentage(consts("DAI_ADDR"));
+        expect(actualTokenTargetPercent).to.equal(5000);
+
+        expect(supportedTokens).to.contain(consts("USDC_ADDR"));
+        actualTokenTargetPercent = await tuffTokenDiamond.getAaveTokenTargetedPercentage(consts("USDC_ADDR"));
+        expect(actualTokenTargetPercent).to.equal(2500);
+
+        expect(supportedTokens).to.contain(consts("USDT_ADDR"));
+        actualTokenTargetPercent = await tuffTokenDiamond.getAaveTokenTargetedPercentage(consts("USDT_ADDR"));
+        expect(actualTokenTargetPercent).to.equal(2500);
+    });
+
+    it('should add a token and update total token weight', async () => {
+        const tokenAddr = consts("WETH9_ADDR");
+        const tokenWeight = 2500;
+
+        let actualTotalTargetWeight = await tuffTokenDiamond.getAaveTotalTargetWeight();
+        const expectedTotalTargetWeight = actualTotalTargetWeight.add(tokenWeight);
+
         let supportedTokens = await tuffTokenDiamond.getAllAaveSupportedTokens();
         expect(supportedTokens.length).to.equal(3);
-        expect(supportedTokens).to.not.contain(consts("CRV_ADDR"));
+        expect(supportedTokens).to.not.contain(tokenAddr);
 
-        await tuffTokenDiamond.addAaveSupportedToken(consts("CRV_ADDR"), 2500);
+        await tuffTokenDiamond.addAaveSupportedToken(tokenAddr, tokenWeight);
 
         supportedTokens = await tuffTokenDiamond.getAllAaveSupportedTokens();
         expect(supportedTokens.length).to.equal(4);
-        expect(supportedTokens).to.contain(consts("CRV_ADDR"));
+        expect(supportedTokens).to.contain(tokenAddr);
+
+        actualTotalTargetWeight = await tuffTokenDiamond.getAaveTotalTargetWeight();
+        expect(actualTotalTargetWeight).to.equal(expectedTotalTargetWeight);
     });
 
-    it('should remove a token', async () => {
+    it('should remove a token and update total token weight', async () => {
+        const tokenAddr = consts("DAI_ADDR");
+        let actualTotalTargetWeight = await tuffTokenDiamond.getAaveTotalTargetWeight();
+        let actualTokenTargetPercent = await tuffTokenDiamond.getAaveTokenTargetedPercentage(tokenAddr);
+        const expectedTotalTargetWeight = actualTotalTargetWeight.sub(actualTokenTargetPercent);
+
         let supportedTokens = await tuffTokenDiamond.getAllAaveSupportedTokens();
         expect(supportedTokens.length).to.equal(3);
-        expect(supportedTokens).to.contain(consts("DAI_ADDR"));
+        expect(supportedTokens).to.contain(tokenAddr);
 
-        await tuffTokenDiamond.removeAaveSupportedToken(consts("DAI_ADDR"));
+        await tuffTokenDiamond.removeAaveSupportedToken(tokenAddr);
 
         supportedTokens = await tuffTokenDiamond.getAllAaveSupportedTokens();
         expect(supportedTokens.length).to.equal(2);
-        expect(supportedTokens).to.not.contain(consts("DAI_ADDR"));
+        expect(supportedTokens).to.not.contain(tokenAddr);
+
+        actualTotalTargetWeight = await tuffTokenDiamond.getAaveTotalTargetWeight();
+        expect(actualTotalTargetWeight).to.equal(expectedTotalTargetWeight);
+    });
+
+    it('should update a tokens target weight and total token weight', async () => {
+        const tokenAddr = consts("DAI_ADDR");
+        let actualTotalTargetWeight = await tuffTokenDiamond.getAaveTotalTargetWeight();
+        let actualTokenTargetPercent = await tuffTokenDiamond.getAaveTokenTargetedPercentage(tokenAddr);
+        expect(actualTokenTargetPercent).to.equal(5000);
+
+        const expectedTotalTargetWeight = actualTotalTargetWeight.add(actualTokenTargetPercent);
+        const expectedTargetPercentage = actualTokenTargetPercent.add(actualTokenTargetPercent);
+        await tuffTokenDiamond.setAaveTokenTargetedPercentage(tokenAddr, expectedTargetPercentage);
+
+        actualTokenTargetPercent = await tuffTokenDiamond.getAaveTokenTargetedPercentage(tokenAddr);
+        expect(actualTokenTargetPercent).to.equal(expectedTargetPercentage);
+
+        actualTotalTargetWeight = await tuffTokenDiamond.getAaveTotalTargetWeight();
+        expect(actualTotalTargetWeight).to.equal(expectedTotalTargetWeight);
     });
 
     it('reverts if adding a unsupported aave token', async () => {
@@ -111,14 +177,35 @@ describe('AaveLPManager', function () {
             "The tokenAddress provided is not supported by Aave");
     });
 
-    it("should deposit and withdraw dai to/from aave and TuffToken's wallet", async () => {
+    it("should get correct aToken balance", async () => {
+        const tokenAddr = consts("DAI_ADDR");
+        const adaiContract = await utils.getADAIContract();
 
+        //First, confirm we have no aToken
+        let startingATokenBal = await tuffTokenDiamond.getATokenBalance(tokenAddr);
+        expect(new BN(startingATokenBal.toString())).to.be.bignumber.equal(new BN("0"));
+        startingATokenBal = await adaiContract.balanceOf(tuffTokenDiamond.address);
+        expect(new BN(startingATokenBal.toString())).to.be.bignumber.equal(new BN("0"));
+
+        //Then, deposit DAI into Aave, which gives us aDAI
+        const qtyInDAI = hre.ethers.utils.parseEther("2000");
+        await assertDepositToAave(tuffTokenDiamond, qtyInDAI, true);
+
+        //Lastly, assert that aToken was properly given
+        let endingATokenBal = await tuffTokenDiamond.getATokenBalance(tokenAddr);
+        expect(new BN(endingATokenBal.toString())).to.be.bignumber.equal(new BN(qtyInDAI.toString()));
+        endingATokenBal = await adaiContract.balanceOf(tuffTokenDiamond.address);
+        expect(new BN(endingATokenBal.toString())).to.be.bignumber.equal(new BN(qtyInDAI.toString()));
+    });
+
+    it("should deposit and withdraw dai to/from aave and TuffToken's wallet", async () => {
         const daiContract = await utils.getDAIContract();
         const adaiContract = await utils.getADAIContract();
 
+        //First, deposit
         const {startDaiQty} = await assertDepositToAave(tuffTokenDiamond);
 
-        //Make the call to withdraw all from Aave
+        //Then, withdraw
         await tuffTokenDiamond.withdrawAllFromAave(consts("DAI_ADDR"));
 
         //Check that the account now has no aDAI after withdraw
@@ -136,24 +223,61 @@ describe('AaveLPManager', function () {
             "This token is currently not supported");
     });
 
-
     it("should liquidate Aave treasury", async () => {
-
         await assertDepositToAave(tuffTokenDiamond);
 
         await tuffTokenDiamond.liquidateAaveTreasury();
 
         const tokens = await tuffTokenDiamond.getAllAaveSupportedTokens();
-
         tokens.forEach(token => {
             (async () => {
                 const balance = await tuffTokenDiamond.getATokenBalance(token);
                 expect(balance).to.equal(0, `unexpected aToken (${token}) balance after withdraw of all assets`);
             })()
         })
-
     });
 
+    it("should balance a single underbalanced token", async () => {
+        //Setup
+        const tokenAddr = consts("DAI_ADDR");
+        const qtyInDAI = hre.ethers.utils.parseEther("2000");
+        await assertDepositToAave(tuffTokenDiamond, qtyInDAI, true);
+
+        //First, get how much token we have before balancing
+        const startingATokenBal = await tuffTokenDiamond.getATokenBalance(tokenAddr);
+
+        //Next, set a token to a higher target percentage s.t. it is now underbalanced
+        let actualTokenTargetPercent = await tuffTokenDiamond.getAaveTokenTargetedPercentage(tokenAddr);
+        const newTargetPercentage = actualTokenTargetPercent * 2;
+        await tuffTokenDiamond.setAaveTokenTargetedPercentage(tokenAddr, newTargetPercentage);
+
+        //Run the balancing
+        await tuffTokenDiamond.balanceAaveLendingPool();
+
+        //Finally, confirm that we improved the underbalanced token's situation
+        const endingATokenBal = await tuffTokenDiamond.getATokenBalance(tokenAddr);
+        expect(new BN(endingATokenBal.toString())).to.be.bignumber.greaterThan(new BN(startingATokenBal.toString()));
+    });
+
+    it("should not balance tokens when all are within buffer range", async () => {
+        //Setup
+        const tokenAddr = consts("DAI_ADDR");
+        const qtyInDAI = hre.ethers.utils.parseEther("2000");
+        await assertDepositToAave(tuffTokenDiamond, qtyInDAI, true);
+
+        //First, get how much token we have before balancing
+        const startingATokenBal = await tuffTokenDiamond.getATokenBalance(tokenAddr);
+
+        //Run the balancing
+        await tuffTokenDiamond.balanceAaveLendingPool();
+
+        //Since everything is already balanced, confirm that tokens haven't changed amount. (other than a buffer for
+        // interest made during this time)
+        const interestBuffer = hre.ethers.utils.parseEther('0.00001');
+        const endingATokenBal = await tuffTokenDiamond.getATokenBalance(tokenAddr);
+        const tokenBalanceDiff = BigNumber.from(endingATokenBal).sub(startingATokenBal);
+        expect(tokenBalanceDiff).to.be.lte(interestBuffer);
+    });
 });
 
 exports.assertDepositToAave = assertDepositToAave;

@@ -25,7 +25,6 @@ describe('TokenMaturity', function () {
 
         //Per `hardhat.config.js`, the 0 and 1 index accounts are named accounts. They are reserved for deployment uses
         [, , ...accounts] = await hre.ethers.getSigners();
-
     });
 
     beforeEach(async function () {
