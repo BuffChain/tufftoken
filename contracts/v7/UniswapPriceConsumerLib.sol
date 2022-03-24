@@ -1,29 +1,15 @@
 // SPDX-License-Identifier: agpl-3.0
-pragma solidity ^0.8.0;
+pragma solidity >=0.7.0;
 
-library GovernanceLib {
+library UniswapPriceConsumerLib {
     //IMPORTANT: You must increment this string if you add a new variable to StateStorage that is not at the end
-    string constant NAMESPACE = "io.BuffChain.TuffToken.GovernanceLib.1";
+    string constant NAMESPACE =
+        "io.BuffChain.TuffToken.UniswapPriceConsumerLib.1";
     bytes32 constant POSITION = keccak256(bytes(NAMESPACE));
-
-    struct Voter {
-        bool voted;
-        bool approve;
-    }
-
-    struct Election {
-        string name;
-        string description;
-        string author;
-        uint256 electionEnd;
-        bool ended;
-        mapping(address => Voter) voters;
-        mapping(bool => uint256) votes;
-    }
 
     struct StateStorage {
         bool isInit;
-        Election[] elections;
+        address factoryAddr;
     }
 
     function getState()

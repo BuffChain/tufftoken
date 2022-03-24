@@ -2,7 +2,7 @@
 
 const hre = require("hardhat");
 
-const {consts, UNISWAP_POOL_BASE_FEE, CHAINLINK_PRICE_CONSUMER_ENUM} = require("../utils/consts");
+const {consts, UNISWAP_POOL_BASE_FEE} = require("../utils/consts");
 const {logDeploymentTx} = require("../utils/deployment_helpers");
 
 module.exports = async () => {
@@ -20,13 +20,14 @@ module.exports = async () => {
             "AaveLPManager",
             "TuffKeeper",
             "TokenMaturity",
-            "Governance",
-            "UniswapManager"
+            "UniswapManager",
+            "UniswapPriceConsumer"
         ],
         log: true
     });
     let tuffTokenDiamondContract = await hre.ethers.getContractAt(tuffTokenDiamond.abi, tuffTokenDiamond.address, contractOwner);
-    console.log(`TuffTokenDiamond address [${await tuffTokenDiamondContract.address}]`);
+    const tuffTokenAddress = await tuffTokenDiamondContract.address;
+    console.log(`TuffTokenDiamond address [${tuffTokenAddress}]`);
 
     if (!await tuffTokenDiamondContract.isTuffTokenInit()) {
         let initTx = await tuffTokenDiamondContract.initTuffToken(contractOwner);
@@ -35,7 +36,8 @@ module.exports = async () => {
 
     if (!await tuffTokenDiamondContract.isAaveInit()) {
         let tx = await tuffTokenDiamondContract.initAaveLPManager(
-            consts("AAVE_LENDINGPOOL_PROVIDER_ADDR"),  consts("AAVE_PROTOCOL_DATA_PROVIDER_ADDR")
+            consts("AAVE_LENDINGPOOL_PROVIDER_ADDR"),  consts("AAVE_PROTOCOL_DATA_PROVIDER_ADDR"),
+            consts("WETH9_ADDR")
         );
         logDeploymentTx("Initialized AaveLPManager:", tx);
 
@@ -59,11 +61,6 @@ module.exports = async () => {
         logDeploymentTx("Initialized TokenMaturity:", initTx);
     }
 
-    if (!await tuffTokenDiamondContract.isGovernanceInit()) {
-        let initTx = await tuffTokenDiamondContract.initGovernance();
-        logDeploymentTx("Initialized Governance:", initTx);
-    }
-
     if (!await tuffTokenDiamondContract.isUniswapManagerInit()) {
         let initTx = await tuffTokenDiamondContract.initUniswapManager(
             consts("UNISWAP_V3_ROUTER_ADDR"),
@@ -73,6 +70,11 @@ module.exports = async () => {
         logDeploymentTx("Initialized UniswapManager:", initTx);
     }
 
+
+    if (!await tuffTokenDiamondContract.isUniswapPriceConsumerInit()) {
+        let initTx = await tuffTokenDiamondContract.initUniswapPriceConsumer(consts("UNISWAP_V3_FACTORY_ADDR"));
+        logDeploymentTx("Initialized UniswapPriceConsumer:", initTx);
+    }
 };
 
 module.exports.tags = ['v0001'];

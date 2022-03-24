@@ -25,7 +25,6 @@ describe('TokenMaturity', function () {
 
         //Per `hardhat.config.js`, the 0 and 1 index accounts are named accounts. They are reserved for deployment uses
         [, , ...accounts] = await hre.ethers.getSigners();
-
     });
 
     beforeEach(async function () {
@@ -293,7 +292,7 @@ describe('TokenMaturity', function () {
 
         //TODO: This buffer is likely from the poolFee that uniswap charges, this test needs to be updated to account
         // for that
-        const buffer = hre.ethers.utils.parseEther('0.012');
+        const buffer = hre.ethers.utils.parseEther('0.02');
         const ethDiff = BigNumber.from(expectedEth).sub(ethBalanceAfterLiquidation);
         expect(ethDiff).to.be.lte(buffer, "eth difference exceeds allowed buffer");
 
