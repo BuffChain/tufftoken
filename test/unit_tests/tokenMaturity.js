@@ -238,6 +238,9 @@ describe('TokenMaturity', function () {
             expectedETHRedemptionAmount
         );
 
+        // allow a re-run
+        await tuffTokenDiamond.onTokenMaturity();
+
     });
 
     it('should liquidate treasury', async () => {
