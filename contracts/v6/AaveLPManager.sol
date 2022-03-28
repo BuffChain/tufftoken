@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: agpl-3.0
 pragma solidity ^0.6.0;
 
+import "hardhat/console.sol";
+
 import "@openzeppelin/contracts-v6/math/SafeMath.sol";
 import {Context} from "@openzeppelin/contracts-v6/utils/Context.sol";
 import {LendingPool} from "@aave/protocol-v2/contracts/protocol/lendingpool/LendingPool.sol";
@@ -302,6 +304,7 @@ contract AaveLPManager is Context {
         uint256[] tokensTargetWeight;
         uint256 totalBalanceInWeth;
         uint24 poolFee;
+        uint24 decimalPrecision;
         uint256 treasuryBalance;
     }
 
@@ -313,7 +316,6 @@ contract AaveLPManager is Context {
     function balanceAaveLendingPool() public aaveInitLock {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
         BalanceMetadata memory bm;
-        emit AaveLPManagerBalanceSwap(address(this), 0);
 
         bm.supportedTokens = getAllAaveSupportedTokens();
         bm.tokensValueInWeth = new uint256[](
@@ -325,11 +327,11 @@ contract AaveLPManager is Context {
 
         bm.totalBalanceInWeth = 0;
         bm.poolFee = 3000;
+        bm.decimalPrecision = 10**5;
 
         bm.treasuryBalance = IERC20(address(this)).balanceOf(
             address(this)
         );
-
 
         // First loop through all tokens to aggregate their collective value and weights
         for (uint256 i = 0; i < bm.supportedTokens.length; i++) {
@@ -359,10 +361,16 @@ contract AaveLPManager is Context {
         for (uint256 i = 0; i < bm.supportedTokens.length; i++) {
             //Calculate target percentage
             uint256 tokenTargetWeight = getAaveTokenTargetedPercentage(bm.supportedTokens[i]);
-            uint256 tokenTargetPercentage = SafeMath.div(tokenTargetWeight, ss.totalTargetWeight);
+            uint256 tokenTargetPercentage = SafeMath.div(
+                SafeMath.mul(tokenTargetWeight, bm.decimalPrecision),
+                ss.totalTargetWeight
+            );
 
             //Calculate actual percentage
-            uint256 tokenActualPercentage = SafeMath.div(bm.tokensValueInWeth[i], bm.totalBalanceInWeth);
+            uint256 tokenActualPercentage = SafeMath.div(
+                SafeMath.mul(bm.tokensValueInWeth[i], bm.decimalPrecision),
+                bm.totalBalanceInWeth
+            );
 
             require(tokenTargetPercentage < uint(-1), "Cannot cast tokenTargetPercentage - out of range of int max");
             require(tokenActualPercentage < uint(-1), "Cannot cast tokenActualPercentage - out of range of int max");
@@ -370,17 +378,23 @@ contract AaveLPManager is Context {
             //Only balance if token is under-allocated more than our buffer amount
             int256 iPercentageDiff = int(tokenTargetPercentage) - int(tokenActualPercentage);
             if (iPercentageDiff > 0) {
+                console.log("++++++++++++");
+                console.log(bm.treasuryBalance);
+                console.log(bm.supportedTokens.length);
+
                 //Get proportional balance for the token
                 uint256 balanceIn = SafeMath.div(bm.treasuryBalance, bm.supportedTokens.length);
 
-                IUniswapManager(address(this)).swapExactInputSingle(
-                    address(this),
-                    bm.poolFee,
-                    bm.supportedTokens[i],
-                    balanceIn
-                );
+                if (balanceIn > 0) {
+                    IUniswapManager(address(this)).swapExactInputSingle(
+                        address(this),
+                        bm.poolFee,
+                        bm.supportedTokens[i],
+                        balanceIn
+                    );
 
-                emit AaveLPManagerBalanceSwap(bm.supportedTokens[i], balanceIn);
+                    emit AaveLPManagerBalanceSwap(bm.supportedTokens[i], balanceIn);
+                }
             }
         }
     }

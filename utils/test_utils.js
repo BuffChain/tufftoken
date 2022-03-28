@@ -31,22 +31,60 @@ async function getADAIContract() {
  * Hardhat provides a default set of accounts that hold 10000 ETH each (https://hardhat.org/hardhat-network/reference/#initial-state).
  * You can use those accounts, and their signer, to send ETH to other accounts, such as contracts.
  * @param fromAccount: The signer and its address from which you want to send ETH from
- * @param toAddr: The address from which you want to receive the ETH to
+ * @param toAddr: The address to receive TUFF tokens
  * @param amount: Amount of ETH to transfer Defaults to 100
- * @returns {Promise<Contract>}
+ * @returns {Promise<void>}
  */
 async function transferETH(fromAccount, toAddr, amount = "100") {
     if (hre.hardhatArguments.verbose) {
-        console.log(`[${fromAccount.address}] has [${hre.ethers.utils.formatEther(await hre.ethers.provider.getBalance(fromAccount.address))}] ETH`);
-        console.log(`[${toAddr}] has [${hre.ethers.utils.formatEther(await hre.ethers.provider.getBalance(toAddr))}] ETH`);
+        console.log(`[${fromAccount.address}] has [${hre.ethers.utils.formatEther(
+            await hre.ethers.provider.getBalance(fromAccount.address))}] ETH`);
+        console.log(`[${toAddr}] has [${hre.ethers.utils.formatEther(
+            await hre.ethers.provider.getBalance(toAddr))}] ETH`);
     }
+
     const transactionHash = await fromAccount.sendTransaction({
         to: toAddr,
         value: hre.ethers.utils.parseEther(amount),
     });
+
     if (hre.hardhatArguments.verbose) {
-        console.log(`[${fromAccount.address}] has [${hre.ethers.utils.formatEther(await hre.ethers.provider.getBalance(fromAccount.address))}] ETH`);
-        console.log(`[${toAddr}] has [${hre.ethers.utils.formatEther(await hre.ethers.provider.getBalance(toAddr))}] ETH`);
+        console.log(`[${fromAccount.address}] has [${hre.ethers.utils.formatEther(
+            await hre.ethers.provider.getBalance(fromAccount.address))}] ETH`);
+        console.log(`[${toAddr}] has [${hre.ethers.utils.formatEther(
+            await hre.ethers.provider.getBalance(toAddr))}] ETH`);
+    }
+}
+
+/**
+ * Upon deployment of TuffToken, the `contractOwner` account is supplied with all TUFF tokens. Thus, we use this
+ * account to transfer tokens to the desired address
+ * @param toAddr: The address to receive TUFF tokens
+ * @param amount: Amount of TUFF tokens to transfer. Defaults to 10000
+ * @returns {Promise<void>}
+ */
+async function transferTUFF(toAddr, amount = "10000") {
+    const {deployments, getNamedAccounts} = hre;
+
+    const {contractOwner} = await getNamedAccounts();
+    const TuffTokenDiamond = await deployments.get("TuffTokenDiamond");
+    const tuffTokenDiamond = await hre.ethers.getContractAt(
+        TuffTokenDiamond.abi, TuffTokenDiamond.address, contractOwner);
+
+    if (hre.hardhatArguments.verbose) {
+        console.log(`[${contractOwner}] has [${hre.ethers.utils.formatEther(
+            await tuffTokenDiamond.balanceOf(contractOwner))}] TUFF`);
+        console.log(`[${toAddr}] has [${hre.ethers.utils.formatEther(
+            await tuffTokenDiamond.balanceOf(toAddr))}] TUFF`);
+    }
+
+    await tuffTokenDiamond.transfer(toAddr, amount, {from: contractOwner});
+
+    if (hre.hardhatArguments.verbose) {
+        console.log(`[${contractOwner}] has [${hre.ethers.utils.formatEther(
+            await tuffTokenDiamond.balanceOf(contractOwner))}] TUFF`);
+        console.log(`[${toAddr}] has [${hre.ethers.utils.formatEther(
+            await tuffTokenDiamond.balanceOf(toAddr))}] TUFF`);
     }
 }
 
@@ -196,6 +234,7 @@ module.exports = {
     getUSDCContract,
     getADAIContract,
     transferETH,
+    transferTUFF,
     runCallbackImpersonatingAcct,
     sendTokensToAddr,
     sqrtPriceX96,
