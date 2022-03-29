@@ -5,6 +5,8 @@ pragma abicoder v2;
 import {TuffKeeperLib} from "./TuffKeeperLib.sol";
 import {KeeperCompatibleInterface} from "@chainlink/contracts/src/v0.8/interfaces/KeeperCompatibleInterface.sol";
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
+import {TokenMaturity} from "./TokenMaturity.sol";
+import {IAaveLPManager} from "./IAaveLPManager.sol";
 
 contract TuffKeeper is KeeperCompatibleInterface {
     modifier initTuffKeeperLock() {
@@ -93,9 +95,14 @@ contract TuffKeeper is KeeperCompatibleInterface {
         bytes calldata /* performData */
     ) external override initTuffKeeperLock {
         if (isIntervalComplete(block.timestamp)) {
-            //    todo: check contract maturity & liquidate
 
-            //    todo: run self balancing / use fees collected to add to LPs
+            TokenMaturity tokenMaturity = TokenMaturity(address(this));
+            if (tokenMaturity.isTokenMatured(block.timestamp)) {
+                tokenMaturity.onTokenMaturity();
+            } else {
+                IAaveLPManager aaveLPManager = IAaveLPManager(address(this));
+                aaveLPManager.balanceAaveLendingPool();
+            }
 
             setLastTimestamp(block.timestamp);
         }
