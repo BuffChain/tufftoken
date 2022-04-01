@@ -23,7 +23,7 @@ describe("TuffGovToken", function () {
 
         //Per `hardhat.config.js`, the 0 and 1 index accounts are named accounts. They are reserved for deployment uses
         [, , ...accounts] = await hre.ethers.getSigners();
-        
+
         const {TuffTokenDiamond, TuffGovToken} = await hre.deployments.fixture();
         tuffTokenDiamond = await hre.ethers.getContractAt(TuffTokenDiamond.abi, TuffTokenDiamond.address, owner);
 
@@ -88,9 +88,7 @@ describe("TuffGovToken", function () {
         await assertTuffWasWrapped(sender, tuffBalance);
 
         let delegate = await tuffGovToken.delegates(sender);
-
-        const zeroAddress = '0x0000000000000000000000000000000000000000'
-        expect(delegate).to.equal(zeroAddress, "Should not have delegate set");
+        expect(delegate).to.equal(hre.ethers.constants.AddressZero, "Should not have delegate set");
 
         let checkPoints = await tuffGovToken.numCheckpoints(sender);
         expect(checkPoints).to.equal(0, "Should not have reached any checkpoints");

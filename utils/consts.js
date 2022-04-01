@@ -30,7 +30,8 @@ let constsMap = {
         UNISWAP_WETH_USDC_POOL_ADDR: "0xf43261E862FF94B45600d62444dEF3AB94f2a745",
 
         //Current: price should be $.01, 1 DAI = 0.0003139 ETH, .01 DAI = 0.00000313875 ETH
-        TUFF_STARTING_PRICE: 0.00000313875 // todo: LP pool may impact whether this needs to be a constant or function
+        // todo: LP pool may impact whether this needs to be a constant or function
+        TUFF_STARTING_PRICE: hre.ethers.utils.formatEther("3138750000000")
     },
     mainnet: {
         //Network related
@@ -57,7 +58,11 @@ let constsMap = {
         UNISWAP_WETH_USDC_POOL_ADDR: "0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640",
 
         //Current: price should be $.01, 1 DAI = 0.0003139 ETH, .01 DAI = 0.00000313875 ETH
-        TUFF_STARTING_PRICE: 0.00000313875 // todo: LP pool may impact whether this needs to be a constant or function
+        //140364714483181082952859648
+        // todo: LP pool may impact whether this needs to be a constant or function
+        // TUFF_STARTING_PRICE: hre.ethers.utils.formatEther("3138750000000")
+        // TUFF_STARTING_PRICE: hre.ethers.utils.formatEther("3138750000000")
+        TUFF_STARTING_PRICE: 0.00000313875
     }
 }
 

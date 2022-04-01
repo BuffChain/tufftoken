@@ -55,6 +55,7 @@ contract UniswapManager {
         ss.isInit = true;
     }
 
+    //TODO: Fix this
     /// based on https://docs.uniswap.org/protocol/guides/swaps/multihop-swaps
     function swapExactInputMultihop(
         address inputToken,
@@ -66,24 +67,26 @@ contract UniswapManager {
         UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
             .getState();
 
-        // Transfer `amountIn` of DAI to this contract.
-        TransferHelper.safeTransferFrom(
-            inputToken,
-            address(this),
-            address(this),
-            amountIn
-        );
+//        //Transfer `amountIn` of `inputToken` to this contract
+//        TransferHelper.safeTransferFrom(
+//            inputToken,
+//            address(this),
+//            address(this),
+//            amountIn
+//        );
 
-        // Approve the router to spend DAI.
+        //Approve the router to spend `inputToken`
         TransferHelper.safeApprove(
             inputToken,
             address(ss.swapRouter),
             amountIn
         );
 
-        // Multiple pool swaps are encoded through bytes called a `path`. A path is a sequence of token addresses and poolFees that define the pools used in the swaps.
-        // The format for pool encoding is (tokenIn, fee, tokenOut/tokenIn, fee, tokenOut) where tokenIn/tokenOut parameter is the shared token across the pools.
-        // Since we are swapping DAI to USDC and then USDC to WETH9 the path encoding is (DAI, 0.3%, USDC, 0.3%, WETH9).
+        //Multiple pool swaps are encoded through bytes called a `path`. A path is a sequence of token addresses and
+        // poolFees that define the pools used in the swaps.The format for pool encoding is (tokenIn, fee,
+        // tokenOut/tokenIn, fee, tokenOut) where tokenIn/tokenOut parameter is the shared token across the pools.
+        // Since we are swapping `inputToken` to WETH9 and then WETH9 to `outputToken` the path encoding is
+        // (inputToken, 0.3%, WETH9, 0.3%, outputToken).
         ISwapRouter.ExactInputParams memory params = ISwapRouter
             .ExactInputParams({
                 path: abi.encodePacked(

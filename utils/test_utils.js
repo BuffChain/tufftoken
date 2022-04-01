@@ -197,7 +197,7 @@ async function uniswapExactInputSingle(weth9Contract, uniswapSwapRouterContract,
     });
 }
 
-function sqrtPriceX96(price) {
+function getSqrtPriceX96(price) {
     // sqrtRatioX96 price per uniswap v3 https://docs.uniswap.org/sdk/guides/fetching-prices#understanding-sqrtprice
     return BigInt(Math.sqrt(price) * 2 ** 96).toString();
 }
@@ -237,7 +237,8 @@ module.exports = {
     transferTUFF,
     runCallbackImpersonatingAcct,
     sendTokensToAddr,
-    sqrtPriceX96,
+    getSqrtPriceX96,
+    getUniswapPoolContract,
     getUniswapPriceQuote,
     wrapTuffToGov,
     unwrapGovToTuff
