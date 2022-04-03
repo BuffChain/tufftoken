@@ -34,14 +34,47 @@ describe('TuffKeeper', function () {
     });
 
 
-    it('should perform upkeep', async () => {
+    it('should perform upkeep on token maturity', async () => {
 
-        const interval = await tuffTokenDiamond.getInterval();
+        const interval = await tuffTokenDiamond.getTokenMaturityInterval();
         const dayInSeconds = 86400;
 
         expect(interval).to.equal(dayInSeconds, "interval should be 1 day.");
 
-        const startingTimeStamp = await tuffTokenDiamond.getLastTimestamp();
+        await assertUpkeep(setTokenMaturityInterval, getLastTokenMaturityTimestamp)
+
+
+    });
+
+    it('should perform upkeep on balancing assets', async () => {
+
+        const interval = await tuffTokenDiamond.getBalanceAssetsInterval();
+        const weekInSeconds = 86400 * 7;
+
+        expect(interval).to.equal(weekInSeconds, "interval should be 1 week.");
+
+        await assertUpkeep(setBalanceAssetsInterval, getLastBalanceAssetsTimestamp)
+
+    });
+
+    async function getLastTokenMaturityTimestamp() {
+        return await tuffTokenDiamond.getLastTokenMaturityTimestamp();
+    }
+
+    async function getLastBalanceAssetsTimestamp() {
+        return await tuffTokenDiamond.getLastBalanceAssetsTimestamp();
+    }
+
+    async function setTokenMaturityInterval(newInterval) {
+        await tuffTokenDiamond.setTokenMaturityInterval(newInterval);
+    }
+
+    async function setBalanceAssetsInterval(newInterval) {
+        await tuffTokenDiamond.setBalanceAssetsInterval(newInterval);
+    }
+
+    async function assertUpkeep(setInterval, getTimestamp) {
+        const startingTimeStamp = await getTimestamp();
 
         let [needed, performData] = await tuffTokenDiamond.checkUpkeep(randomBytes(0));
 
@@ -54,8 +87,8 @@ describe('TuffKeeper', function () {
 
         expect(startingBlockTimestamp).to.equal(expectedBlockTimestamp, "perform data should be block timestamp.");
 
-        // shorten interval to appease isIntervalComplete
-        await tuffTokenDiamond.setInterval(1);
+        // shorten intervals to appease isIntervalComplete
+        await setInterval(1);
 
         await mineBlock();
 
@@ -70,7 +103,7 @@ describe('TuffKeeper', function () {
 
         await tuffTokenDiamond.performUpkeep(performData);
 
-        const endingTimestamp = await tuffTokenDiamond.getLastTimestamp();
+        const endingTimestamp = await getTimestamp();
 
         expect(endingTimestamp > startingTimeStamp).to.equal(true,
             "last timestamp that performed upkeep should greater than the starting value");
@@ -80,7 +113,6 @@ describe('TuffKeeper', function () {
 
         expect(latestTimestamp.toString()).to.equal(endingTimestamp,
             "last timestamp that performed upkeep should be the latest block.");
-
-    });
+    }
 
 });

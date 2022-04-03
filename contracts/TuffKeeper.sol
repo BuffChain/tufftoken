@@ -40,42 +40,68 @@ contract TuffKeeper is KeeperCompatibleInterface {
 
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
 
-        ss.interval = 86400; // starts at 1 day
-        ss.lastTimeStamp = block.timestamp;
+        ss.tokenMaturityInterval = 86400; // 1 day
+        ss.balanceAssetsInterval = 86400 * 7; // 1 week
+        ss.lastTokenMaturityTimestamp = block.timestamp;
+        ss.lastBalanceAssetsTimestamp = block.timestamp;
 
         ss.isInit = true;
     }
 
-    function setInterval(uint256 _interval) public initTuffKeeperLock {
+    function setTokenMaturityInterval(uint256 _tokenMaturityInterval) public initTuffKeeperLock {
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
-        ss.interval = _interval;
+        ss.tokenMaturityInterval = _tokenMaturityInterval;
     }
 
-    function getInterval() public view returns (uint256) {
+    function getTokenMaturityInterval() public view returns (uint256) {
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
-        return ss.interval;
+        return ss.tokenMaturityInterval;
     }
 
-    function setLastTimestamp(uint256 _lastTimeStamp)
+    function setBalanceAssetsInterval(uint256 _balanceAssetsInterval) public initTuffKeeperLock {
+        TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
+        ss.balanceAssetsInterval = _balanceAssetsInterval;
+    }
+
+    function getBalanceAssetsInterval() public view returns (uint256) {
+        TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
+        return ss.balanceAssetsInterval;
+    }
+
+    function setLastTokenMaturityTimestamp(uint256 _lastTimestamp)
         public
         initTuffKeeperLock
     {
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
-        ss.lastTimeStamp = _lastTimeStamp;
+        ss.lastTokenMaturityTimestamp = _lastTimestamp;
     }
 
-    function getLastTimestamp() public view returns (uint256) {
+    function getLastTokenMaturityTimestamp() public view returns (uint256) {
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
-        return ss.lastTimeStamp;
+        return ss.lastTokenMaturityTimestamp;
     }
 
-    function isIntervalComplete(uint256 timestamp)
+
+    function setLastBalanceAssetsTimestamp(uint256 _lastTimestamp)
+    public
+    initTuffKeeperLock
+    {
+        TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
+        ss.lastBalanceAssetsTimestamp = _lastTimestamp;
+    }
+
+    function getLastBalanceAssetsTimestamp() public view returns (uint256) {
+        TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
+        return ss.lastBalanceAssetsTimestamp;
+    }
+
+    function isIntervalComplete(uint256 timestamp, uint256 lastTimestamp, uint256 interval)
         private
         view
         initTuffKeeperLock
         returns (bool)
     {
-        return (timestamp - getLastTimestamp()) >= getInterval();
+        return (timestamp - lastTimestamp) >= interval;
     }
 
     function checkUpkeep(
@@ -87,24 +113,32 @@ contract TuffKeeper is KeeperCompatibleInterface {
         initTuffKeeperLock
         returns (bool needed, bytes memory performData)
     {
-        needed = isIntervalComplete(block.timestamp);
+        needed =
+        isIntervalComplete(block.timestamp, getLastTokenMaturityTimestamp(), getTokenMaturityInterval()) ||
+        isIntervalComplete(block.timestamp, getLastBalanceAssetsTimestamp(), getBalanceAssetsInterval());
         performData = bytes(Strings.toString(block.timestamp));
     }
 
     function performUpkeep(
         bytes calldata /* performData */
     ) external override initTuffKeeperLock {
-        if (isIntervalComplete(block.timestamp)) {
 
-            TokenMaturity tokenMaturity = TokenMaturity(address(this));
+        TokenMaturity tokenMaturity = TokenMaturity(address(this));
+
+        if (isIntervalComplete(block.timestamp, getLastTokenMaturityTimestamp(), getTokenMaturityInterval())) {
             if (tokenMaturity.isTokenMatured(block.timestamp)) {
                 tokenMaturity.onTokenMaturity();
-            } else {
-                IAaveLPManager aaveLPManager = IAaveLPManager(address(this));
-                aaveLPManager.balanceAaveLendingPool();
             }
-
-            setLastTimestamp(block.timestamp);
+            setLastTokenMaturityTimestamp(block.timestamp);
         }
+
+        if (isIntervalComplete(block.timestamp, getLastBalanceAssetsTimestamp(), getBalanceAssetsInterval()) &&
+            !tokenMaturity.isTokenMatured(block.timestamp)) {
+            IAaveLPManager aaveLPManager = IAaveLPManager(address(this));
+            aaveLPManager.balanceAaveLendingPool();
+            setLastBalanceAssetsTimestamp(block.timestamp);
+        }
+
+
     }
 }
