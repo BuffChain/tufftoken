@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
 import {TuffTokenLib} from "./TuffTokenLib.sol";
+import "./TokenMaturity.sol";
 
 contract TuffToken is Context, IERC20 {
     modifier tuffTokenInitLock() {
@@ -266,6 +267,11 @@ contract TuffToken is Context, IERC20 {
 
         //if any account belongs to _isExcludedFromFee account then remove the fee
         if (ss.isExcludedFromFee[from] || ss.isExcludedFromFee[to]) {
+            takeFee = false;
+        }
+
+        TokenMaturity tokenMaturity = TokenMaturity(address(this));
+        if (takeFee && tokenMaturity.isTokenMatured(block.timestamp)) {
             takeFee = false;
         }
 
