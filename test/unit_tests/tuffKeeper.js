@@ -5,6 +5,8 @@ const hre = require("hardhat");
 const {randomBytes} = require('crypto');
 const Web3 = require('web3');
 const {mineBlock} = require("../../utils/back_test_utils");
+const utils = require("../../utils/test_utils");
+const {consts} = require("../../utils/consts");
 const web3 = new Web3('wss://mainnet.infura.io/ws/v3/'  +  process.env.INFURA_KEY);
 
 describe('TuffKeeper', function () {
@@ -25,6 +27,10 @@ describe('TuffKeeper', function () {
     beforeEach(async function () {
         const {TuffTokenDiamond} = await hre.deployments.fixture();
         tuffTokenDiamond = await hre.ethers.getContractAt(TuffTokenDiamond.abi, TuffTokenDiamond.address, owner);
+
+        await utils.sendTokensToAddr(accounts.at(-1), tuffTokenDiamond.address);
+
+        await tuffTokenDiamond.depositToAave(consts("DAI_ADDR"), hre.ethers.utils.parseEther("2000"));
     });
 
 
