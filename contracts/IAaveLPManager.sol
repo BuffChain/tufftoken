@@ -9,4 +9,6 @@ interface IAaveLPManager {
         returns (address[] memory);
 
     function liquidateAaveTreasury() external returns (bool);
+
+    function balanceAaveLendingPool() external;
 }
