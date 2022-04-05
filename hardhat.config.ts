@@ -1,14 +1,38 @@
-const fs = require("fs");
-const path = require("path");
+import * as fs from 'fs';
+import path from "path";
 
-require("@nomiclabs/hardhat-waffle");
-require("@nomiclabs/hardhat-web3");
-require('hardhat-deploy');
-require('hardhat-deploy-ethers');
-require("hardhat-gas-reporter");
-const {TASK_DEPLOY_MAIN} = require('hardhat-deploy');
+import '@nomiclabs/hardhat-waffle';
+import '@nomiclabs/hardhat-web3';
+import 'hardhat-deploy';
+import 'hardhat-deploy-ethers';
+import 'hardhat-gas-reporter';
+import {TASK_DEPLOY_MAIN} from 'hardhat-deploy';
+import {task, extendEnvironment, extendConfig, HardhatUserConfig, subtask} from 'hardhat/config';
 
-require('dotenv').config();
+import 'dotenv/config';
+import {HardhatNetworkConfig} from "hardhat/src/types/config";
+import {
+    HardhatConfig,
+    HardhatNetworkForkingConfig,
+    HardhatRuntimeEnvironment,
+    RunSuperFunction,
+    TaskArguments
+} from "hardhat/types";
+
+interface BackTestConfig {
+    startBlockNumber: number
+    endBlockNumber: number
+}
+
+declare module 'hardhat/types/config' {
+    export interface HardhatUserConfig {
+        backTest: BackTestConfig
+    }
+
+    export interface HardhatConfig {
+        backTest: BackTestConfig
+    }
+}
 
 /**
  * @type import('hardhat/config').HardhatUserConfig
@@ -106,10 +130,10 @@ module.exports = {
     }
 };
 
-extendEnvironment((hre) => {
+extendEnvironment((hre: HardhatRuntimeEnvironment) => {
     if (hre.hardhatArguments.verbose) {
         console.log("Enabling hre logging");
-        hre.network.config.loggingEnabled = true;
+        (hre.network.config as HardhatNetworkConfig).loggingEnabled = true;
     }
 });
 
@@ -124,14 +148,19 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
 task("download_block_data", "Downloads and serializes tx data for a range of blocks")
     .addOptionalParam("startBlockNumber", "Start of the block range you want to serialize, inclusive")
     .addOptionalParam("endBlockNumber", "End of the block range you want to serialize, inclusive")
-    .setAction(async (taskArgs, hre) => {
+    .setAction(async (taskArgs: TaskArguments, hre: HardhatRuntimeEnvironment) => {
         const blockDataPath = path.join(process.cwd(), "block_data");
-        const {startBlockNumber, endBlockNumber} = getBlockParams(taskArgs);
+        const {startBlockNumber, endBlockNumber} = getBlockParams(taskArgs, hre);
         console.log(`Downloading blocks [${startBlockNumber},${endBlockNumber}]`);
 
         //Update forking blockNumber so the provider has access to all previous block info,
         // ending at endBlockNumber (inclusive)
-        hre.network.config.forking.blockNumber = endBlockNumber + 1;
+        const config = hre.network.config as HardhatNetworkConfig;
+        if (config.forking) {
+            config.forking.blockNumber = endBlockNumber + 1;
+        } else {
+            throw new Error("Forking was not configured in hardhat config");
+        }
 
         //Plus one for inclusive range of [startBlockNumber,endBlockNumber]
         const numOfBlocks = endBlockNumber - startBlockNumber + 1;
@@ -153,7 +182,7 @@ task("download_block_data", "Downloads and serializes tx data for a range of blo
     });
 
 task("test")
-    .setAction(async (taskArgs, hre, runSuper) => {
+    .setAction(async (taskArgs: TaskArguments, hre: HardhatRuntimeEnvironment, runSuper: RunSuperFunction<any>) => {
         console.log(`Running tests within ${hre.config.paths.tests}`);
 
         taskArgs["deployFixture"] = true;
@@ -164,24 +193,29 @@ task("test:backtest")
     .addOptionalParam("startBlockNumber", "Start block of the backtest, defaults to one block after the forking block " +
         "number")
     .addOptionalParam("endBlockNumber", "End block of the backtest, defaults to 10 blocks after the startBlockNumber")
-    .setAction(async (taskArgs, hre) => {
-        const {startBlockNumber, endBlockNumber} = getBlockParams(taskArgs);
+    .setAction(async (taskArgs: TaskArguments, hre: HardhatRuntimeEnvironment) => {
+        const {startBlockNumber, endBlockNumber} = getBlockParams(taskArgs, hre);
         // hre.network.config.forking.blockNumber = startBlockNumber - 1;
-        hre.config.startBlockNumber = startBlockNumber;
-        hre.config.endBlockNumber = endBlockNumber;
+        hre.config.backTest.startBlockNumber = startBlockNumber;
+        hre.config.backTest.endBlockNumber = endBlockNumber;
 
         hre.config.paths.tests = path.join(path.parse(hre.config.paths.tests).dir, "back_tests");
         hre.config.mocha.timeout = Number.MAX_SAFE_INTEGER;
         return await hre.run("test");
     });
 
-function getBlockParams(taskArgs) {
-    let startBlockNumber, endBlockNumber;
+function getBlockParams(taskArgs: TaskArguments, hre: HardhatRuntimeEnvironment) {
+    let startBlockNumber = 0, endBlockNumber;
 
     if (taskArgs["startBlockNumber"]) {
         startBlockNumber = parseInt(taskArgs["startBlockNumber"]);
     } else {
-        startBlockNumber = hre.network.config.forking.blockNumber + 1;
+        const config = hre.network.config as HardhatNetworkConfig;
+        if (config?.forking?.blockNumber) {
+            startBlockNumber = config.forking.blockNumber;
+        } else {
+            throw new Error("Forking was not configured in hardhat config");
+        }
     }
 
     if (taskArgs["endBlockNumber"]) {
@@ -201,7 +235,7 @@ function getBlockParams(taskArgs) {
  * Added this hook into the hardhat deploy plugin to automatically write log output to the corresponding network's
  * deployment folder
  */
-subtask(TASK_DEPLOY_MAIN, async (taskArgs, hre, runSuper) => {
+subtask(TASK_DEPLOY_MAIN, async (taskArgs: TaskArguments, hre: HardhatRuntimeEnvironment, runSuper: RunSuperFunction<any>) => {
     const networkName = hre.network.name;
     const manifestPath = path.join(process.cwd(), "deployments", networkName, ".manifest.json");
 

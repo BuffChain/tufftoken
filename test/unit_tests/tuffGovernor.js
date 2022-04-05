@@ -23,7 +23,7 @@ describe("TuffGovernor", function () {
         const {contractOwner} = await hre.getNamedAccounts();
         owner = await hre.ethers.getSigner(contractOwner);
 
-        //Per `hardhat.config.js`, the 0 and 1 index accounts are named accounts. They are reserved for deployment uses
+        //Per `hardhat.config.ts`, the 0 and 1 index accounts are named accounts. They are reserved for deployment uses
         [, , ...accounts] = await hre.ethers.getSigners();
 
         const {TuffTokenDiamond, TuffGovToken, TimelockController, TuffGovernor} = await hre.deployments.fixture();
