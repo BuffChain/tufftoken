@@ -5,6 +5,8 @@ const hre = require("hardhat");
 const {randomBytes} = require('crypto');
 const Web3 = require('web3');
 const {mineBlock} = require("../../utils/back_test_utils");
+const utils = require("../../utils/test_utils");
+const {consts} = require("../../utils/consts");
 const web3 = new Web3('wss://mainnet.infura.io/ws/v3/'  +  process.env.INFURA_KEY);
 
 describe('TuffKeeper', function () {
@@ -18,24 +20,61 @@ describe('TuffKeeper', function () {
         const {contractOwner} = await hre.getNamedAccounts();
         owner = await hre.ethers.getSigner(contractOwner);
 
-        //Per `hardhat.config.js`, the 0 and 1 index accounts are named accounts. They are reserved for deployment uses
+        //Per `hardhat.config.ts`, the 0 and 1 index accounts are named accounts. They are reserved for deployment uses
         [, , ...accounts] = await hre.ethers.getSigners();
     });
 
     beforeEach(async function () {
         const {TuffTokenDiamond} = await hre.deployments.fixture();
         tuffTokenDiamond = await hre.ethers.getContractAt(TuffTokenDiamond.abi, TuffTokenDiamond.address, owner);
+
+        await utils.sendTokensToAddr(accounts.at(-1), tuffTokenDiamond.address);
+
+        await tuffTokenDiamond.depositToAave(consts("DAI_ADDR"), hre.ethers.utils.parseEther("2000"));
     });
 
 
-    it('should perform upkeep', async () => {
+    it('should perform upkeep on token maturity', async () => {
 
-        const interval = await tuffTokenDiamond.getInterval();
+        const interval = await tuffTokenDiamond.getTokenMaturityInterval();
         const dayInSeconds = 86400;
 
         expect(interval).to.equal(dayInSeconds, "interval should be 1 day.");
 
-        const startingTimeStamp = await tuffTokenDiamond.getLastTimestamp();
+        await assertUpkeep(setTokenMaturityInterval, getLastTokenMaturityTimestamp)
+
+
+    });
+
+    it('should perform upkeep on balancing assets', async () => {
+
+        const interval = await tuffTokenDiamond.getBalanceAssetsInterval();
+        const weekInSeconds = 86400 * 7;
+
+        expect(interval).to.equal(weekInSeconds, "interval should be 1 week.");
+
+        await assertUpkeep(setBalanceAssetsInterval, getLastBalanceAssetsTimestamp)
+
+    });
+
+    async function getLastTokenMaturityTimestamp() {
+        return await tuffTokenDiamond.getLastTokenMaturityTimestamp();
+    }
+
+    async function getLastBalanceAssetsTimestamp() {
+        return await tuffTokenDiamond.getLastBalanceAssetsTimestamp();
+    }
+
+    async function setTokenMaturityInterval(newInterval) {
+        await tuffTokenDiamond.setTokenMaturityInterval(newInterval);
+    }
+
+    async function setBalanceAssetsInterval(newInterval) {
+        await tuffTokenDiamond.setBalanceAssetsInterval(newInterval);
+    }
+
+    async function assertUpkeep(setInterval, getTimestamp) {
+        const startingTimeStamp = await getTimestamp();
 
         let [needed, performData] = await tuffTokenDiamond.checkUpkeep(randomBytes(0));
 
@@ -48,8 +87,8 @@ describe('TuffKeeper', function () {
 
         expect(startingBlockTimestamp).to.equal(expectedBlockTimestamp, "perform data should be block timestamp.");
 
-        // shorten interval to appease isIntervalComplete
-        await tuffTokenDiamond.setInterval(1);
+        // shorten intervals to appease isIntervalComplete
+        await setInterval(1);
 
         await mineBlock();
 
@@ -64,7 +103,7 @@ describe('TuffKeeper', function () {
 
         await tuffTokenDiamond.performUpkeep(performData);
 
-        const endingTimestamp = await tuffTokenDiamond.getLastTimestamp();
+        const endingTimestamp = await getTimestamp();
 
         expect(endingTimestamp > startingTimeStamp).to.equal(true,
             "last timestamp that performed upkeep should greater than the starting value");
@@ -74,7 +113,6 @@ describe('TuffKeeper', function () {
 
         expect(latestTimestamp.toString()).to.equal(endingTimestamp,
             "last timestamp that performed upkeep should be the latest block.");
-
-    });
+    }
 
 });

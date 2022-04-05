@@ -23,7 +23,7 @@ describe('TokenMaturity', function () {
         const {contractOwner} = await hre.getNamedAccounts();
         owner = await hre.ethers.getSigner(contractOwner);
 
-        //Per `hardhat.config.js`, the 0 and 1 index accounts are named accounts. They are reserved for deployment uses
+        //Per `hardhat.config.ts`, the 0 and 1 index accounts are named accounts. They are reserved for deployment uses
         [, , ...accounts] = await hre.ethers.getSigners();
     });
 
@@ -238,6 +238,9 @@ describe('TokenMaturity', function () {
             expectedETHRedemptionAmount
         );
 
+        // allow a re-run
+        await tuffTokenDiamond.onTokenMaturity();
+
     });
 
     it('should liquidate treasury', async () => {
@@ -289,7 +292,7 @@ describe('TokenMaturity', function () {
 
         //TODO: This buffer is likely from the poolFee that uniswap charges, this test needs to be updated to account
         // for that
-        const buffer = hre.ethers.utils.parseEther('0.02');
+        const buffer = hre.ethers.utils.parseEther('0.025');
         const ethDiff = BigNumber.from(expectedEth).sub(ethBalanceAfterLiquidation);
         expect(ethDiff).to.be.lte(buffer, "eth difference exceeds allowed buffer");
 
