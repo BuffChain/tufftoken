@@ -20,4 +20,7 @@ node_modules/
 .env
 /.env
 
+# Typescipt
+dist/
+
 yarn.lock

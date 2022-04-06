@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: agpl-3.0
 
-const hre = require("hardhat");
+import hre from 'hardhat';
 
 const {consts, UNISWAP_POOL_BASE_FEE} = require("../utils/consts");
 const {logDeploymentTx} = require("../utils/deployment_helpers");
@@ -25,6 +25,7 @@ module.exports = async () => {
         ],
         log: true
     });
+    // @ts-ignore
     let tuffTokenDiamondContract = await hre.ethers.getContractAt(tuffTokenDiamond.abi, tuffTokenDiamond.address, contractOwner);
     const tuffTokenAddress = await tuffTokenDiamondContract.address;
     console.log(`TuffTokenDiamond address [${tuffTokenAddress}]`);

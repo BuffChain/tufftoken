@@ -1,19 +1,19 @@
 import * as fs from 'fs';
 import path from "path";
 
+import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-waffle';
 import '@nomiclabs/hardhat-web3';
 import 'hardhat-deploy';
 import 'hardhat-deploy-ethers';
 import 'hardhat-gas-reporter';
+import '@typechain/hardhat'; //Generate types from ABI of compiled contracts
 import {TASK_DEPLOY_MAIN} from 'hardhat-deploy';
-import {task, extendEnvironment, extendConfig, HardhatUserConfig, subtask} from 'hardhat/config';
+import {task, extendEnvironment, HardhatUserConfig, subtask} from 'hardhat/config';
 
 import 'dotenv/config';
 import {HardhatNetworkConfig} from "hardhat/src/types/config";
 import {
-    HardhatConfig,
-    HardhatNetworkForkingConfig,
     HardhatRuntimeEnvironment,
     RunSuperFunction,
     TaskArguments
@@ -34,10 +34,7 @@ declare module 'hardhat/types/config' {
     }
 }
 
-/**
- * @type import('hardhat/config').HardhatUserConfig
- */
-module.exports = {
+const config: HardhatUserConfig = {
     paths: {
         tests: "./test/unit_tests"
     },
@@ -91,7 +88,7 @@ module.exports = {
                 //Feel free to update at any time. This is here to make local development and caching easier
                 blockNumber: 14411890
             },
-            timeout: 30000,
+            // timeout: 30000,
 
             // mining: {
             //     auto: false,
@@ -103,7 +100,7 @@ module.exports = {
         },
         kovan: {
             url: process.env.INFURA_URL,
-            accounts: [process.env.ETH_ACCOUNT_PRIV_KEY]
+            accounts: [process.env.ETH_ACCOUNT_PRIV_KEY || ""]
         }
     },
     namedAccounts: {
@@ -127,8 +124,18 @@ module.exports = {
     },
     mocha: {
         timeout: 30000
+    },
+    typechain: {
+        outDir: "src/types",
+        target: "ethers-v5",
+    },
+    backTest: {
+        startBlockNumber: 0,
+        endBlockNumber: 0,
     }
 };
+
+export default config;
 
 extendEnvironment((hre: HardhatRuntimeEnvironment) => {
     if (hre.hardhatArguments.verbose) {

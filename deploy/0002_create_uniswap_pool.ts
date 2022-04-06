@@ -1,13 +1,17 @@
 // SPDX-License-Identifier: agpl-3.0
 
-const hre = require("hardhat");
+import hre from 'hardhat';
+import {Contract, ethers} from "ethers";
 
-const {Pool, Position, NonfungiblePositionManager, nearestUsableTick} = require('@uniswap/v3-sdk');
-const {Percent, Token} = require("@uniswap/sdk-core");
+import {Pool, Position, NonfungiblePositionManager, nearestUsableTick} from '@uniswap/v3-sdk';
+import {Percent, Token} from "@uniswap/sdk-core";
 
 const {consts, UNISWAP_POOL_BASE_FEE} = require("../utils/consts");
 const {logDeploymentTx} = require("../utils/deployment_helpers");
 const {getSqrtPriceX96, getWETH9Contract} = require("../utils/test_utils");
+// import {consts, UNISWAP_POOL_BASE_FEE} from "../utils/consts";
+// import {logDeploymentTx} from "../utils/deployment_helpers";
+// import {getSqrtPriceX96, getWETH9Contract} from "../utils/test_utils";
 
 interface Immutables {
     factory: string;
@@ -15,12 +19,12 @@ interface Immutables {
     token1: string;
     fee: number;
     tickSpacing: number;
-    maxLiquidityPerTick: hre.ethers.BigNumber;
+    maxLiquidityPerTick: ethers.BigNumber;
 }
 
 interface State {
-    liquidity: hre.ethers.BigNumber;
-    sqrtPriceX96: hre.ethers.BigNumber;
+    liquidity: ethers.BigNumber;
+    sqrtPriceX96: ethers.BigNumber;
     tick: number;
     observationIndex: number;
     observationCardinality: number;
@@ -29,7 +33,7 @@ interface State {
     unlocked: boolean;
 }
 
-async function getPoolImmutables(poolContract) {
+async function getPoolImmutables(poolContract: Contract) {
     const immutables: Immutables = {
         factory: await poolContract.factory(),
         token0: await poolContract.token0(),
@@ -41,7 +45,7 @@ async function getPoolImmutables(poolContract) {
     return immutables;
 }
 
-async function getPoolState(poolContract) {
+async function getPoolState(poolContract: Contract) {
     const slot = await poolContract.slot0();
     const PoolState: State = {
         liquidity: await poolContract.liquidity(),
@@ -56,7 +60,7 @@ async function getPoolState(poolContract) {
     return PoolState;
 }
 
-async function createPool(uniswapV3Factory, tuffTokenDiamond) {
+async function createPool(uniswapV3Factory: Contract, tuffTokenDiamond: Contract) {
     let tuffTokenPoolAddr = await uniswapV3Factory.getPool(consts("WETH9_ADDR"), tuffTokenDiamond.address, UNISWAP_POOL_BASE_FEE);
     if (!tuffTokenPoolAddr || tuffTokenPoolAddr === hre.ethers.constants.AddressZero) {
         console.log(`TuffToken pool not found, creating one now...`);
@@ -79,7 +83,7 @@ async function createPool(uniswapV3Factory, tuffTokenDiamond) {
     return uniswapV3Pool;
 }
 
-async function addLiquidityToPool(poolContract, tuffTokenDiamond) {
+async function addLiquidityToPool(poolContract: Contract, tuffTokenDiamond: Contract) {
     const immutables = await getPoolImmutables(poolContract);
     const state = await getPoolState(poolContract);
 
@@ -90,6 +94,8 @@ async function addLiquidityToPool(poolContract, tuffTokenDiamond) {
 
     const tuffBalance = hre.ethers.utils.parseEther("1");
     const wethBalance = hre.ethers.utils.parseEther("1");
+    console.log("-----STARTING BALANCES-----");
+    await printTuffTokenTreasury(tuffTokenDiamond);
 
     const WETH9_TUFF_POOL = new Pool(
         WETH9,
@@ -100,32 +106,53 @@ async function addLiquidityToPool(poolContract, tuffTokenDiamond) {
         state.tick
     );
 
-    console.log(`current pool liquidity [${state.liquidity.toString()}]`);
+    console.log(`Current pool liquidity [${state.liquidity.toString()}]`);
     const position = new Position({
         pool: WETH9_TUFF_POOL,
-        liquidity: state.liquidity.div(5000).toString(),
+        liquidity: hre.ethers.utils.parseEther("1").toString(),
         tickLower: nearestUsableTick(state.tick, immutables.tickSpacing) - immutables.tickSpacing  * 2,
         tickUpper: nearestUsableTick(state.tick, immutables.tickSpacing) + immutables.tickSpacing * 2
     });
 
     //Mint position
-    const {mintCallData, mintValue} = NonfungiblePositionManager.addCallParameters(position, {
+    const mintTx = await NonfungiblePositionManager.addCallParameters(position, {
         slippageTolerance: new Percent(50, 10_000),
         recipient: tuffTokenDiamond.address,
         deadline: deadline
     });
+    const decodedMintTx = NonfungiblePositionManager.INTERFACE.parseTransaction({data: mintTx.calldata, value: mintTx.value});
+    console.log(`decodedMintTx.name [${decodedMintTx.name}]`);
+    console.log(`decodedMintTx.args [${decodedMintTx.args}]`);
+    console.log(`decodedMintTx.value [${decodedMintTx.value}]`);
 
     //Add liquidity to position
-    const {liquidityCallData ,liquidityValue} = NonfungiblePositionManager.addCallParameters(position, {
+    const liquidityTx = await NonfungiblePositionManager.addCallParameters(position, {
         slippageTolerance: new Percent(50, 10_000),
         deadline: deadline,
         tokenId: 1
     });
+    const decodedLiquidityTx = NonfungiblePositionManager.INTERFACE.parseTransaction({data: liquidityTx.calldata, value: liquidityTx.value});
+    console.log(`decodedLiquidityTx.name [${decodedLiquidityTx.name}]`);
+    console.log(`decodedLiquidityTx.args [${decodedLiquidityTx.args}]`);
+    console.log(`decodedLiquidityTx.value [${decodedLiquidityTx.value}]`);
 
+    console.log("-----ENDING BALANCES-----");
+    await printTuffTokenTreasury(tuffTokenDiamond);
 
     // await tuffTokenDiamond.approve(uniswapV3Pool.address, hre.ethers.constants.MaxUint256);
     // await (await getWETH9Contract()).approve(uniswapV3Pool.address, hre.ethers.constants.MaxUint256);
     // await uniswapV3Pool.mint(tuffTokenDiamond.address, -130000, -100000, hre.ethers.utils.parseEther("1"), []);
+}
+
+async function printTuffTokenTreasury(tuffTokenDiamond: Contract) {
+    console.log(`[${tuffTokenDiamond.address}] has [${hre.ethers.utils.formatEther(
+      await hre.ethers.provider.getBalance(tuffTokenDiamond.address))}] ETH`);
+
+    console.log(`[${tuffTokenDiamond.address}] has [${hre.ethers.utils.formatEther(
+      await (await getWETH9Contract()).balanceOf(tuffTokenDiamond.address))}] WETH`);
+
+    console.log(`[${tuffTokenDiamond.address}] has [${hre.ethers.utils.formatEther(
+      await tuffTokenDiamond.balanceOf(tuffTokenDiamond.address))}] TUFF`);
 }
 
 module.exports = async () => {
@@ -133,6 +160,7 @@ module.exports = async () => {
     const {contractOwner} = await hre.getNamedAccounts();
 
     const TuffTokenDiamond = await deployments.get("TuffTokenDiamond");
+    // @ts-ignore
     const tuffTokenDiamond = await hre.ethers.getContractAt(TuffTokenDiamond.abi, TuffTokenDiamond.address, contractOwner);
     const uniswapV3Factory = await hre.ethers.getContractAt("UniswapV3Factory", consts("UNISWAP_V3_FACTORY_ADDR"));
 
