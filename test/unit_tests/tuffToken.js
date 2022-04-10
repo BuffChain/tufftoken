@@ -237,17 +237,17 @@ describe("TuffToken", function () {
         // Make transaction from first account to second
         await tuffTokenDiamond.connect(sender).transfer(receiver.address, amount);
 
-        // Get balances after transaction
-        const senderEndingBalanceAfterFirstTransfer = parseFloat(await tuffTokenDiamond.balanceOf(sender.address));
-        const receiverEndingBalanceAfterFirstTransfer = parseFloat(await tuffTokenDiamond.balanceOf(receiver.address));
+        // Get ending balances after transaction
+        const senderEndingBalance = parseFloat(await tuffTokenDiamond.balanceOf(sender.address));
+        const receiverEndingBalance = parseFloat(await tuffTokenDiamond.balanceOf(receiver.address));
 
         // Get fees
         const takeFee = !isTokenMatured;
         const farmFeeAmount = await tuffTokenDiamond.calculateFarmFee(amount, takeFee);
 
         // Then determine if fees were properly taken
-        expect(senderEndingBalanceAfterFirstTransfer).to.equal(senderStartingBalance - amount, "Amount wasn't correctly taken from the sender");
-        expect(receiverEndingBalanceAfterFirstTransfer).to.equal(receiverStartingBalance + amount - farmFeeAmount, "Amount wasn't correctly sent to the receiver");
+        expect(senderEndingBalance).to.equal(senderStartingBalance - amount, "Amount wasn't correctly taken from the sender");
+        expect(receiverEndingBalance).to.equal(receiverStartingBalance + amount - farmFeeAmount, "Amount wasn't correctly sent to the receiver");
 
     }
 
