@@ -71,7 +71,7 @@ the changes occurred in the mainnet enviroment.
 
 Before we can start modeling, we need the "future" tx data that we will be replaying for the local network. We have 
 created a convenient download and serializer hardhat task to handle this for you. It requires two parameters where you 
-specify the range of blocks you want to fetch. Note that the values cannot exceed the `blockNumber` configured in `hardhat.config.js`, 
+specify the range of blocks you want to fetch. Note that the values cannot exceed the `blockNumber` configured in `hardhat.config.ts`, 
 as hardhat relies on that forked, archival block data to create the local network; from which we fetch that tx data 
 from.
 ```
@@ -91,7 +91,7 @@ ethereumetl export_blocks_and_transactions --start-block ${START_BLOCK_NUM} --en
 ```
 
 With the block txs downloaded, we must now configure hardhat's network to start at the appropriate block. Using the 
-example from above, we would update the `blockNumber` configured in `hardhat.config.js` to 13302359 (one less than the 
+example from above, we would update the `blockNumber` configured in `hardhat.config.ts` to 13302359 (one less than the 
 start block number). We do this because then we will deploy the contract, and then apply the txs we just fetched.
 
 ## Deploying
