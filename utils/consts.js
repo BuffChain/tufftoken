@@ -6,6 +6,9 @@ console.log(`Using [${networkName}] network config`)
 
 let constsMap = {
     kovan: {
+
+        DEV_WALLET_ADDR: "0x4d5031A3BF5b4828932D0e1C3006cC860b97aC3c",
+
         //Network related
         BLOCKTIME: 4, //seconds
 
@@ -33,6 +36,10 @@ let constsMap = {
         TUFF_STARTING_PRICE: 0.00000313875 // todo: LP pool may impact whether this needs to be a constant or function
     },
     mainnet: {
+
+        // TODO update when sig wallet is created
+        DEV_WALLET_ADDR: "0x4d5031A3BF5b4828932D0e1C3006cC860b97aC3c",
+
         //Network related
         BLOCKTIME: 13, //seconds
 

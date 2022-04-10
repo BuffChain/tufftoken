@@ -33,6 +33,7 @@ contract TuffToken is Context, IERC20 {
         uint8 decimals,
         uint256 farmFee,
         uint256 devFee,
+        address devWalletAddress,
         uint256 totalSupply
     ) public {
         require(
@@ -53,6 +54,7 @@ contract TuffToken is Context, IERC20 {
         ss.decimals = decimals;
         ss.farmFee = farmFee;
         ss.devFee = devFee;
+        ss.devWalletAddress = devWalletAddress;
         ss.totalSupply = totalSupply * 10**ss.decimals;
 
         //Set owner balancer and exclude from fees
@@ -111,6 +113,24 @@ contract TuffToken is Context, IERC20 {
     function setDevFee(uint256 _devFee) public tuffTokenInitLock {
         TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
         ss.devFee = _devFee;
+    }
+
+    function getDevWalletAddress()
+        public
+        view
+        tuffTokenInitLock
+        returns (address)
+    {
+        TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
+        return ss.devWalletAddress;
+    }
+
+    function setDevWalletAddress(address _devWalletAddress)
+        public
+        tuffTokenInitLock
+    {
+        TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
+        ss.devWalletAddress = _devWalletAddress;
     }
 
     function balanceOf(address account)
@@ -294,7 +314,12 @@ contract TuffToken is Context, IERC20 {
         }
 
         uint256 farmFeeAmount = calculateFee(amount, ss.farmFee, takeFee);
-        uint256 devFeeAmount = calculateFee(amount, ss.devFee, takeFee);
+
+        uint256 devFeeAmount = 0;
+        if (ss.devFee != 0 && ss.devWalletAddress != address(0)) {
+            devFeeAmount = calculateFee(amount, ss.devFee, takeFee);
+        }
+
         uint256 totalFeeAmount = farmFeeAmount.add(devFeeAmount);
         uint256 transferAmount = amount.sub(totalFeeAmount);
 
@@ -302,11 +327,18 @@ contract TuffToken is Context, IERC20 {
         ss.balances[to] = ss.balances[to].add(transferAmount);
 
         ss.balances[address(this)] = ss.balances[address(this)].add(
-            totalFeeAmount
+            farmFeeAmount
         );
 
         emit Transfer(from, to, transferAmount);
-        emit Transfer(from, address(this), totalFeeAmount);
+        emit Transfer(from, address(this), farmFeeAmount);
+
+        if (devFeeAmount != 0) {
+            ss.balances[ss.devWalletAddress] = ss
+                .balances[ss.devWalletAddress]
+                .add(devFeeAmount);
+            emit Transfer(from, ss.devWalletAddress, devFeeAmount);
+        }
     }
 
     function burn(address account, uint256 amount) public tuffTokenInitLock {

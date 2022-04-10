@@ -39,6 +39,7 @@ module.exports = async () => {
             TOKEN_DECIMALS,
             TOKEN_FARM_FEE,
             TOKEN_DEV_FEE,
+            consts("DEV_WALLET_ADDR"),
             TOKEN_TOTAL_SUPPLY
         );
         logDeploymentTx("Initialized TuffToken:", initTx);

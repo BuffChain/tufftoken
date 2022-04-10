@@ -16,6 +16,7 @@ library TuffTokenLib {
         uint8 decimals;
         uint256 farmFee;
         uint256 devFee;
+        address devWalletAddress;
         uint256 totalSupply;
     }
 
