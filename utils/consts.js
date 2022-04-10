@@ -69,6 +69,15 @@ function consts(constsKey) {
 }
 
 //Network agnostic constants
+module.exports.TOKEN_NAME = 'TuffToken';
+module.exports.TOKEN_SYMBOL = 'TUFF';
+module.exports.TOKEN_DECIMALS = 9;
+module.exports.TOKEN_FARM_FEE = 10;
+module.exports.TOKEN_DEV_FEE = 1;
+module.exports.TOKEN_TOTAL_SUPPLY = 1000000000;
+
+module.exports.TOKEN_DAYS_UNTIL_MATURITY = 6 * 365;
+
 module.exports.UNISWAP_POOL_BASE_FEE = 3000;
 
 module.exports.consts = consts;

@@ -15,6 +15,7 @@ library TuffTokenLib {
         string symbol;
         uint8 decimals;
         uint256 farmFee;
+        uint256 devFee;
         uint256 totalSupply;
     }
 

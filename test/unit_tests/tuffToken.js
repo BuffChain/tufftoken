@@ -25,13 +25,27 @@ describe("TuffToken", function () {
     });
 
     it('should calculate farm fee amount with take fee true', async () => {
-        const feeAmount = await tuffTokenDiamond.calculateFarmFee(100, true);
+        const farmFee = await tuffTokenDiamond.getFarmFee();
+        const feeAmount = await tuffTokenDiamond.calculateFee(100, farmFee, true);
         expect(feeAmount).to.equal(10, "incorrect farm fee amount");
     });
 
     it('should calculate farm fee amount with take fee false', async () => {
-        const feeAmount = await tuffTokenDiamond.calculateFarmFee(100, false);
+        const farmFee = await tuffTokenDiamond.getFarmFee();
+        const feeAmount = await tuffTokenDiamond.calculateFee(100, farmFee, false);
         expect(feeAmount).to.equal(0, "incorrect farm fee amount");
+    });
+
+    it('should calculate dev fee amount with take fee true', async () => {
+        const devFee = await tuffTokenDiamond.getDevFee();
+        const feeAmount = await tuffTokenDiamond.calculateFee(100, devFee, true);
+        expect(feeAmount).to.equal(1, "incorrect dev fee amount");
+    });
+
+    it('should calculate dev fee amount with take fee false', async () => {
+        const devFee = await tuffTokenDiamond.getDevFee();
+        const feeAmount = await tuffTokenDiamond.calculateFee(100, devFee, false);
+        expect(feeAmount).to.equal(0, "incorrect dev fee amount");
     });
 
     it('should exclude from fees', async () => {
@@ -219,6 +233,14 @@ describe("TuffToken", function () {
         expect(receiverEndingBalance).to.equal(receiverStartingBalance + amount, "Amount wasn't correctly sent to the receiver");
     });
 
+    async function getTotalFee(amount, takeFee) {
+        const farmFee = await tuffTokenDiamond.getFarmFee();
+        const devFee = await tuffTokenDiamond.getDevFee();
+        const farmFeeAmount = await tuffTokenDiamond.calculateFee(amount, farmFee, takeFee);
+        const devFeeAmount = await tuffTokenDiamond.calculateFee(amount, devFee, takeFee);
+        return parseFloat(farmFeeAmount) + parseFloat(devFeeAmount);
+    }
+
     async function assetTransferBothIncludedInFee(sender, receiver, amount, isTokenMatured) {
         // Setup sender account
         await tuffTokenDiamond.includeInFee(sender.address);
@@ -243,11 +265,11 @@ describe("TuffToken", function () {
 
         // Get fees
         const takeFee = !isTokenMatured;
-        const farmFeeAmount = await tuffTokenDiamond.calculateFarmFee(amount, takeFee);
+        const totalFeeAmount = await getTotalFee(amount, takeFee);
 
         // Then determine if fees were properly taken
         expect(senderEndingBalance).to.equal(senderStartingBalance - amount, "Amount wasn't correctly taken from the sender");
-        expect(receiverEndingBalance).to.equal(receiverStartingBalance + amount - farmFeeAmount, "Amount wasn't correctly sent to the receiver");
+        expect(receiverEndingBalance).to.equal(receiverStartingBalance + amount - totalFeeAmount, "Amount wasn't correctly sent to the receiver");
 
     }
 
@@ -303,10 +325,10 @@ describe("TuffToken", function () {
         const receiverEndingBalance = parseFloat(await tuffTokenDiamond.balanceOf(receiver));
 
         // Get fees
-        const farmFeeAmount = await tuffTokenDiamond.calculateFarmFee(amount, true);
+        const totalFeeAmount = await getTotalFee(amount, true);
 
         // Then determine if fees were properly taken
         expect(senderEndingBalance).to.equal(senderStartingBalance - amount, "Amount wasn't correctly taken from the sender");
-        expect(receiverEndingBalance).to.equal(receiverStartingBalance + amount - farmFeeAmount, "Amount wasn't correctly sent to the receiver");
+        expect(receiverEndingBalance).to.equal(receiverStartingBalance + amount - totalFeeAmount, "Amount wasn't correctly sent to the receiver");
     });
 });

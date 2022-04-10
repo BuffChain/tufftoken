@@ -26,7 +26,15 @@ contract TuffToken is Context, IERC20 {
 
     //Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
     // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
-    function initTuffToken(address initialOwner) public {
+    function initTuffToken(
+        address initialOwner,
+        string memory name,
+        string memory symbol,
+        uint8 decimals,
+        uint256 farmFee,
+        uint256 devFee,
+        uint256 totalSupply
+    ) public {
         require(
             !isTuffTokenInit(),
             string(
@@ -40,11 +48,12 @@ contract TuffToken is Context, IERC20 {
 
         TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
 
-        ss.name = "TuffToken";
-        ss.symbol = "TUFF";
-        ss.decimals = 9;
-        ss.farmFee = 10;
-        ss.totalSupply = 1000000000 * 10**ss.decimals;
+        ss.name = name;
+        ss.symbol = symbol;
+        ss.decimals = decimals;
+        ss.farmFee = farmFee;
+        ss.devFee = devFee;
+        ss.totalSupply = totalSupply * 10**ss.decimals;
 
         //Set owner balancer and exclude from fees
         ss.balances[initialOwner] = ss.totalSupply;
@@ -92,6 +101,16 @@ contract TuffToken is Context, IERC20 {
     function setFarmFee(uint256 _farmFee) public tuffTokenInitLock {
         TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
         ss.farmFee = _farmFee;
+    }
+
+    function getDevFee() public view tuffTokenInitLock returns (uint256) {
+        TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
+        return ss.devFee;
+    }
+
+    function setDevFee(uint256 _devFee) public tuffTokenInitLock {
+        TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
+        ss.devFee = _devFee;
     }
 
     function balanceOf(address account)
@@ -207,19 +226,18 @@ contract TuffToken is Context, IERC20 {
         return ss.isExcludedFromFee[account];
     }
 
-    function calculateFarmFee(uint256 _amount, bool takeFee)
-        public
-        view
-        tuffTokenInitLock
-        returns (uint256)
-    {
-        if (!takeFee) {
+    function calculateFee(
+        uint256 _amount,
+        uint256 feePercent,
+        bool takeFee
+    ) public view tuffTokenInitLock returns (uint256) {
+        if (!takeFee || feePercent == 0) {
             return 0;
         }
 
         TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
 
-        uint256 fee = _amount.mul(ss.farmFee).div(10**2);
+        uint256 fee = _amount.mul(feePercent).div(10**2);
         require(
             fee > 0,
             string(
@@ -275,18 +293,20 @@ contract TuffToken is Context, IERC20 {
             takeFee = false;
         }
 
-        uint256 farmFeeAmount = calculateFarmFee(amount, takeFee);
-        uint256 transferAmount = amount.sub(farmFeeAmount);
+        uint256 farmFeeAmount = calculateFee(amount, ss.farmFee, takeFee);
+        uint256 devFeeAmount = calculateFee(amount, ss.devFee, takeFee);
+        uint256 totalFeeAmount = farmFeeAmount.add(devFeeAmount);
+        uint256 transferAmount = amount.sub(totalFeeAmount);
 
         ss.balances[from] = ss.balances[from].sub(amount);
         ss.balances[to] = ss.balances[to].add(transferAmount);
 
         ss.balances[address(this)] = ss.balances[address(this)].add(
-            farmFeeAmount
+            totalFeeAmount
         );
 
         emit Transfer(from, to, transferAmount);
-        emit Transfer(from, address(this), farmFeeAmount);
+        emit Transfer(from, address(this), totalFeeAmount);
     }
 
     function burn(address account, uint256 amount) public tuffTokenInitLock {

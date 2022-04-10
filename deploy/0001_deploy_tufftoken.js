@@ -2,7 +2,9 @@
 
 const hre = require("hardhat");
 
-const {consts, UNISWAP_POOL_BASE_FEE} = require("../utils/consts");
+const {consts, UNISWAP_POOL_BASE_FEE, TOKEN_NAME, TOKEN_SYMBOL, TOKEN_DECIMALS, TOKEN_FARM_FEE, TOKEN_DEV_FEE,
+    TOKEN_TOTAL_SUPPLY, TOKEN_DAYS_UNTIL_MATURITY
+} = require("../utils/consts");
 const {logDeploymentTx} = require("../utils/deployment_helpers");
 
 module.exports = async () => {
@@ -30,7 +32,15 @@ module.exports = async () => {
     console.log(`TuffTokenDiamond address [${tuffTokenAddress}]`);
 
     if (!await tuffTokenDiamondContract.isTuffTokenInit()) {
-        let initTx = await tuffTokenDiamondContract.initTuffToken(contractOwner);
+        let initTx = await tuffTokenDiamondContract.initTuffToken(
+            contractOwner,
+            TOKEN_NAME,
+            TOKEN_SYMBOL,
+            TOKEN_DECIMALS,
+            TOKEN_FARM_FEE,
+            TOKEN_DEV_FEE,
+            TOKEN_TOTAL_SUPPLY
+        );
         logDeploymentTx("Initialized TuffToken:", initTx);
     }
 
@@ -57,7 +67,7 @@ module.exports = async () => {
     }
 
     if (!await tuffTokenDiamondContract.isTokenMaturityInit()) {
-        let initTx = await tuffTokenDiamondContract.initTokenMaturity();
+        let initTx = await tuffTokenDiamondContract.initTokenMaturity(TOKEN_DAYS_UNTIL_MATURITY);
         logDeploymentTx("Initialized TokenMaturity:", initTx);
     }
 

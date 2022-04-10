@@ -139,7 +139,10 @@ contract AaveLPManager is Context {
         );
 
         ss.supportedTokens.push(tokenAddr);
-        ss.totalTargetWeight = SafeMath.add(ss.totalTargetWeight, targetPercentage);
+        ss.totalTargetWeight = SafeMath.add(
+            ss.totalTargetWeight,
+            targetPercentage
+        );
         ss.tokenMetadata[tokenAddr].targetPercent = targetPercentage;
         //TODO: Remove this to save gas? This cost gas to save, while reading it is a view function, so gas free
         ss.tokenMetadata[tokenAddr].aToken = aTokenAddr;
@@ -152,7 +155,10 @@ contract AaveLPManager is Context {
             tokenAddr
         );
         if (_isSupportedToken) {
-            ss.totalTargetWeight = SafeMath.sub(ss.totalTargetWeight, ss.tokenMetadata[tokenAddr].targetPercent);
+            ss.totalTargetWeight = SafeMath.sub(
+                ss.totalTargetWeight,
+                ss.tokenMetadata[tokenAddr].targetPercent
+            );
 
             //Remove the token without preserving order
             ss.supportedTokens[_tokenIndex] = ss.supportedTokens[
@@ -180,8 +186,14 @@ contract AaveLPManager is Context {
     ) public aaveInitLock {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
 
-        ss.totalTargetWeight = SafeMath.sub(ss.totalTargetWeight, ss.tokenMetadata[tokenAddr].targetPercent);
-        ss.totalTargetWeight = SafeMath.add(ss.totalTargetWeight, targetPercentage);
+        ss.totalTargetWeight = SafeMath.sub(
+            ss.totalTargetWeight,
+            ss.tokenMetadata[tokenAddr].targetPercent
+        );
+        ss.totalTargetWeight = SafeMath.add(
+            ss.totalTargetWeight,
+            targetPercentage
+        );
 
         ss.tokenMetadata[tokenAddr].targetPercent = targetPercentage;
     }
@@ -342,20 +354,38 @@ contract AaveLPManager is Context {
         //Then, loop through again to balance tokens
         for (uint256 i = 0; i < supportedTokens.length; i++) {
             //Calculate target percentage
-            uint256 tokenTargetWeight = getAaveTokenTargetedPercentage(supportedTokens[i]);
-            uint256 tokenTargetPercentage = SafeMath.div(tokenTargetWeight, ss.totalTargetWeight);
+            uint256 tokenTargetWeight = getAaveTokenTargetedPercentage(
+                supportedTokens[i]
+            );
+            uint256 tokenTargetPercentage = SafeMath.div(
+                tokenTargetWeight,
+                ss.totalTargetWeight
+            );
 
             //Calculate actual percentage
-            uint256 tokenActualPercentage = SafeMath.div(tokensValueInWeth[i], totalBalanceInWeth);
+            uint256 tokenActualPercentage = SafeMath.div(
+                tokensValueInWeth[i],
+                totalBalanceInWeth
+            );
 
-            require(tokenTargetPercentage < uint(-1), "Cannot cast tokenTargetPercentage - out of range of int max");
-            require(tokenActualPercentage < uint(-1), "Cannot cast tokenActualPercentage - out of range of int max");
+            require(
+                tokenTargetPercentage < uint256(-1),
+                "Cannot cast tokenTargetPercentage - out of range of int max"
+            );
+            require(
+                tokenActualPercentage < uint256(-1),
+                "Cannot cast tokenActualPercentage - out of range of int max"
+            );
 
             //Only balance if token is under-allocated more than our buffer amount
-            int256 iPercentageDiff = int(tokenTargetPercentage) - int(tokenActualPercentage);
+            int256 iPercentageDiff = int256(tokenTargetPercentage) -
+                int256(tokenActualPercentage);
             if (iPercentageDiff > 0) {
                 //Convert percentage to WETH value
-                uint256 balanceOutAmountInWeth = SafeMath.mul(totalBalanceInWeth, uint(iPercentageDiff));
+                uint256 balanceOutAmountInWeth = SafeMath.mul(
+                    totalBalanceInWeth,
+                    uint256(iPercentageDiff)
+                );
 
                 IUniswapManager(address(this)).swapExactInputSingle(
                     supportedTokens[i],
