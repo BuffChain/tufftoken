@@ -262,8 +262,7 @@ describe("TuffToken", function () {
     it('should send token correctly - both included in fees - token has matured', async () => {
         const sender = accounts[0];
         const receiver = accounts[1];
-        const senderBalance = 1000000;
-        const amountToSend = 500000;
+        const amount = 1000000;
 
         // assert no fees taken after token maturity
         const latestBlock = await hre.ethers.provider.getBlock("latest")
@@ -274,7 +273,7 @@ describe("TuffToken", function () {
 
         expect(isTokenMatured).to.equal(true, "should have reached maturity");
 
-        await assetTransferBothIncludedInFee(sender, receiver, senderBalance, amountToSend, isTokenMatured);
+        await assetTransferBothIncludedInFee(sender, receiver, amount, isTokenMatured);
 
     });
 
