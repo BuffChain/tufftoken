@@ -8,7 +8,7 @@ const {BigNumber, FixedNumber} = require("ethers");
 
 const utils = require("../../utils/test_utils");
 const {assertDepositToAave} = require("./aaveLPManager");
-const {consts, UNISWAP_POOL_BASE_FEE} = require("../../utils/consts");
+const {consts, UNISWAP_POOL_BASE_FEE, TOKEN_DAYS_UNTIL_MATURITY} = require("../../utils/consts");
 
 describe('TokenMaturity', function () {
 
@@ -30,6 +30,18 @@ describe('TokenMaturity', function () {
     beforeEach(async function () {
         const {TuffTokenDiamond} = await hre.deployments.fixture();
         tuffTokenDiamond = await hre.ethers.getContractAt(TuffTokenDiamond.abi, TuffTokenDiamond.address, owner);
+    });
+
+    it('should get default token maturity', async () => {
+
+        const latestBlock = await hre.ethers.provider.getBlock("latest")
+        const latestTimestamp = latestBlock.timestamp;
+        const secondsPerDay = 86400;
+
+        const daysUntilMaturity = Math.ceil((parseInt(await tuffTokenDiamond.getContractMaturityTimestamp()) - latestTimestamp) / secondsPerDay);
+
+        expect(daysUntilMaturity).to.equal(TOKEN_DAYS_UNTIL_MATURITY, "unexpected days until maturity");
+
     });
 
 

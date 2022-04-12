@@ -3,6 +3,7 @@
 const {expect} = require("chai");
 const hre = require("hardhat");
 const {TUFF_TOTAL_SUPPLY} = require('../../utils/test_utils')
+const {consts} = require("../../utils/consts");
 
 describe("TuffToken", function () {
 
@@ -25,13 +26,27 @@ describe("TuffToken", function () {
     });
 
     it('should calculate farm fee amount with take fee true', async () => {
-        const feeAmount = await tuffTokenDiamond.calculateFarmFee(100, true);
+        const farmFee = await tuffTokenDiamond.getFarmFee();
+        const feeAmount = await tuffTokenDiamond.calculateFee(100, farmFee, true);
         expect(feeAmount).to.equal(10, "incorrect farm fee amount");
     });
 
     it('should calculate farm fee amount with take fee false', async () => {
-        const feeAmount = await tuffTokenDiamond.calculateFarmFee(100, false);
+        const farmFee = await tuffTokenDiamond.getFarmFee();
+        const feeAmount = await tuffTokenDiamond.calculateFee(100, farmFee, false);
         expect(feeAmount).to.equal(0, "incorrect farm fee amount");
+    });
+
+    it('should calculate dev fee amount with take fee true', async () => {
+        const devFee = await tuffTokenDiamond.getDevFee();
+        const feeAmount = await tuffTokenDiamond.calculateFee(100, devFee, true);
+        expect(feeAmount).to.equal(1, "incorrect dev fee amount");
+    });
+
+    it('should calculate dev fee amount with take fee false', async () => {
+        const devFee = await tuffTokenDiamond.getDevFee();
+        const feeAmount = await tuffTokenDiamond.calculateFee(100, devFee, false);
+        expect(feeAmount).to.equal(0, "incorrect dev fee amount");
     });
 
     it('should exclude from fees', async () => {
@@ -219,11 +234,23 @@ describe("TuffToken", function () {
         expect(receiverEndingBalance).to.equal(receiverStartingBalance + amount, "Amount wasn't correctly sent to the receiver");
     });
 
-    it('should send token correctly - both included in fees', async () => {
-        const amount = 10000000;
+    async function getFees(amount, takeFee) {
+        const farmFee = await tuffTokenDiamond.getFarmFee();
+        const devFee = await tuffTokenDiamond.getDevFee();
+        const farmFeeAmount = await tuffTokenDiamond.calculateFee(amount, farmFee, takeFee);
+        const devFeeAmount = await tuffTokenDiamond.calculateFee(amount, devFee, takeFee);
+        return {
+            totalFeeAmount: parseFloat(farmFeeAmount) + parseFloat(devFeeAmount),
+            farmFeeAmount,
+            devFeeAmount
+        }
+    }
+
+    async function assetTransferBothIncludedInFee(sender, receiver, amount, isTokenMatured) {
+
+        const contractStartingBalance = parseFloat(await tuffTokenDiamond.balanceOf(tuffTokenDiamond.address));
 
         // Setup sender account
-        const sender = accounts[0];
         await tuffTokenDiamond.includeInFee(sender.address);
         expect(await tuffTokenDiamond.isExcludedFromFee(sender.address)).to.equal(false, "account should not be excluded from fee");
         // Give sender account tokens to send
@@ -232,7 +259,6 @@ describe("TuffToken", function () {
         expect(senderStartingBalance).to.equal(amount);
 
         // Setup receiver account
-        const receiver = accounts[1];
         await tuffTokenDiamond.includeInFee(receiver.address);
         expect(await tuffTokenDiamond.isExcludedFromFee(receiver.address)).to.equal(false, "account should not be excluded from fee");
         const receiverStartingBalance = parseFloat(await tuffTokenDiamond.balanceOf(receiver.address));
@@ -246,11 +272,45 @@ describe("TuffToken", function () {
         const receiverEndingBalance = parseFloat(await tuffTokenDiamond.balanceOf(receiver.address));
 
         // Get fees
-        const farmFeeAmount = await tuffTokenDiamond.calculateFarmFee(amount, true);
+        const takeFee = !isTokenMatured;
+        const {totalFeeAmount, farmFeeAmount, devFeeAmount} = await getFees(amount, takeFee);
 
         // Then determine if fees were properly taken
         expect(senderEndingBalance).to.equal(senderStartingBalance - amount, "Amount wasn't correctly taken from the sender");
-        expect(receiverEndingBalance).to.equal(receiverStartingBalance + amount - farmFeeAmount, "Amount wasn't correctly sent to the receiver");
+        expect(receiverEndingBalance).to.equal(receiverStartingBalance + amount - totalFeeAmount, "Amount wasn't correctly sent to the receiver");
+
+        const devWalletEndingBalance = parseFloat(await tuffTokenDiamond.balanceOf(consts("DEV_WALLET_ADDR")));
+        expect(devWalletEndingBalance).to.equal(devFeeAmount, "Fee wasn't correctly sent to dev wallet");
+
+        const contractEndingBalance = parseFloat(await tuffTokenDiamond.balanceOf(tuffTokenDiamond.address));
+        expect(contractEndingBalance).to.equal(contractStartingBalance + parseFloat(farmFeeAmount), "Fee wasn't correctly sent to contract wallet");
+    }
+
+    it('should send token correctly - both included in fees - token has not matured', async () => {
+        const sender = accounts[0];
+        const receiver = accounts[1];
+        const amount = 1000000;
+        const isTokenMatured = false;
+        await assetTransferBothIncludedInFee(sender, receiver, amount, isTokenMatured);
+    });
+
+    it('should send token correctly - both included in fees - token has matured', async () => {
+        const sender = accounts[0];
+        const receiver = accounts[1];
+        const senderBalance = 1000000;
+        const amountToSend = 500000;
+
+        // assert no fees taken after token maturity
+        const latestBlock = await hre.ethers.provider.getBlock("latest")
+        let latestTimestamp = latestBlock.timestamp;
+        await tuffTokenDiamond.setContractMaturityTimestamp(latestTimestamp);
+
+        const isTokenMatured = await tuffTokenDiamond.isTokenMatured(latestTimestamp);
+
+        expect(isTokenMatured).to.equal(true, "should have reached maturity");
+
+        await assetTransferBothIncludedInFee(sender, receiver, senderBalance, amountToSend, isTokenMatured);
+
     });
 
     it('should send token correctly on behalf of other account', async () => {
@@ -278,10 +338,10 @@ describe("TuffToken", function () {
         const receiverEndingBalance = parseFloat(await tuffTokenDiamond.balanceOf(receiver));
 
         // Get fees
-        const farmFeeAmount = await tuffTokenDiamond.calculateFarmFee(amount, true);
+        const {totalFeeAmount} = await getFees(amount, true);
 
         // Then determine if fees were properly taken
         expect(senderEndingBalance).to.equal(senderStartingBalance - amount, "Amount wasn't correctly taken from the sender");
-        expect(receiverEndingBalance).to.equal(receiverStartingBalance + amount - farmFeeAmount, "Amount wasn't correctly sent to the receiver");
+        expect(receiverEndingBalance).to.equal(receiverStartingBalance + amount - totalFeeAmount, "Amount wasn't correctly sent to the receiver");
     });
 });

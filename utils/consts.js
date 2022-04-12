@@ -6,6 +6,9 @@ console.log(`Using [${networkName}] network config`)
 
 let constsMap = {
     kovan: {
+
+        DEV_WALLET_ADDR: "0x4d5031A3BF5b4828932D0e1C3006cC860b97aC3c",
+
         //Network related
         BLOCKTIME: 4, //seconds
 
@@ -33,6 +36,10 @@ let constsMap = {
         TUFF_STARTING_PRICE: 0.00000313875 // todo: LP pool may impact whether this needs to be a constant or function
     },
     mainnet: {
+
+        // TODO update when sig wallet is created
+        DEV_WALLET_ADDR: "0x4d5031A3BF5b4828932D0e1C3006cC860b97aC3c",
+
         //Network related
         BLOCKTIME: 13, //seconds
 
@@ -69,6 +76,15 @@ function consts(constsKey) {
 }
 
 //Network agnostic constants
+module.exports.TOKEN_NAME = 'TuffToken';
+module.exports.TOKEN_SYMBOL = 'TUFF';
+module.exports.TOKEN_DECIMALS = 9;
+module.exports.TOKEN_FARM_FEE = 10;
+module.exports.TOKEN_DEV_FEE = 1;
+module.exports.TOKEN_TOTAL_SUPPLY = 1000000000;
+
+module.exports.TOKEN_DAYS_UNTIL_MATURITY = 6 * 365;
+
 module.exports.UNISWAP_POOL_BASE_FEE = 3000;
 
 module.exports.consts = consts;

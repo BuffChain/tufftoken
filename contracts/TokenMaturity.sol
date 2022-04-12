@@ -27,7 +27,7 @@ contract TokenMaturity {
 
     using SafeMath for uint256;
 
-    function initTokenMaturity() public {
+    function initTokenMaturity(uint256 daysUntilMaturity) public {
         require(
             !isTokenMaturityInit(),
             string(
@@ -41,7 +41,9 @@ contract TokenMaturity {
 
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
 
-        ss.contractMaturityTimestamp = block.timestamp + (6 * 365 days);
+        ss.contractMaturityTimestamp =
+            block.timestamp +
+            (daysUntilMaturity * 1 days);
 
         ss.isTreasuryLiquidated = false;
 
@@ -66,6 +68,16 @@ contract TokenMaturity {
     function isTokenMaturityInit() public view returns (bool) {
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
         return ss.isInit;
+    }
+
+    function getContractMaturityTimestamp()
+        public
+        view
+        tokenMaturityInitLock
+        returns (uint256)
+    {
+        TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
+        return ss.contractMaturityTimestamp;
     }
 
     function setContractMaturityTimestamp(uint256 timestamp)
@@ -229,7 +241,7 @@ contract TokenMaturity {
         );
 
         liquidateTreasury();
-        
+
         if (!getIsTreasuryLiquidated()) {
             return;
         }
@@ -245,7 +257,6 @@ contract TokenMaturity {
     }
 
     function liquidateTreasury() public tokenMaturityInitLock {
-
         bool allAssetsLiquidated = true;
 
         if (!IAaveLPManager(address(this)).liquidateAaveTreasury()) {
@@ -256,7 +267,6 @@ contract TokenMaturity {
             .getAllAaveSupportedTokens();
 
         for (uint256 i = 0; i < supportedTokens.length; i++) {
-
             uint256 balance = IERC20(supportedTokens[i]).balanceOf(
                 address(this)
             );
@@ -268,7 +278,6 @@ contract TokenMaturity {
             if (swapForWETH(supportedTokens[i], balance) > 0) {
                 allAssetsLiquidated = false;
             }
-
         }
 
         if (unwrapWETH() > 0) {
@@ -278,14 +287,16 @@ contract TokenMaturity {
         if (allAssetsLiquidated) {
             setIsTreasuryLiquidated(true);
         }
-
     }
 
     //    swaps for WETH and returns new asset balance
-    function swapForWETH(address token, uint256 amount) public tokenMaturityInitLock returns (uint256) {
-
+    function swapForWETH(address token, uint256 amount)
+        public
+        tokenMaturityInitLock
+        returns (uint256)
+    {
         UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
-        .getState();
+            .getState();
 
         UniswapManager uniswapManager = UniswapManager(address(this));
 
@@ -296,9 +307,7 @@ contract TokenMaturity {
             amount
         );
 
-        return IERC20(token).balanceOf(
-            address(this)
-        );
+        return IERC20(token).balanceOf(address(this));
     }
 
     //    unwraps WETH and returns remaining WETH balance
