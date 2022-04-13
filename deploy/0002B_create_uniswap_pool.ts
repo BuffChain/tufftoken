@@ -156,8 +156,10 @@ async function printTuffTokenTreasury(tuffTokenDiamond: Contract) {
 }
 
 module.exports = async () => {
+    console.log("[DEPLOY][v0002B] - Creating Uniswap pool and providing liquidity");
+
     const {deployments, getNamedAccounts} = hre;
-    const {contractOwner} = await hre.getNamedAccounts();
+    const {contractOwner} = await getNamedAccounts();
 
     const TuffTokenDiamond = await deployments.get("TuffTokenDiamond");
     // @ts-ignore
@@ -168,4 +170,4 @@ module.exports = async () => {
     await addLiquidityToPool(uniswapV3Pool, tuffTokenDiamond);
 };
 
-module.exports.tags = ['v0002'];
+module.exports.tags = ['v0002B'];

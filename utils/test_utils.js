@@ -118,22 +118,7 @@ async function runCallbackImpersonatingAcct(acct, callbackFn) {
         });
 }
 
-/**
- * General method to procure ETH, WETH, and DAI to a specific address
- * @param fromAcct:
- * @param toAddr
- * @param daiAmount
- * @returns {Promise<void>}
- */
-async function sendTokensToAddr(fromAcct, toAddr, daiAmount="") {
-    //Set up accounts and variables
-    const toAcct = await hre.ethers.getSigner(toAddr);
-    await transferETH(fromAcct, toAddr);
-    const expiryDate = Math.floor(Date.now() / 1000) + 60 * 20; //20 minutes from the current Unix time
-    const qtyInWETH = hre.ethers.utils.parseEther("20");
-
-    //Get smart contracts
-    const daiContract = await getDAIContract();
+async function swapEthForWeth(toAcct, qtyInWETH) {
     const weth9Contract = await getWETH9Contract();
     const uniswapSwapRouterContract = await hre.ethers.getContractAt(
         SwapRouterABI,
@@ -149,7 +134,28 @@ async function sendTokensToAddr(fromAcct, toAddr, daiAmount="") {
         await weth9Contract.connect(acct).approve(uniswapSwapRouterContract.address, qtyInWETH);
     });
 
+    return {weth9Contract, uniswapSwapRouterContract};
+}
+
+/**
+ * General method to procure ETH, WETH, and DAI to a specific address
+ * @param fromAcct:
+ * @param toAddr
+ * @param daiAmount
+ * @returns {Promise<void>}
+ */
+async function sendTokensToAddr(fromAcct, toAddr, daiAmount="") {
+    //Set up accounts and variables
+    const toAcct = await hre.ethers.getSigner(toAddr);
+    await transferETH(fromAcct, toAddr);
+    const expiryDate = Math.floor(Date.now() / 1000) + 60 * 20; //20 minutes from the current Unix time
+    const qtyInWETH = hre.ethers.utils.parseEther("20");
+
+    //Swap ETH for WETH
+    const {weth9Contract, uniswapSwapRouterContract} = await swapEthForWeth(toAcct, qtyInWETH);
+
     //If test specifies DAI amount, then give exact DAI amount, otherwise default to half of the WETH
+    const daiContract = await getDAIContract();
     if (daiAmount) {
         const outDAIQty = hre.ethers.utils.parseEther(daiAmount);
         await uniswapExactOutputSingle(weth9Contract, uniswapSwapRouterContract, toAcct, expiryDate, outDAIQty);
@@ -235,6 +241,7 @@ module.exports = {
     getADAIContract,
     transferETH,
     transferTUFF,
+    swapEthForWeth,
     runCallbackImpersonatingAcct,
     sendTokensToAddr,
     getSqrtPriceX96,

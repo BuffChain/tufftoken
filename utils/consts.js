@@ -2,7 +2,7 @@
 
 const hre = require("hardhat");
 const networkName = hre.network.name;
-console.log(`Using [${networkName}] network config`)
+console.log(`Using [${networkName}] network config`);
 
 let constsMap = {
     kovan: {

@@ -4,6 +4,8 @@ import hre from 'hardhat';
 const AccessControlABI = require('../artifacts/@openzeppelin/contracts/access/AccessControl.sol/AccessControl.json').abi;
 
 module.exports = async () => {
+    console.log("[DEPLOY][v0003] - Deploying TuffGov token");
+
     const {deployments, getNamedAccounts} = hre;
     const {deployer, contractOwner} = await getNamedAccounts();
 

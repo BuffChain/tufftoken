@@ -82,13 +82,13 @@ const config: HardhatUserConfig = {
     },
     networks: {
         hardhat: {
+            live: false,
             forking: {
                 url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMAPI_KEY}`,
 
                 //Feel free to update at any time. This is here to make local development and caching easier
                 blockNumber: 14411890
             },
-            // timeout: 30000,
 
             // mining: {
             //     auto: false,
@@ -96,9 +96,11 @@ const config: HardhatUserConfig = {
             // }
         },
         mainnet_cloudflare: {
+            live: false,
             url: "https://cloudflare-eth.com"
         },
         kovan: {
+            live: true,
             url: process.env.INFURA_URL,
             accounts: [process.env.ETH_ACCOUNT_PRIV_KEY || ""]
         }

@@ -6,6 +6,8 @@ const {consts, UNISWAP_POOL_BASE_FEE} = require("../utils/consts");
 const {logDeploymentTx} = require("../utils/deployment_helpers");
 
 module.exports = async () => {
+    console.log("[DEPLOY][v0001] - Deploying and initializing TuffTokenDiamond");
+
     const {deployments, getNamedAccounts} = hre;
     const {deployer, contractOwner} = await getNamedAccounts();
 
@@ -70,7 +72,6 @@ module.exports = async () => {
         );
         logDeploymentTx("Initialized UniswapManager:", initTx);
     }
-
 
     if (!await tuffTokenDiamondContract.isUniswapPriceConsumerInit()) {
         let initTx = await tuffTokenDiamondContract.initUniswapPriceConsumer(consts("UNISWAP_V3_FACTORY_ADDR"));
