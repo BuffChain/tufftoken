@@ -8,6 +8,7 @@ import {Percent, Token} from "@uniswap/sdk-core";
 import { getERC721EnumerableContract } from '../utils/test_utils';
 import {abi as NonfungiblePositionManagerABI} from '@uniswap/v3-periphery/artifacts/contracts/NonfungiblePositionManager.sol/NonfungiblePositionManager.json';
 import { NonfungiblePositionManager } from '../src/types';
+import {Address} from "hardhat-deploy/dist/types";
 
 const {consts, UNISWAP_POOL_BASE_FEE} = require("../utils/consts");
 const {logDeploymentTx} = require("../utils/deployment_helpers");
@@ -83,7 +84,7 @@ async function createPool(uniswapV3Factory: Contract, tuffTokenDiamond: Contract
     return uniswapV3Pool;
 }
 
-async function addLiquidityToPool(poolContract: Contract, tuffTokenDiamond: Contract) {
+async function addLiquidityToPool(poolContract: Contract, tuffTokenDiamond: Contract, contractOwner: Address) {
     const immutables = await getPoolImmutables(poolContract);
     const state = await getPoolState(poolContract);
 
@@ -95,7 +96,7 @@ async function addLiquidityToPool(poolContract: Contract, tuffTokenDiamond: Cont
     const tuffBalance = hre.ethers.utils.parseEther("1");
     const wethBalance = hre.ethers.utils.parseEther("1");
     console.log("-----STARTING BALANCES-----");
-    await printTuffTokenTreasury(tuffTokenDiamond);
+    await printContractOwnerBal(tuffTokenDiamond, contractOwner);
 
     const WETH9_TUFF_POOL = new Pool(
         WETH9,
@@ -117,8 +118,8 @@ async function addLiquidityToPool(poolContract: Contract, tuffTokenDiamond: Cont
     const nonfungiblePositionManager = await hre.ethers.getContractAt(
       NonfungiblePositionManagerABI, consts("UNISWAP_V3_NonfungiblePositionManager_ADDR")) as NonfungiblePositionManager;
 
-    const tuffTokenSigner = await hre.ethers.getSigner(tuffTokenDiamond.address);
-    await runCallbackImpersonatingAcct(tuffTokenSigner, async (acct: Signer) => {
+    const contractOwnerAcct = await hre.ethers.getSigner(contractOwner);
+    await runCallbackImpersonatingAcct(contractOwnerAcct, async (acct: Signer) => {
         const weth9Contract = await getWETH9Contract();
         await weth9Contract.connect(acct).approve(consts("UNISWAP_V3_NonfungiblePositionManager_ADDR"), hre.ethers.utils.parseEther("10").toString());
         await tuffTokenDiamond.connect(acct).approve(consts("UNISWAP_V3_NonfungiblePositionManager_ADDR"), hre.ethers.utils.parseEther("10").toString());
@@ -166,22 +167,22 @@ async function addLiquidityToPool(poolContract: Contract, tuffTokenDiamond: Cont
     });
 
     console.log("-----ENDING BALANCES-----");
-    await printTuffTokenTreasury(tuffTokenDiamond);
+    await printContractOwnerBal(tuffTokenDiamond, contractOwner);
 
     // await tuffTokenDiamond.approve(uniswapV3Pool.address, hre.ethers.constants.MaxUint256);
     // await (await getWETH9Contract()).approve(uniswapV3Pool.address, hre.ethers.constants.MaxUint256);
     // await uniswapV3Pool.mint(tuffTokenDiamond.address, -130000, -100000, hre.ethers.utils.parseEther("1"), []);
 }
 
-async function printTuffTokenTreasury(tuffTokenDiamond: Contract) {
-    console.log(`[${tuffTokenDiamond.address}] has [${hre.ethers.utils.formatEther(
-      await hre.ethers.provider.getBalance(tuffTokenDiamond.address))}] ETH`);
+async function printContractOwnerBal(tuffTokenDiamond: Contract, contractOwner: Address) {
+    console.log(`[${contractOwner}] has [${hre.ethers.utils.formatEther(
+      await hre.ethers.provider.getBalance(contractOwner))}] ETH`);
 
-    console.log(`[${tuffTokenDiamond.address}] has [${hre.ethers.utils.formatEther(
-      await (await getWETH9Contract()).balanceOf(tuffTokenDiamond.address))}] WETH`);
+    console.log(`[${contractOwner}] has [${hre.ethers.utils.formatEther(
+      await (await getWETH9Contract()).balanceOf(contractOwner))}] WETH`);
 
-    console.log(`[${tuffTokenDiamond.address}] has [${hre.ethers.utils.formatEther(
-      await tuffTokenDiamond.balanceOf(tuffTokenDiamond.address))}] TUFF`);
+    console.log(`[${contractOwner}] has [${hre.ethers.utils.formatEther(
+      await tuffTokenDiamond.balanceOf(contractOwner))}] TUFF`);
 }
 
 module.exports = async () => {
@@ -196,7 +197,7 @@ module.exports = async () => {
     const uniswapV3Factory = await hre.ethers.getContractAt("UniswapV3Factory", consts("UNISWAP_V3_FACTORY_ADDR"));
 
     const uniswapV3Pool = await createPool(uniswapV3Factory, tuffTokenDiamond);
-    await addLiquidityToPool(uniswapV3Pool, tuffTokenDiamond);
+    await addLiquidityToPool(uniswapV3Pool, tuffTokenDiamond, contractOwner);
 };
 
 module.exports.tags = ['v0002B'];

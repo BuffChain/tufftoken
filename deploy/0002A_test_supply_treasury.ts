@@ -6,30 +6,28 @@ import {swapEthForWeth} from '../utils/test_utils';
 
 module.exports = async () => {
     if (hre.network.live) {
-        console.log("[DEPLOY][v0002A] - Deploying to a live network, not supplying treasury with ETH or WETH");
+        console.log("[DEPLOY][v0002A] - Deploying to a live network, not supplying contractOwner with ETH or WETH");
         return;
     } else {
-        console.log("[DEPLOY][v0002A] - Supplying ETH and WETH to TUFF's treasury contract");
+        console.log("[DEPLOY][v0002A] - Supplying ETH and WETH to contractOwner");
     }
 
-    const {deployments, getNamedAccounts} = hre;
-    const {deployer} = await getNamedAccounts();
+    const {getNamedAccounts} = hre;
+    const {deployer, contractOwner} = await getNamedAccounts();
     const deployerAcct = await hre.ethers.getSigner(deployer);
+    const contractOwnerAcct = await hre.ethers.getSigner(contractOwner);
 
     const ethAmt = hre.ethers.utils.parseEther("100");
     const wethAmt = hre.ethers.utils.parseEther("40");
 
-    const TuffTokenDiamond = await deployments.get("TuffTokenDiamond");
-    const tuffTokenSigner = await hre.ethers.getSigner(TuffTokenDiamond.address);
-
-    console.log(`Sending [${ethAmt}] ETH to tuffTokenDiamond contract [${TuffTokenDiamond.address}]`);
+    console.log(`Sending [${ethAmt}] ETH to contractOwner [${contractOwner}]`);
     const sendEthTx = await deployerAcct.sendTransaction({
-        to: TuffTokenDiamond.address,
+        to: contractOwner,
         value: ethAmt,
     });
 
-    console.log(`Swapping [${wethAmt}] WETH in tuffTokenDiamond contract [${TuffTokenDiamond.address}]`);
-    await swapEthForWeth(tuffTokenSigner, wethAmt);
+    console.log(`Swapping [${wethAmt}] WETH for contractOwner [${contractOwner}]`);
+    await swapEthForWeth(contractOwnerAcct, wethAmt);
 };
 
 module.exports.tags = ['v0002A', 'test'];
