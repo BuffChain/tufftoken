@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: agpl-3.0
 pragma solidity ^0.6.0;
 
-import "hardhat/console.sol";
-
 import "@openzeppelin/contracts-v6/math/SafeMath.sol";
 import {Context} from "@openzeppelin/contracts-v6/utils/Context.sol";
 import {LendingPool} from "@aave/protocol-v2/contracts/protocol/lendingpool/LendingPool.sol";
@@ -141,7 +139,10 @@ contract AaveLPManager is Context {
         );
 
         ss.supportedTokens.push(tokenAddr);
-        ss.totalTargetWeight = SafeMath.add(ss.totalTargetWeight, targetPercentage);
+        ss.totalTargetWeight = SafeMath.add(
+            ss.totalTargetWeight,
+            targetPercentage
+        );
         ss.tokenMetadata[tokenAddr].targetPercent = targetPercentage;
         //TODO: Remove this to save gas? This cost gas to save, while reading it is a view function, so gas free
         ss.tokenMetadata[tokenAddr].aToken = aTokenAddr;
@@ -154,7 +155,10 @@ contract AaveLPManager is Context {
             tokenAddr
         );
         if (_isSupportedToken) {
-            ss.totalTargetWeight = SafeMath.sub(ss.totalTargetWeight, ss.tokenMetadata[tokenAddr].targetPercent);
+            ss.totalTargetWeight = SafeMath.sub(
+                ss.totalTargetWeight,
+                ss.tokenMetadata[tokenAddr].targetPercent
+            );
 
             //Remove the token without preserving order
             ss.supportedTokens[_tokenIndex] = ss.supportedTokens[
@@ -182,8 +186,14 @@ contract AaveLPManager is Context {
     ) public aaveInitLock {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
 
-        ss.totalTargetWeight = SafeMath.sub(ss.totalTargetWeight, ss.tokenMetadata[tokenAddr].targetPercent);
-        ss.totalTargetWeight = SafeMath.add(ss.totalTargetWeight, targetPercentage);
+        ss.totalTargetWeight = SafeMath.sub(
+            ss.totalTargetWeight,
+            ss.tokenMetadata[tokenAddr].targetPercent
+        );
+        ss.totalTargetWeight = SafeMath.add(
+            ss.totalTargetWeight,
+            targetPercentage
+        );
 
         ss.tokenMetadata[tokenAddr].targetPercent = targetPercentage;
     }
@@ -384,9 +394,9 @@ contract AaveLPManager is Context {
             //Only balance if token is under-allocated more than our buffer amount
             int256 iPercentageDiff = int(tokenTargetPercentage) - int(tokenActualPercentage);
             if (iPercentageDiff > 0) {
-                console.log("++++++++++++");
-                console.log(bm.treasuryBalance);
-                console.log(bm.supportedTokens.length);
+//                console.log("++++++++++++");
+//                console.log(bm.treasuryBalance);
+//                console.log(bm.supportedTokens.length);
 
                 //Get proportional balance for the token
                 uint256 balanceIn = SafeMath.div(bm.treasuryBalance, bm.supportedTokens.length);
