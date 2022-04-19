@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: agpl-3.0
 
 import hre from 'hardhat';
-import {ethers, Contract, Signer, BigNumber} from "ethers";
+import {ethers, Contract, Signer, BigNumber, BigNumberish} from "ethers";
 
 import {Pool, Position, NonfungiblePositionManager as ANonfungiblePositionManager, nearestUsableTick} from '@uniswap/v3-sdk';
 import {Percent, Token} from "@uniswap/sdk-core";
@@ -89,12 +89,13 @@ async function addLiquidityToPool(poolContract: Contract, tuffTokenDiamond: Cont
     const state = await getPoolState(poolContract);
 
     const WETH9 = new Token(1, immutables.token0, 18, "WETH9", "Wrapped Ethereum");
-    const TUFF = new Token(1, immutables.token1, 18, "TUFF", "Tuff Token");
+    const TUFF = new Token(1, immutables.token1, 9, "TUFF", "Tuff Token");
     const block = await hre.ethers.provider.getBlock("latest");
     const deadline = block.timestamp + 200;
 
-    const tuffBalance = hre.ethers.utils.parseEther("1");
-    const wethBalance = hre.ethers.utils.parseEther("1");
+    //BuffChain's cut is 15% of total minted supply, we then provide half of that as liquidity
+    const tuffLiquidity = hre.ethers.utils.parseUnits("1", 9);
+    const wethLiquidity = hre.ethers.utils.parseEther("1");
     console.log("-----STARTING BALANCES-----");
     await printContractOwnerBal(tuffTokenDiamond, contractOwner);
 
@@ -110,7 +111,7 @@ async function addLiquidityToPool(poolContract: Contract, tuffTokenDiamond: Cont
     console.log(`Current pool liquidity [${state.liquidity.toString()}]`);
     const position = new Position({
         pool: WETH9_TUFF_POOL,
-        liquidity: hre.ethers.utils.parseEther("1").toString(),
+        liquidity: tuffLiquidity.toString(),
         tickLower: nearestUsableTick(state.tick, immutables.tickSpacing) - immutables.tickSpacing  * 2,
         tickUpper: nearestUsableTick(state.tick, immutables.tickSpacing) + immutables.tickSpacing * 2
     });
@@ -120,35 +121,46 @@ async function addLiquidityToPool(poolContract: Contract, tuffTokenDiamond: Cont
 
     const contractOwnerAcct = await hre.ethers.getSigner(contractOwner);
     await runCallbackImpersonatingAcct(contractOwnerAcct, async (acct: Signer) => {
+        const acctAddr = await acct.getAddress();
         const weth9Contract = await getWETH9Contract();
         await weth9Contract.connect(acct).approve(consts("UNISWAP_V3_NonfungiblePositionManager_ADDR"), hre.ethers.utils.parseEther("10").toString());
-        await tuffTokenDiamond.connect(acct).approve(consts("UNISWAP_V3_NonfungiblePositionManager_ADDR"), hre.ethers.utils.parseEther("10").toString());
+        await tuffTokenDiamond.connect(acct).approve(consts("UNISWAP_V3_NonfungiblePositionManager_ADDR"), tuffLiquidity);
 
         //Mint position
+        const mintResp = await nonfungiblePositionManager.mint(
+          {
+              token0: immutables.token0,
+              token1: immutables.token1,
+              fee: immutables.fee,
+              tickLower: nearestUsableTick(state.tick, immutables.tickSpacing) - immutables.tickSpacing  * 2,
+              tickUpper: nearestUsableTick(state.tick, immutables.tickSpacing) + immutables.tickSpacing * 2,
+              amount0Desired: wethLiquidity,
+              amount1Desired: tuffLiquidity,
+              amount0Min: 0,
+              amount1Min: 0,
+              recipient: acctAddr,
+              deadline: deadline
+          }
+        );
+
         const mintParams = await ANonfungiblePositionManager.addCallParameters(position, {
             slippageTolerance: new Percent(50, 10_000),
             recipient: await acct.getAddress(),
             deadline: deadline
         });
-
-        const gasPriceInGwei = 50000;
-        const mintTx = {
-            data: mintParams.calldata,
-            to: consts("UNISWAP_V3_NonfungiblePositionManager_ADDR"),
-            value: BigNumber.from(mintParams.value),
-            from: await acct.getAddress(),
-            gasPrice: BigNumber.from(gasPriceInGwei * Math.pow(10, 9)),
-        };
-
-        const mintReceipt = await acct.sendTransaction(mintTx);
-        console.dir(mintReceipt);
-
-        // return await hre.ethers.getContractAt(INonfungiblePositionManagerInterface, consts("ADAI_ADDR"));
-
-        const decodedMintTx = ANonfungiblePositionManager.INTERFACE.parseTransaction({data: mintParams.calldata, value: mintParams.value});
-        console.log(`decodedMintTx.name [${decodedMintTx.name}]`);
-        console.log(`decodedMintTx.args [${decodedMintTx.args}]`);
-        console.log(`decodedMintTx.value [${decodedMintTx.value}]`);
+        //
+        // const gasPriceInGwei = 500;
+        // const mintTx = {
+        //     data: mintParams.calldata,
+        //     to: consts("UNISWAP_V3_NonfungiblePositionManager_ADDR"),
+        //     value: BigNumber.from(mintParams.value),
+        //     from: await acct.getAddress(),
+        //     gasPrice: BigNumber.from(gasPriceInGwei * Math.pow(10, 9)),
+        // };
+        //
+        // await acct.sendTransaction(mintTx);
+        console.log(mintResp);
+        console.log("Mint liquidity nft position was successful");
 
         const liquidityPosNFT = await getERC721EnumerableContract();
         const tokenId = liquidityPosNFT.tokenOfOwnerByIndex(await acct.getAddress(), 0);
