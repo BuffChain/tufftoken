@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: agpl-3.0
 
 import hre from 'hardhat';
-import {Contract, ethers} from "ethers";
+import {ethers, Contract, Signer, BigNumber} from "ethers";
 
-import {Pool, Position, NonfungiblePositionManager, nearestUsableTick} from '@uniswap/v3-sdk';
+import {Pool, Position, NonfungiblePositionManager as ANonfungiblePositionManager, nearestUsableTick} from '@uniswap/v3-sdk';
 import {Percent, Token} from "@uniswap/sdk-core";
+import { getERC721EnumerableContract } from '../utils/test_utils';
+import {abi as NonfungiblePositionManagerABI} from '@uniswap/v3-periphery/artifacts/contracts/NonfungiblePositionManager.sol/NonfungiblePositionManager.json';
+import { NonfungiblePositionManager } from '../src/types';
 
 const {consts, UNISWAP_POOL_BASE_FEE} = require("../utils/consts");
 const {logDeploymentTx} = require("../utils/deployment_helpers");
-const {getSqrtPriceX96, getWETH9Contract} = require("../utils/test_utils");
-// import {consts, UNISWAP_POOL_BASE_FEE} from "../utils/consts";
-// import {logDeploymentTx} from "../utils/deployment_helpers";
-// import {getSqrtPriceX96, getWETH9Contract} from "../utils/test_utils";
+const {getSqrtPriceX96, getWETH9Contract, runCallbackImpersonatingAcct} = require("../utils/test_utils");
 
 interface Immutables {
     factory: string;
@@ -114,27 +114,56 @@ async function addLiquidityToPool(poolContract: Contract, tuffTokenDiamond: Cont
         tickUpper: nearestUsableTick(state.tick, immutables.tickSpacing) + immutables.tickSpacing * 2
     });
 
-    //Mint position
-    const mintTx = await NonfungiblePositionManager.addCallParameters(position, {
-        slippageTolerance: new Percent(50, 10_000),
-        recipient: tuffTokenDiamond.address,
-        deadline: deadline
-    });
-    const decodedMintTx = NonfungiblePositionManager.INTERFACE.parseTransaction({data: mintTx.calldata, value: mintTx.value});
-    console.log(`decodedMintTx.name [${decodedMintTx.name}]`);
-    console.log(`decodedMintTx.args [${decodedMintTx.args}]`);
-    console.log(`decodedMintTx.value [${decodedMintTx.value}]`);
+    const nonfungiblePositionManager = await hre.ethers.getContractAt(
+      NonfungiblePositionManagerABI, consts("UNISWAP_V3_NonfungiblePositionManager_ADDR")) as NonfungiblePositionManager;
 
-    //Add liquidity to position
-    const liquidityTx = await NonfungiblePositionManager.addCallParameters(position, {
-        slippageTolerance: new Percent(50, 10_000),
-        deadline: deadline,
-        tokenId: 1
+    const tuffTokenSigner = await hre.ethers.getSigner(tuffTokenDiamond.address);
+    await runCallbackImpersonatingAcct(tuffTokenSigner, async (acct: Signer) => {
+        const weth9Contract = await getWETH9Contract();
+        await weth9Contract.connect(acct).approve(consts("UNISWAP_V3_NonfungiblePositionManager_ADDR"), hre.ethers.utils.parseEther("10").toString());
+        await tuffTokenDiamond.connect(acct).approve(consts("UNISWAP_V3_NonfungiblePositionManager_ADDR"), hre.ethers.utils.parseEther("10").toString());
+
+        //Mint position
+        const mintParams = await ANonfungiblePositionManager.addCallParameters(position, {
+            slippageTolerance: new Percent(50, 10_000),
+            recipient: await acct.getAddress(),
+            deadline: deadline
+        });
+
+        const gasPriceInGwei = 50000;
+        const mintTx = {
+            data: mintParams.calldata,
+            to: consts("UNISWAP_V3_NonfungiblePositionManager_ADDR"),
+            value: BigNumber.from(mintParams.value),
+            from: await acct.getAddress(),
+            gasPrice: BigNumber.from(gasPriceInGwei * Math.pow(10, 9)),
+        };
+
+        const mintReceipt = await acct.sendTransaction(mintTx);
+        console.dir(mintReceipt);
+
+        // return await hre.ethers.getContractAt(INonfungiblePositionManagerInterface, consts("ADAI_ADDR"));
+
+        const decodedMintTx = ANonfungiblePositionManager.INTERFACE.parseTransaction({data: mintParams.calldata, value: mintParams.value});
+        console.log(`decodedMintTx.name [${decodedMintTx.name}]`);
+        console.log(`decodedMintTx.args [${decodedMintTx.args}]`);
+        console.log(`decodedMintTx.value [${decodedMintTx.value}]`);
+
+        const liquidityPosNFT = await getERC721EnumerableContract();
+        const tokenId = liquidityPosNFT.tokenOfOwnerByIndex(await acct.getAddress(), 0);
+        console.log(`tokenId [${tokenId}]`);
+
+        //Add liquidity to position
+        const liquidityTx = await ANonfungiblePositionManager.addCallParameters(position, {
+            slippageTolerance: new Percent(50, 10_000),
+            deadline: deadline,
+            tokenId: tokenId
+        });
+        const decodedLiquidityTx = ANonfungiblePositionManager.INTERFACE.parseTransaction({data: liquidityTx.calldata, value: liquidityTx.value});
+        console.log(`decodedLiquidityTx.name [${decodedLiquidityTx.name}]`);
+        console.log(`decodedLiquidityTx.args [${decodedLiquidityTx.args}]`);
+        console.log(`decodedLiquidityTx.value [${decodedLiquidityTx.value}]`);
     });
-    const decodedLiquidityTx = NonfungiblePositionManager.INTERFACE.parseTransaction({data: liquidityTx.calldata, value: liquidityTx.value});
-    console.log(`decodedLiquidityTx.name [${decodedLiquidityTx.name}]`);
-    console.log(`decodedLiquidityTx.args [${decodedLiquidityTx.args}]`);
-    console.log(`decodedLiquidityTx.value [${decodedLiquidityTx.value}]`);
 
     console.log("-----ENDING BALANCES-----");
     await printTuffTokenTreasury(tuffTokenDiamond);

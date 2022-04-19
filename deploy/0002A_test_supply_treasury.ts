@@ -2,7 +2,6 @@
 
 import hre from "hardhat";
 
-import {getContractAddress} from "ethers/lib/utils";
 import {swapEthForWeth} from '../utils/test_utils';
 
 module.exports = async () => {

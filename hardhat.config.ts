@@ -130,6 +130,7 @@ const config: HardhatUserConfig = {
     typechain: {
         outDir: "src/types",
         target: "ethers-v5",
+        externalArtifacts: ['node_modules/@uniswap/v3-periphery/artifacts/contracts/NonfungiblePositionManager.sol/NonfungiblePositionManager.json']
     },
     backTest: {
         startBlockNumber: 0,
