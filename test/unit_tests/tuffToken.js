@@ -8,13 +8,15 @@ const {consts} = require("../../utils/consts");
 describe("TuffToken", function () {
 
     let owner;
+    let buffChainAddr;
     let accounts;
 
     let tuffTokenDiamond;
 
     before(async function () {
-        const {contractOwner} = await hre.getNamedAccounts();
+        const {contractOwner, buffChain} = await hre.getNamedAccounts();
         owner = await hre.ethers.getSigner(contractOwner);
+        buffChainAddr = buffChain;
 
         //Per `hardhat.config.ts`, the 0 and 1 index accounts are named accounts. They are reserved for deployment uses
         [, , ...accounts] = await hre.ethers.getSigners();
@@ -158,7 +160,6 @@ describe("TuffToken", function () {
         const senderEndingBalance = parseFloat(await tuffTokenDiamond.balanceOf(sender));
         const receiverEndingBalance = parseFloat(await tuffTokenDiamond.balanceOf(receiver));
 
-
         expect(senderEndingBalance).to.equal(senderStartingBalance - amount, "Amount wasn't correctly taken from the sender");
         expect(receiverEndingBalance).to.equal(receiverStartingBalance + amount, "Amount wasn't correctly sent to the receiver");
     });
@@ -247,7 +248,6 @@ describe("TuffToken", function () {
     }
 
     async function assetTransferBothIncludedInFee(sender, receiver, amount, isTokenMatured) {
-
         const contractStartingBalance = parseFloat(await tuffTokenDiamond.balanceOf(tuffTokenDiamond.address));
 
         // Setup sender account
@@ -279,7 +279,7 @@ describe("TuffToken", function () {
         expect(senderEndingBalance).to.equal(senderStartingBalance - amount, "Amount wasn't correctly taken from the sender");
         expect(receiverEndingBalance).to.equal(receiverStartingBalance + amount - totalFeeAmount, "Amount wasn't correctly sent to the receiver");
 
-        const devWalletEndingBalance = parseFloat(await tuffTokenDiamond.balanceOf(consts("DEV_WALLET_ADDR")));
+        const devWalletEndingBalance = parseFloat(await tuffTokenDiamond.balanceOf(buffChainAddr));
         expect(devWalletEndingBalance).to.equal(devFeeAmount, "Fee wasn't correctly sent to dev wallet");
 
         const contractEndingBalance = parseFloat(await tuffTokenDiamond.balanceOf(tuffTokenDiamond.address));

@@ -11,7 +11,7 @@ module.exports = async () => {
     console.log("[DEPLOY][v0001] - Deploying and initializing TuffTokenDiamond");
 
     const {deployments, getNamedAccounts} = hre;
-    const {deployer, contractOwner} = await getNamedAccounts();
+    const {deployer, contractOwner, buffChain} = await getNamedAccounts();
 
     console.log(`Deployer address [${deployer}]`);
     console.log(`Contract owner address [${contractOwner}]`);
@@ -42,7 +42,7 @@ module.exports = async () => {
             TOKEN_DECIMALS,
             TOKEN_FARM_FEE,
             TOKEN_DEV_FEE,
-            consts("DEV_WALLET_ADDR"),
+            buffChain,
             TOKEN_TOTAL_SUPPLY
         );
         logDeploymentTx("Initialized TuffToken:", initTx);

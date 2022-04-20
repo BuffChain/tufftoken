@@ -400,7 +400,7 @@ contract AaveLPManager is Context {
 
                 //Get proportional balance for the token
                 uint256 balanceIn = SafeMath.div(bm.treasuryBalance, bm.supportedTokens.length);
-                console.log(balanceIn);
+//                console.log(balanceIn);
 
                 if (balanceIn > 0) {
                     IUniswapManager(address(this)).swapExactInputMultihop(

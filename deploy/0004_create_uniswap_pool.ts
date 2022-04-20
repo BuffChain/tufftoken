@@ -9,6 +9,7 @@ import { getERC721EnumerableContract } from '../utils/test_utils';
 import {abi as NonfungiblePositionManagerABI} from '@uniswap/v3-periphery/artifacts/contracts/NonfungiblePositionManager.sol/NonfungiblePositionManager.json';
 import { NonfungiblePositionManager } from '../src/types';
 import {Address} from "hardhat-deploy/dist/types";
+import { TOKEN_TOTAL_SUPPLY } from '../utils/consts';
 
 const {consts, UNISWAP_POOL_BASE_FEE} = require("../utils/consts");
 const {logDeploymentTx} = require("../utils/deployment_helpers");
@@ -84,7 +85,7 @@ async function createPool(uniswapV3Factory: Contract, tuffTokenDiamond: Contract
     return uniswapV3Pool;
 }
 
-async function addLiquidityToPool(poolContract: Contract, tuffTokenDiamond: Contract, contractOwner: Address) {
+async function addLiquidityToPool(poolContract: Contract, tuffTokenDiamond: Contract, buffChain: Address) {
     const immutables = await getPoolImmutables(poolContract);
     const state = await getPoolState(poolContract);
 
@@ -94,10 +95,14 @@ async function addLiquidityToPool(poolContract: Contract, tuffTokenDiamond: Cont
     const deadline = block.timestamp + 200;
 
     //BuffChain's cut is 15% of total minted supply, we then provide half of that as liquidity
+    //TODO: do we also want to use TuffDAO treasury? That would _likely_ be another deployment script
+    const buffChainsLiquidityCut = Math.floor((TOKEN_TOTAL_SUPPLY * 0.15) / 2);
+    console.log(`BuffChain is providing ${buffChainsLiquidityCut} TUFF`);
+
     const tuffLiquidity = hre.ethers.utils.parseUnits("1", 9);
     const wethLiquidity = hre.ethers.utils.parseEther("1");
     console.log("-----STARTING BALANCES-----");
-    await printContractOwnerBal(tuffTokenDiamond, contractOwner);
+    await printBuffChainBal(tuffTokenDiamond, buffChain);
 
     const WETH9_TUFF_POOL = new Pool(
         WETH9,
@@ -119,8 +124,8 @@ async function addLiquidityToPool(poolContract: Contract, tuffTokenDiamond: Cont
     const nonfungiblePositionManager = await hre.ethers.getContractAt(
       NonfungiblePositionManagerABI, consts("UNISWAP_V3_NonfungiblePositionManager_ADDR")) as NonfungiblePositionManager;
 
-    const contractOwnerAcct = await hre.ethers.getSigner(contractOwner);
-    await runCallbackImpersonatingAcct(contractOwnerAcct, async (acct: Signer) => {
+    const buffChainAcct = await hre.ethers.getSigner(buffChain);
+    await runCallbackImpersonatingAcct(buffChainAcct, async (acct: Signer) => {
         const acctAddr = await acct.getAddress();
         const weth9Contract = await getWETH9Contract();
         await weth9Contract.connect(acct).approve(consts("UNISWAP_V3_NonfungiblePositionManager_ADDR"), hre.ethers.utils.parseEther("10").toString());
@@ -148,7 +153,7 @@ async function addLiquidityToPool(poolContract: Contract, tuffTokenDiamond: Cont
             recipient: await acct.getAddress(),
             deadline: deadline
         });
-        //
+
         // const gasPriceInGwei = 500;
         // const mintTx = {
         //     data: mintParams.calldata,
@@ -179,29 +184,29 @@ async function addLiquidityToPool(poolContract: Contract, tuffTokenDiamond: Cont
     });
 
     console.log("-----ENDING BALANCES-----");
-    await printContractOwnerBal(tuffTokenDiamond, contractOwner);
+    await printBuffChainBal(tuffTokenDiamond, buffChain);
 
     // await tuffTokenDiamond.approve(uniswapV3Pool.address, hre.ethers.constants.MaxUint256);
     // await (await getWETH9Contract()).approve(uniswapV3Pool.address, hre.ethers.constants.MaxUint256);
     // await uniswapV3Pool.mint(tuffTokenDiamond.address, -130000, -100000, hre.ethers.utils.parseEther("1"), []);
 }
 
-async function printContractOwnerBal(tuffTokenDiamond: Contract, contractOwner: Address) {
-    console.log(`[${contractOwner}] has [${hre.ethers.utils.formatEther(
-      await hre.ethers.provider.getBalance(contractOwner))}] ETH`);
+async function printBuffChainBal(tuffTokenDiamond: Contract, buffChain: Address) {
+    console.log(`[${buffChain}] has [${hre.ethers.utils.formatEther(
+      await hre.ethers.provider.getBalance(buffChain))}] ETH`);
 
-    console.log(`[${contractOwner}] has [${hre.ethers.utils.formatEther(
-      await (await getWETH9Contract()).balanceOf(contractOwner))}] WETH`);
+    console.log(`[${buffChain}] has [${hre.ethers.utils.formatEther(
+      await (await getWETH9Contract()).balanceOf(buffChain))}] WETH`);
 
-    console.log(`[${contractOwner}] has [${hre.ethers.utils.formatEther(
-      await tuffTokenDiamond.balanceOf(contractOwner))}] TUFF`);
+    console.log(`[${buffChain}] has [${hre.ethers.utils.formatEther(
+      await tuffTokenDiamond.balanceOf(buffChain))}] TUFF`);
 }
 
 module.exports = async () => {
-    console.log("[DEPLOY][v0002B] - Creating Uniswap pool and providing liquidity");
+    console.log("[DEPLOY][v0004] - Creating Uniswap pool and providing liquidity");
 
     const {deployments, getNamedAccounts} = hre;
-    const {contractOwner} = await getNamedAccounts();
+    const {contractOwner, buffChain} = await getNamedAccounts();
 
     const TuffTokenDiamond = await deployments.get("TuffTokenDiamond");
     // @ts-ignore
@@ -209,7 +214,7 @@ module.exports = async () => {
     const uniswapV3Factory = await hre.ethers.getContractAt("UniswapV3Factory", consts("UNISWAP_V3_FACTORY_ADDR"));
 
     const uniswapV3Pool = await createPool(uniswapV3Factory, tuffTokenDiamond);
-    await addLiquidityToPool(uniswapV3Pool, tuffTokenDiamond, contractOwner);
+    await addLiquidityToPool(uniswapV3Pool, tuffTokenDiamond, buffChain);
 };
 
-module.exports.tags = ['v0002B'];
+module.exports.tags = ['v0004'];

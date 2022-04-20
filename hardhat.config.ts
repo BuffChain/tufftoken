@@ -115,6 +115,16 @@ const config: HardhatUserConfig = {
             default: 1, //For tests and hardhat network, use accounts[1]
             1: '', //TODO: Multi-sig ETH account for mainnet
             "kovan": '0x4d5031A3BF5b4828932D0e1C3006cC860b97aC3c',
+        },
+        buffChain: {
+            default: '0x4d5031A3BF5b4828932D0e1C3006cC860b97aC3c',
+            1: '', //TODO: Multi-sig ETH account for mainnet
+            "kovan": '0x4d5031A3BF5b4828932D0e1C3006cC860b97aC3c',
+        },
+        tuffDAO: {
+            default: '',
+            1: '', //TODO: Multi-sig ETH account for mainnet
+            "kovan": '',
         }
     },
     external: {

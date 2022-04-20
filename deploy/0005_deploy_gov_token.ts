@@ -4,7 +4,7 @@ import hre from 'hardhat';
 const AccessControlABI = require('../artifacts/@openzeppelin/contracts/access/AccessControl.sol/AccessControl.json').abi;
 
 module.exports = async () => {
-    console.log("[DEPLOY][v0003] - Deploying TuffGov token");
+    console.log("[DEPLOY][v0005] - Deploying TuffGov token");
 
     const {deployments, getNamedAccounts} = hre;
     const {deployer, contractOwner} = await getNamedAccounts();
@@ -58,4 +58,4 @@ module.exports = async () => {
     await accessControl.revokeRole(adminRole, deployer);
 };
 
-module.exports.tags = ['v0003'];
+module.exports.tags = ['v0005'];
