@@ -5,7 +5,7 @@
   "scripts": {
     "clean": "hardhat clean",
     "compile": "hardhat compile",
-    "test": "hardhat test",
+    "test": "hardhat test --verbose",
     "download_block_data": "hardhat download_block_data",
     "back_test": "hardhat test:backtest",
     "node": "hardhat node --no-deploy",

@@ -16,9 +16,9 @@ module.exports = async () => {
     const tuffTokenDiamond = await hre.ethers.getContractAt(TuffTokenDiamond.abi, TuffTokenDiamond.address, contractOwnerAcct) as TuffToken;
 
     const buffChainTotalCut = BigNumber.from(Math.floor(TOKEN_TOTAL_SUPPLY * BUFFCHAIN_TOTAL_MINTED_PERCENTAGE));
-    const tuffAmt = hre.ethers.utils.parseUnits(buffChainTotalCut.toString(), TOKEN_DECIMALS);
+    const tuffAmt = hre.ethers.utils.parseUnits(buffChainTotalCut.toString(), 0);
     console.log(`Sending [${tuffAmt}] TUFF to buffChain [${buffChain}]`);
-    await (tuffTokenDiamond.connect(contractOwnerAcct) as TuffToken).transfer(buffChain, tuffAmt);
+    await (tuffTokenDiamond.connect(contractOwnerAcct) as TuffToken).transfer(buffChain, buffChainTotalCut);
 
     //TODO: Create a json map of holder addresses and amount to supply. Read them in and send the appropriate tokens
     // the contractOwnerAcct
