@@ -87,8 +87,11 @@ const config: HardhatUserConfig = {
                 url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMAPI_KEY}`,
 
                 //Feel free to update at any time. This is here to make local development and caching easier
-                blockNumber: 14411890
+                blockNumber: 14623970
             },
+            accounts: {
+                mnemonic: process.env.ETH_HARDHAT_ACCOUNT_MNEMONIC
+            }
 
             // mining: {
             //     auto: false,
@@ -102,7 +105,12 @@ const config: HardhatUserConfig = {
         kovan: {
             live: true,
             url: process.env.INFURA_URL,
-            accounts: [process.env.ETH_ACCOUNT_PRIV_KEY || ""]
+            accounts: [process.env.ETH_KOVAN_ACCOUNT_PRIV_KEY || ""]
+        },
+        mainnet: {
+            live: true,
+            url: process.env.INFURA_URL,
+            accounts: [process.env.ETH_MAINNET_ACCOUNT_PRIV_KEY || ""]
         }
     },
     namedAccounts: {

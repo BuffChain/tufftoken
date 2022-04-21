@@ -176,53 +176,78 @@ contract TuffToken is Context, IERC20 {
     }
 
     function transferFrom(
-        address sender,
-        address recipient,
+        address from,
+        address to,
         uint256 amount
     ) public override tuffTokenInitLock returns (bool) {
-        TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
-        _transfer(sender, recipient, amount);
-        _approve(
-            sender,
-            _msgSender(),
-            ss.allowances[sender][_msgSender()].sub(
-                amount,
-                "ERC20: transfer amount exceeds allowance"
-            )
-        );
+        address spender = _msgSender();
+        _spendAllowance(from, spender, amount);
+        _transfer(from, to, amount);
         return true;
     }
 
-    function increaseAllowance(address spender, uint256 addedValue)
-        public
-        virtual
-        tuffTokenInitLock
-        returns (bool)
-    {
-        TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
-        _approve(
-            _msgSender(),
-            spender,
-            ss.allowances[_msgSender()][spender].add(addedValue)
-        );
+    /**
+     * @dev Updates `owner` s allowance for `spender` based on spent `amount`.
+     *
+     * Does not update the allowance amount in case of infinite allowance.
+     * Revert if not enough allowance is available.
+     *
+     * Might emit an {Approval} event.
+     */
+    function _spendAllowance(
+        address owner,
+        address spender,
+        uint256 amount
+    ) internal virtual tuffTokenInitLock {
+        uint256 currentAllowance = allowance(owner, spender);
+        if (currentAllowance != type(uint256).max) {
+            require(currentAllowance >= amount, "ERC20: insufficient allowance");
+            unchecked {
+                _approve(owner, spender, currentAllowance - amount);
+            }
+        }
+    }
+
+    /**
+     * @dev Atomically increases the allowance granted to `spender` by the caller.
+     *
+     * This is an alternative to {approve} that can be used as a mitigation for
+     * problems described in {IERC20-approve}.
+     *
+     * Emits an {Approval} event indicating the updated allowance.
+     *
+     * Requirements:
+     *
+     * - `spender` cannot be the zero address.
+     */
+    function increaseAllowance(address spender, uint256 addedValue) public virtual tuffTokenInitLock returns (bool) {
+        address owner = _msgSender();
+        _approve(owner, spender, allowance(owner, spender) + addedValue);
         return true;
     }
 
-    function decreaseAllowance(address spender, uint256 subtractedValue)
-        public
-        virtual
-        tuffTokenInitLock
-        returns (bool)
-    {
-        TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
-        _approve(
-            _msgSender(),
-            spender,
-            ss.allowances[_msgSender()][spender].sub(
-                subtractedValue,
-                "ERC20: decreased allowance below zero"
-            )
-        );
+    /**
+     * @dev Atomically decreases the allowance granted to `spender` by the caller.
+     *
+     * This is an alternative to {approve} that can be used as a mitigation for
+     * problems described in {IERC20-approve}.
+     *
+     * Emits an {Approval} event indicating the updated allowance.
+     *
+     * Requirements:
+     *
+     * - `spender` cannot be the zero address.
+     * - `spender` must have allowance for the caller of at least
+     * `subtractedValue`.
+     */
+    function decreaseAllowance(address spender, uint256 subtractedValue) public virtual tuffTokenInitLock returns (bool) {
+        address owner = _msgSender();
+        uint256 currentAllowance = allowance(owner, spender);
+        require(currentAllowance >= subtractedValue, "ERC20: decreased allowance below zero");
+        unchecked {
+            _approve(owner, spender, currentAllowance - subtractedValue);
+        }
+
         return true;
     }
 
@@ -271,6 +296,19 @@ contract TuffToken is Context, IERC20 {
         return fee;
     }
 
+    /**
+     * @dev Sets `amount` as the allowance of `spender` over the `owner` s tokens.
+     *
+     * This internal function is equivalent to `approve`, and can be used to
+     * e.g. set automatic allowances for certain subsystems, etc.
+     *
+     * Emits an {Approval} event.
+     *
+     * Requirements:
+     *
+     * - `owner` cannot be the zero address.
+     * - `spender` cannot be the zero address.
+     */
     function _approve(
         address owner,
         address spender,
@@ -285,20 +323,36 @@ contract TuffToken is Context, IERC20 {
         emit Approval(owner, spender, amount);
     }
 
+    /**
+     * @dev Moves `amount` of tokens from `sender` to `recipient`.
+     *
+     * This internal function is equivalent to {transfer}, and can be used to
+     * e.g. implement automatic token fees, slashing mechanisms, etc.
+     *
+     * Emits a {Transfer} event.
+     *
+     * Requirements:
+     *
+     * - `from` cannot be the zero address.
+     * - `to` cannot be the zero address.
+     * - `from` must have a balance of at least `amount`.
+     */
     function _transfer(
         address from,
         address to,
         uint256 amount
-    ) private {
+    ) internal virtual {
         require(from != address(0), "ERC20: transfer from the zero address");
         require(to != address(0), "ERC20: transfer to the zero address");
         require(amount > 0, "Transfer amount must be greater than zero");
-        require(
-            balanceOf(from) >= amount,
-            "Sender does not have adequate funds."
-        );
 
         TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
+
+        uint256 fromBal = ss.balances[from];
+        require(
+            fromBal >= amount,
+            "Sender does not have adequate funds."
+        );
 
         //indicates if fee should be deducted from transfer
         bool takeFee = true;
@@ -316,14 +370,14 @@ contract TuffToken is Context, IERC20 {
         uint256 farmFeeAmount = calculateFee(amount, ss.farmFee, takeFee);
 
         uint256 devFeeAmount = 0;
-        if (ss.devFee != 0 && ss.devWalletAddress != address(0)) {
+        if (ss.devFee != 0) {
             devFeeAmount = calculateFee(amount, ss.devFee, takeFee);
         }
 
         uint256 totalFeeAmount = farmFeeAmount.add(devFeeAmount);
         uint256 transferAmount = amount.sub(totalFeeAmount);
 
-        ss.balances[from] = ss.balances[from].sub(amount);
+        ss.balances[from] = fromBal.sub(amount);
         ss.balances[to] = ss.balances[to].add(transferAmount);
 
         ss.balances[address(this)] = ss.balances[address(this)].add(

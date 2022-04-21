@@ -28,6 +28,10 @@ async function getADAIContract() {
     return await hre.ethers.getContractAt(IERC20ABI, consts("ADAI_ADDR"));
 }
 
+async function getERC20Contract(contractAddr) {
+    return await hre.ethers.getContractAt(IERC20ABI, contractAddr);
+}
+
 async function getERC721EnumerableContract(contractAddr) {
     return await hre.ethers.getContractAt(IERC721EnumerableABI, contractAddr);
 }
@@ -142,6 +146,17 @@ async function swapEthForWeth(toAcct, qtyInWETH) {
     return {weth9Contract, uniswapSwapRouterContract};
 }
 
+async function swapTokens(toAcct, tokenIn, tokenOut, qtyOut) {
+    const expiryDate = Math.floor(Date.now() / 1000) + 60 * 20; //20 minutes from the current Unix time
+
+    const uniswapSwapRouterContract = await hre.ethers.getContractAt(
+        SwapRouterABI,
+        consts("UNISWAP_V3_ROUTER_ADDR")
+    );
+
+    await uniswapExactOutputSingle(tokenIn, tokenOut, uniswapSwapRouterContract, toAcct, expiryDate, qtyOut);
+}
+
 /**
  * General method to procure ETH, WETH, and DAI to a specific address
  * @param fromAcct:
@@ -163,10 +178,10 @@ async function sendTokensToAddr(fromAcct, toAddr, daiAmount="") {
     const daiContract = await getDAIContract();
     if (daiAmount) {
         const outDAIQty = hre.ethers.utils.parseEther(daiAmount);
-        await uniswapExactOutputSingle(weth9Contract, uniswapSwapRouterContract, toAcct, expiryDate, outDAIQty);
+        await uniswapExactOutputSingle(consts("WETH9_ADDR"), consts("DAI_ADDR"), uniswapSwapRouterContract, toAcct, expiryDate, outDAIQty);
     } else {
         const inWETHQty = qtyInWETH.div(2);
-        await uniswapExactInputSingle(weth9Contract, uniswapSwapRouterContract, toAcct, expiryDate, inWETHQty);
+        await uniswapExactInputSingle(consts("WETH9_ADDR"), consts("DAI_ADDR"), uniswapSwapRouterContract, toAcct, expiryDate, inWETHQty);
     }
 
     if (hre.hardhatArguments.verbose) {
@@ -176,10 +191,10 @@ async function sendTokensToAddr(fromAcct, toAddr, daiAmount="") {
     }
 }
 
-async function uniswapExactOutputSingle(weth9Contract, uniswapSwapRouterContract, toAcct, expiryDate, outDAIQty) {
+async function uniswapExactOutputSingle(tokenInAddr, tokenOutAddr, uniswapSwapRouterContract, toAcct, expiryDate, outDAIQty) {
     const params = {
-        tokenIn: consts("WETH9_ADDR"),
-        tokenOut: consts("DAI_ADDR"),
+        tokenIn: tokenInAddr,
+        tokenOut: tokenOutAddr,
         fee: 3000,
         recipient: toAcct.address,
         deadline: expiryDate,
@@ -244,10 +259,12 @@ module.exports = {
     getWETH9Contract,
     getUSDCContract,
     getADAIContract,
+    getERC20Contract,
     getERC721EnumerableContract,
     transferETH,
     transferTUFF,
     swapEthForWeth,
+    swapTokens,
     runCallbackImpersonatingAcct,
     sendTokensToAddr,
     getSqrtPriceX96,
