@@ -10,8 +10,6 @@ const IUniswapV3PoolABI = require("@uniswap/v3-core/artifacts/contracts/interfac
 
 const {consts} = require("./consts");
 
-const TUFF_TOTAL_SUPPLY = 1000000000 * 10 ** 9;
-
 async function getDAIContract() {
     return await hre.ethers.getContractAt(IERC20ABI, consts("DAI_ADDR"));
 }
@@ -207,10 +205,10 @@ async function uniswapExactOutputSingle(tokenInAddr, tokenOutAddr, uniswapSwapRo
     });
 }
 
-async function uniswapExactInputSingle(weth9Contract, uniswapSwapRouterContract, toAcct, expiryDate, inWETHQty) {
+async function uniswapExactInputSingle(tokenInAddr, tokenOutAddr, uniswapSwapRouterContract, toAcct, expiryDate, inWETHQty) {
     const params = {
-        tokenIn: consts("WETH9_ADDR"),
-        tokenOut: consts("DAI_ADDR"),
+        tokenIn: tokenInAddr,
+        tokenOut: tokenOutAddr,
         fee: 3000,
         recipient: toAcct.address,
         deadline: expiryDate,
@@ -254,7 +252,6 @@ const unwrapGovToTuff = async (tuffGovToken, amount) => {
 }
 
 module.exports = {
-    TUFF_TOTAL_SUPPLY,
     getDAIContract,
     getWETH9Contract,
     getUSDCContract,

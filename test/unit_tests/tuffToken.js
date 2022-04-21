@@ -2,8 +2,7 @@
 
 const {expect} = require("chai");
 const hre = require("hardhat");
-const {TUFF_TOTAL_SUPPLY} = require('../../utils/test_utils')
-const {consts} = require("../../utils/consts");
+const {consts, TOKEN_TOTAL_SUPPLY, TOKEN_DECIMALS} = require("../../utils/consts");
 
 describe("TuffToken", function () {
 
@@ -73,17 +72,17 @@ describe("TuffToken", function () {
 
     it('should get decimals', async () => {
         const decimals = (await tuffTokenDiamond.decimals());
-        expect(decimals).to.equal(9, "incorrect decimals");
+        expect(decimals).to.equal(TOKEN_DECIMALS, "incorrect decimals");
     });
 
     it('should get totalSupply', async () => {
         const totalSupply = parseFloat(await tuffTokenDiamond.totalSupply());
-        expect(totalSupply).to.equal(TUFF_TOTAL_SUPPLY, "incorrect totalSupply");
+        expect(totalSupply).to.equal(TOKEN_TOTAL_SUPPLY, "incorrect totalSupply");
     });
 
     it('should have TuffToken in the owner account', async () => {
         const balance = parseFloat(await tuffTokenDiamond.balanceOf(owner.address));
-        expect(balance).to.equal(1000000000 * 10 ** 9, "tokens weren't in the owner account");
+        expect(balance).to.equal(TOKEN_TOTAL_SUPPLY * 10 ** TOKEN_DECIMALS, "tokens weren't in the owner account");
     });
 
     it('should initialize and get allowance', async () => {

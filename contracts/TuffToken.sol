@@ -6,6 +6,8 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
+import "hardhat/console.sol";
+
 import {TuffTokenLib} from "./TuffTokenLib.sol";
 import "./TokenMaturity.sol";
 
@@ -180,9 +182,12 @@ contract TuffToken is Context, IERC20 {
         address to,
         uint256 amount
     ) public override tuffTokenInitLock returns (bool) {
+        console.log("jxjxjxjx - 1");
         address spender = _msgSender();
         _spendAllowance(from, spender, amount);
+        console.log("jxjxjxjx - 2");
         _transfer(from, to, amount);
+        console.log("jxjxjxjx - 3");
         return true;
     }
 
@@ -279,9 +284,6 @@ contract TuffToken is Context, IERC20 {
         if (!takeFee || feePercent == 0) {
             return 0;
         }
-
-        TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
-
         uint256 fee = _amount.mul(feePercent).div(10**2);
         require(
             fee > 0,
@@ -348,11 +350,17 @@ contract TuffToken is Context, IERC20 {
 
         TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
 
+        console.log("etetet - 1a");
         uint256 fromBal = ss.balances[from];
+        console.log("etetet - 1b");
+        console.log(from);
+        console.log(fromBal);
+        console.log(amount);
         require(
             fromBal >= amount,
             "Sender does not have adequate funds."
         );
+        console.log("etetet - 2a");
 
         //indicates if fee should be deducted from transfer
         bool takeFee = true;
@@ -366,6 +374,7 @@ contract TuffToken is Context, IERC20 {
         if (takeFee && tokenMaturity.isTokenMatured(block.timestamp)) {
             takeFee = false;
         }
+        console.log("etetet - 2b");
 
         uint256 farmFeeAmount = calculateFee(amount, ss.farmFee, takeFee);
 
@@ -376,6 +385,7 @@ contract TuffToken is Context, IERC20 {
 
         uint256 totalFeeAmount = farmFeeAmount.add(devFeeAmount);
         uint256 transferAmount = amount.sub(totalFeeAmount);
+        console.log("etetet - 3");
 
         ss.balances[from] = fromBal.sub(amount);
         ss.balances[to] = ss.balances[to].add(transferAmount);
@@ -383,6 +393,7 @@ contract TuffToken is Context, IERC20 {
         ss.balances[address(this)] = ss.balances[address(this)].add(
             farmFeeAmount
         );
+        console.log("etetet - 4");
 
         emit Transfer(from, to, transferAmount);
         emit Transfer(from, address(this), farmFeeAmount);

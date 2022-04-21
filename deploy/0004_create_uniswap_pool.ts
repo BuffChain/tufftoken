@@ -80,7 +80,10 @@ async function createPool(uniswapV3Factory: Contract, tuffTokenDiamond: Contract
     const tuffTokenSqrtPriceX96 = getSqrtPriceX96(price);
 
     console.log(`Initializing TuffToken pool. Price: ${price} ETH. sqrtPriceX96: ${tuffTokenSqrtPriceX96}`);
-    // await uniswapV3Pool.initialize(tuffTokenSqrtPriceX96);
+    await uniswapV3Pool.initialize(tuffTokenSqrtPriceX96);
+
+    console.log(`Excluding TuffToken pool from fees`);
+    await tuffTokenDiamond.excludeFromFee(uniswapV3Pool.address);
 
     return uniswapV3Pool;
 }
@@ -97,10 +100,11 @@ async function addLiquidityToPool(poolContract: Contract, tuffTokenDiamond: Cont
     //TODO: do we also want to use TuffDAO treasury? That would _likely_ be another deployment script
     console.log("-----STARTING BALANCES-----");
     const { tuffBal } = await printBuffChainBal(tuffTokenDiamond, buffChain);
+    const buffChainsTuffLiquidity = tuffBal.div(2);
     // const buffChainsTuffLiquidity = hre.ethers.utils.parseUnits(
     //   BigNumber.from(Math.floor(tuffBal.div(2).toNumber())).toString(), 9);
+    // const buffChainsTuffLiquidity = hre.ethers.utils.parseUnits("1", 8);
     const buffChainsWethLiquidity = hre.ethers.utils.parseEther("1");
-    const buffChainsTuffLiquidity = hre.ethers.utils.parseUnits("1", 6);
     // const buffChainsWethLiquidity = BigNumber.from("1000000000000000000");
     // const buffChainsTuffLiquidity = BigNumber.from("75000000000000000");
 
@@ -111,6 +115,9 @@ async function addLiquidityToPool(poolContract: Contract, tuffTokenDiamond: Cont
     const nonfungiblePositionManager = await hre.ethers.getContractAt(
       NonfungiblePositionManagerABI, consts("UNISWAP_V3_NonfungiblePositionManager_ADDR")) as NonfungiblePositionManager;
 
+    // console.log(`Excluding Uniswap NonungiblePositionManager pool from fees`);
+    // await tuffTokenDiamond.excludeFromFee(nonfungiblePositionManager.address);
+
     const acct = await hre.ethers.getSigner(buffChain);
         const acctAddr = await acct.getAddress();
         console.log(`from account should be: [${acctAddr}]`);
@@ -119,12 +126,14 @@ async function addLiquidityToPool(poolContract: Contract, tuffTokenDiamond: Cont
         console.log(`weth contract address: [${weth9Contract.address}]`);
         console.log(`token0 address: [${immutables.token0}]`);
         console.log(`token1 address: [${immutables.token1}]`);
+
+        console.log(`pool has [${await tuffTokenDiamond.balanceOf(poolContract.address)}] TUFF`);
         // await weth9Contract.connect(acct).approve("0xc36442b4a4522e871399cd717abdd847ab11fe88", hre.ethers.utils.parseEther("100").toString());
         // await tuffTokenDiamond.connect(acct).approve("0xc36442b4a4522e871399cd717abdd847ab11fe88", hre.ethers.utils.parseEther("100").toString());
-        await weth9Contract.connect(acct).approve(nonfungiblePositionManager.address, buffChainsWethLiquidity);
         await tuffTokenDiamond.connect(acct).approve(nonfungiblePositionManager.address, buffChainsTuffLiquidity);
-        await weth9Contract.connect(acct).approve(poolContract.address, buffChainsWethLiquidity);
+        await weth9Contract.connect(acct).approve(nonfungiblePositionManager.address, buffChainsWethLiquidity);
         await tuffTokenDiamond.connect(acct).approve(poolContract.address, buffChainsTuffLiquidity);
+        await weth9Contract.connect(acct).approve(poolContract.address, buffChainsWethLiquidity);
 
         const block = await hre.ethers.provider.getBlock("latest");
         const deadline = block.timestamp + 200000;
@@ -207,7 +216,9 @@ async function printBuffChainBal(tuffTokenDiamond: Contract, buffChain: Address)
     console.log(`[${buffChain}] has [${hre.ethers.utils.formatEther(wethBal)}] WETH`);
 
     const tuffBal = BigNumber.from(await tuffTokenDiamond.balanceOf(buffChain));
-    console.log(`[${buffChain}] has [${hre.ethers.utils.parseUnits(tuffBal.toString(), 0)}] TUFF`);
+    // const tuffBal = hre.ethers.utils.parseUnits(BigNumber.from(await tuffTokenDiamond.balanceOf(buffChain)).toString(), 9);
+    // console.log(`[${buffChain}] has [${hre.ethers.utils.parseUnits(tuffBal.toString(), 9)}] TUFF`);
+    console.log(`[${buffChain}] has [${tuffBal.toString()}] TUFF`);
 
     return {ethBal, wethBal, tuffBal};
 }
@@ -223,9 +234,8 @@ module.exports = async () => {
     const tuffTokenDiamond = await hre.ethers.getContractAt(TuffTokenDiamond.abi, TuffTokenDiamond.address, contractOwner);
     const uniswapV3Factory = await hre.ethers.getContractAt("UniswapV3Factory", consts("UNISWAP_V3_FACTORY_ADDR"));
 
-    const usdcContract = await getUSDCContract();
-    const uniswapV3Pool = await createPool(uniswapV3Factory, usdcContract);
-    await addLiquidityToPool(uniswapV3Pool, usdcContract, buffChain);
+    const uniswapV3Pool = await createPool(uniswapV3Factory, tuffTokenDiamond);
+    await addLiquidityToPool(uniswapV3Pool, tuffTokenDiamond, buffChain);
 };
 
 module.exports.tags = ['v0004'];

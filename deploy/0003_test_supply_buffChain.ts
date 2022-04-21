@@ -20,7 +20,6 @@ module.exports = async () => {
 
     const ethAmt = hre.ethers.utils.parseEther("100");
     const wethAmt = hre.ethers.utils.parseEther("40");
-    const usdcAmt = hre.ethers.utils.parseUnits("1", 6);
 
     console.log(`Sending [${ethAmt}] ETH to buffChain [${buffChain}]`);
     const sendEthTx = await deployerAcct.sendTransaction({
@@ -30,9 +29,6 @@ module.exports = async () => {
 
     console.log(`Swapping [${wethAmt}] WETH for buffChain [${buffChain}]`);
     await swapEthForWeth(buffChainAcct, wethAmt);
-
-    console.log(`Swapping [${usdcAmt}] USDC for buffChain [${buffChain}]`);
-    await swapTokens(buffChainAcct, consts("WETH9_ADDR"), consts("USDC_ADDR"), usdcAmt);
 };
 
 module.exports.tags = ['v0003', 'test'];
