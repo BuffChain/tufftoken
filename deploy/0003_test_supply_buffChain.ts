@@ -2,8 +2,7 @@
 
 import hre from "hardhat";
 
-import {swapEthForWeth, swapTokens} from '../utils/test_utils';
-const {consts} = require("../utils/consts");
+import {swapEthForWeth} from '../utils/test_utils';
 
 module.exports = async () => {
     if (hre.network.live) {
@@ -18,11 +17,12 @@ module.exports = async () => {
     const deployerAcct = await hre.ethers.getSigner(deployer);
     const buffChainAcct = await hre.ethers.getSigner(buffChain);
 
+    //Arbitrary amounts
     const ethAmt = hre.ethers.utils.parseEther("100");
     const wethAmt = hre.ethers.utils.parseEther("40");
 
     console.log(`Sending [${ethAmt}] ETH to buffChain [${buffChain}]`);
-    const sendEthTx = await deployerAcct.sendTransaction({
+    await deployerAcct.sendTransaction({
         to: buffChain,
         value: ethAmt,
     });
