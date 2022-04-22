@@ -3,7 +3,6 @@
 const hre = require("hardhat");
 const SwapRouterABI = require("@uniswap/v3-periphery/artifacts/contracts/SwapRouter.sol/SwapRouter.json").abi;
 const WETH9ABI = require("@uniswap/v3-periphery/artifacts/contracts/interfaces/external/IWETH9.sol/IWETH9.json").abi;
-const IERC721EnumerableABI = require("@openzeppelin/contracts/build/contracts/ERC721Enumerable.json").abi;
 const IERC20ABI = require("@uniswap/v3-core/artifacts/contracts/interfaces/IERC20Minimal.sol/IERC20Minimal.json").abi;
 const IUniswapV3FactoryABI = require("@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Factory.sol/IUniswapV3Factory.json").abi;
 const IUniswapV3PoolABI = require("@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json").abi;
@@ -28,10 +27,6 @@ async function getADAIContract() {
 
 async function getERC20Contract(contractAddr) {
     return await hre.ethers.getContractAt(IERC20ABI, contractAddr);
-}
-
-async function getERC721EnumerableContract(contractAddr) {
-    return await hre.ethers.getContractAt(IERC721EnumerableABI, contractAddr);
 }
 
 /**
@@ -257,7 +252,6 @@ module.exports = {
     getUSDCContract,
     getADAIContract,
     getERC20Contract,
-    getERC721EnumerableContract,
     transferETH,
     transferTUFF,
     swapEthForWeth,

@@ -115,7 +115,7 @@ async function addLiquidityToPool(poolContract: Contract, tuffTokenDiamond: Cont
     const deadline = block.timestamp + 200;
 
     //Mint position
-    const mintResp = await nonfungiblePositionManager.connect(buffChainAcct).mint(
+    await nonfungiblePositionManager.connect(buffChainAcct).mint(
       {
           token0: immutables.token0,
           token1: immutables.token1,
@@ -131,31 +131,18 @@ async function addLiquidityToPool(poolContract: Contract, tuffTokenDiamond: Cont
       }
     );
 
-        //
-        // const liquidityPosNFT = await getERC721EnumerableContract();
-        // const tokenId = liquidityPosNFT.tokenOfOwnerByIndex(await acct.getAddress(), 0);
-        // console.log(`tokenId [${tokenId}]`);
+    const tokenId = await nonfungiblePositionManager.tokenOfOwnerByIndex(buffChain, 0);
 
-        //Add liquidity to position
-        // const liquidityTx = await ANonfungiblePositionManager.addCallParameters(position, {
-        //     slippageTolerance: new Percent(50, 10_000),
-        //     deadline: deadline,
-        //     tokenId: tokenId
-        // });
-        // const decodedLiquidityTx = ANonfungiblePositionManager.INTERFACE.parseTransaction({data: liquidityTx.calldata, value: liquidityTx.value});
-        // console.log(`decodedLiquidityTx.name [${decodedLiquidityTx.name}]`);
-        // console.log(`decodedLiquidityTx.args [${decodedLiquidityTx.args}]`);
-        // console.log(`decodedLiquidityTx.value [${decodedLiquidityTx.value}]`);
+    // //Add liquidity to position
+    // const liquidityTx = await ANonfungiblePositionManager.addCallParameters(position, {
+    //     slippageTolerance: new Percent(50, 10_000),
+    //     deadline: deadline,
+    //     tokenId: tokenId
     // });
-    // const tuffDAOAcct = await hre.ethers.getSigner("0x46E7BDD2b003a98C85dA07b930cd3354E97D7F0d");
-    // await runCallbackImpersonatingAcct(tuffDAOAcct, async (acct: Signer) => {
-    //     //from: 0x4d5031A3BF5b4828932D0e1C3006cC860b97aC3c (buffChain)
-    //     //to: 0xf39fd6e51aad88f6f4ce6ab8827279cfffb92266 (UNISWAP_V3_NonfungiblePositionManager_ADDR)
-    //
-    //     const weth9Contract = await getWETH9Contract();
-    //     await weth9Contract.connect(acct).transferFrom("0xae3ec9f8b6212c34c630a25c42bf8cd51ca82e75", hre.ethers.utils.parseEther("10").toString());
-    //     await tuffTokenDiamond.connect(acct).transferFrom("0xae3ec9f8b6212c34c630a25c42bf8cd51ca82e75", hre.ethers.utils.parseEther("10").toString());
-    // });
+    // const decodedLiquidityTx = ANonfungiblePositionManager.INTERFACE.parseTransaction({data: liquidityTx.calldata, value: liquidityTx.value});
+    // console.log(`decodedLiquidityTx.name [${decodedLiquidityTx.name}]`);
+    // console.log(`decodedLiquidityTx.args [${decodedLiquidityTx.args}]`);
+    // console.log(`decodedLiquidityTx.value [${decodedLiquidityTx.value}]`);
 
     console.log("-----ENDING BALANCES-----");
     await printBuffChainBal(tuffTokenDiamond, buffChain);
