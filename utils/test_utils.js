@@ -7,7 +7,9 @@ const IERC20ABI = require("@uniswap/v3-core/artifacts/contracts/interfaces/IERC2
 const IUniswapV3FactoryABI = require("@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Factory.sol/IUniswapV3Factory.json").abi;
 const IUniswapV3PoolABI = require("@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json").abi;
 
-const {consts} = require("./consts");
+const {consts, TOKEN_DECIMALS} = require("./consts");
+const {Contract, BigNumber} = require("ethers");
+const {Address} = require("hardhat-deploy/dist/types");
 
 async function getDAIContract() {
     return await hre.ethers.getContractAt(IERC20ABI, consts("DAI_ADDR"));
@@ -80,7 +82,8 @@ async function transferTUFF(toAddr, amount = "10000") {
             await tuffTokenDiamond.balanceOf(toAddr))}] TUFF`);
     }
 
-    await tuffTokenDiamond.transfer(toAddr, amount, {from: contractOwner});
+    const tuffAmt = hre.ethers.utils.parseUnits(amount, TOKEN_DECIMALS);
+    await tuffTokenDiamond.transfer(toAddr, tuffAmt, {from: contractOwner});
 
     if (hre.hardhatArguments.verbose) {
         console.log(`[${contractOwner}] has [${hre.ethers.utils.formatEther(
@@ -133,7 +136,7 @@ async function swapEthForWeth(toAcct, qtyInWETH) {
         await weth9Contract.connect(acct).deposit({"value": qtyInWETH});
 
         //Approve uniswap to transfer all WETH, if needed
-        await weth9Contract.connect(acct).approve(uniswapSwapRouterContract.address, qtyInWETH);
+        // await weth9Contract.connect(acct).approve(uniswapSwapRouterContract.address, qtyInWETH);
     });
 
     return {weth9Contract, uniswapSwapRouterContract};
@@ -184,7 +187,7 @@ async function sendTokensToAddr(fromAcct, toAddr, daiAmount="") {
     }
 }
 
-async function uniswapExactOutputSingle(tokenInAddr, tokenOutAddr, uniswapSwapRouterContract, toAcct, expiryDate, outDAIQty) {
+async function uniswapExactOutputSingle(tokenInAddr, tokenOutAddr, uniswapSwapRouterContract, toAcct, expiryDate, outAmt) {
     const params = {
         tokenIn: tokenInAddr,
         tokenOut: tokenOutAddr,
@@ -192,12 +195,11 @@ async function uniswapExactOutputSingle(tokenInAddr, tokenOutAddr, uniswapSwapRo
         recipient: toAcct.address,
         deadline: expiryDate,
         sqrtPriceLimitX96: 0,
-        amountOut: outDAIQty,
+        amountOut: outAmt,
         amountInMaximum: hre.ethers.constants.MaxUint256,
     };
-    await runCallbackImpersonatingAcct(toAcct, async (acct) => {
-        await uniswapSwapRouterContract.connect(acct).exactOutputSingle(params);
-    });
+
+    await uniswapSwapRouterContract.connect(toAcct).exactOutputSingle(params);
 }
 
 async function uniswapExactInputSingle(tokenInAddr, tokenOutAddr, uniswapSwapRouterContract, toAcct, expiryDate, inWETHQty) {
@@ -246,6 +248,19 @@ const unwrapGovToTuff = async (tuffGovToken, amount) => {
     await tuffGovToken.withdraw(amount)
 }
 
+async function printAcctBal(tuffTokenDiamond, acctAddr) {
+    const ethBal = BigNumber.from(await hre.ethers.provider.getBalance(acctAddr));
+    console.log(`[${acctAddr}] has [${hre.ethers.utils.formatEther(ethBal)}] ETH`);
+
+    const wethBal = BigNumber.from(await (await getWETH9Contract()).balanceOf(acctAddr));
+    console.log(`[${acctAddr}] has [${hre.ethers.utils.formatEther(wethBal)}] WETH`);
+
+    const tuffBal = BigNumber.from(await tuffTokenDiamond.balanceOf(acctAddr));
+    console.log(`[${acctAddr}] has [${tuffBal.toString()}] TUFF`);
+
+    return {ethBal, wethBal, tuffBal};
+}
+
 module.exports = {
     getDAIContract,
     getWETH9Contract,
@@ -262,5 +277,6 @@ module.exports = {
     getUniswapPoolContract,
     getUniswapPriceQuote,
     wrapTuffToGov,
-    unwrapGovToTuff
+    unwrapGovToTuff,
+    printAcctBal
 }

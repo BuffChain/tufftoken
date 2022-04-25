@@ -8,8 +8,12 @@ import {TuffToken} from "../../src/types/contracts/TuffToken";
 import {IUniswapV3Factory} from "@uniswap/v3-periphery/typechain/IUniswapV3Factory";
 
 
-import {consts, UNISWAP_POOL_BASE_FEE} from '../../utils/consts';
-import {getSqrtPriceX96, getUniswapPoolContract, getWETH9Contract, runCallbackImpersonatingAcct, transferTUFF} from '../../utils/test_utils';
+import {consts, TOKEN_DECIMALS, UNISWAP_POOL_BASE_FEE} from '../../utils/consts';
+import {
+  getSqrtPriceX96, getUniswapPoolContract, getWETH9Contract, printAcctBal, runCallbackImpersonatingAcct,
+  swapEthForWeth,
+  swapTokens, transferTUFF
+} from '../../utils/test_utils';
 
 describe("TuffToken", function () {
 
@@ -59,73 +63,42 @@ describe("TuffToken", function () {
     //Setup
     const recipient = accounts[3];
     const recipientAddr = await recipient.getAddress();
-    const swapDirection = false; //true for token0 to token1, false for token1 to token0
-    const wethAmount = hre.ethers.utils.parseEther("2");
-    const tuffAmount = hre.ethers.utils.parseEther("1");
-    const price = consts("TUFF_STARTING_PRICE");
-    const priceSlippage = price * 5;
-    const priceLimit = price + priceSlippage;
-    const sqrtPriceLimitX96 = getSqrtPriceX96(priceLimit);
+    const tuffAmt = hre.ethers.utils.parseUnits("250", TOKEN_DECIMALS);
+    const wethAmt = hre.ethers.utils.parseEther("20");
 
     await transferTUFF(recipientAddr);
-    const tuff_weth9Pool = await getUniswapPoolContract(
-      consts("WETH9_ADDR"), tuffTokenDiamond.address, UNISWAP_POOL_BASE_FEE);
-    await tuffTokenDiamond.approve(recipientAddr, hre.ethers.constants.MaxUint256)
-    await (await getWETH9Contract()).approve(recipientAddr, hre.ethers.constants.MaxUint256)
+    const {weth9Contract} = await swapEthForWeth(recipient, wethAmt);
+    const startingTuffBalance = await tuffTokenDiamond.balanceOf(recipientAddr);
+    const startingWethBalance = await weth9Contract.balanceOf(recipientAddr);
 
-    let amount0, amount1;
-    await runCallbackImpersonatingAcct(recipient, async (acct: Signer) => {
-      const acctAddr = await acct.getAddress();
+    await weth9Contract.connect(recipient).approve(consts("UNISWAP_V3_ROUTER_ADDR"), hre.ethers.constants.MaxUint256);
+    await swapTokens(recipient, weth9Contract.address, tuffTokenDiamond.address, tuffAmt);
 
-      await tuffTokenDiamond.approve(acctAddr, hre.ethers.constants.MaxUint256)
-      await (await getWETH9Contract()).approve(acctAddr, hre.ethers.constants.MaxUint256)
-
-      const data = await tuff_weth9Pool.swap(
-        acctAddr,
-        swapDirection,
-        tuffAmount,
-        sqrtPriceLimitX96,
-        []
-      );
-      amount0 = data.amount0;
-      amount1 = data.amount1;
-    });
-
-    expect(amount0).to.equal(0);
-    expect(amount1).to.equal(wethAmount);
+    const endingTuffBalance = await tuffTokenDiamond.balanceOf(recipientAddr);
+    const endingWethBalance = await weth9Contract.balanceOf(recipientAddr);
+    expect(endingTuffBalance).to.equal(startingTuffBalance.add(tuffAmt));
+    expect(endingWethBalance).to.be.lt(startingWethBalance);
   });
 
   it('should swap from WETH9 to TUFF', async () => {
     //Setup
     const recipient = accounts[3];
     const recipientAddr = await recipient.getAddress();
-    const swapDirection = true; //true for token0 to token1, false for token1 to token0
-    const tuffAmount = hre.ethers.utils.formatEther("2000000000000");
-    const price = consts("TUFF_STARTING_PRICE");
-    const priceSlippage = price * .5;
-    const priceLimit = price - priceSlippage;
-    const sqrtPriceLimitX96 = getSqrtPriceX96(priceLimit);
+    const startingWethAmt = hre.ethers.utils.parseEther("20");
+    const swapWethAmt = hre.ethers.utils.parseUnits("1", "gwei");
 
-    await transferTUFF(recipientAddr);
-    const tuff_weth9Pool = await getUniswapPoolContract(
-      consts("WETH9_ADDR"), tuffTokenDiamond.address, UNISWAP_POOL_BASE_FEE);
+    await transferTUFF(recipientAddr, "400000");
+    const {weth9Contract} = await swapEthForWeth(recipient, startingWethAmt);
+    const startingTuffBalance = await tuffTokenDiamond.balanceOf(recipientAddr);
+    const startingWethBalance = await weth9Contract.balanceOf(recipientAddr);
+    await printAcctBal(tuffTokenDiamond, recipientAddr);
 
-    let amount0, amount1;
-    await runCallbackImpersonatingAcct(recipient, async (acct: Signer) => {
-      const acctAddr = await acct.getAddress();
+    await tuffTokenDiamond.connect(recipient).approve(consts("UNISWAP_V3_ROUTER_ADDR"), hre.ethers.constants.MaxUint256);
+    await swapTokens(recipient, tuffTokenDiamond.address, weth9Contract.address, swapWethAmt);
 
-      const data = await tuff_weth9Pool.swap(
-        acctAddr,
-        swapDirection,
-        "1",
-        sqrtPriceLimitX96,
-        []
-      );
-      amount0 = data.amount0;
-      amount1 = data.amount1;
-    });
-
-    expect(amount0).to.equal(tuffAmount);
-    expect(amount1).to.equal(0);
+    const endingTuffBalance = await tuffTokenDiamond.balanceOf(recipientAddr);
+    const endingWethBalance = await weth9Contract.balanceOf(recipientAddr);
+    expect(endingWethBalance).to.equal(startingWethBalance.add(swapWethAmt));
+    expect(endingTuffBalance).to.be.lt(startingTuffBalance);
   });
 });

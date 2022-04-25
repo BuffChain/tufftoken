@@ -87,7 +87,7 @@ async function createPool(uniswapV3Factory: IUniswapV3Factory, tuffTokenDiamond:
   console.log(`Initializing TuffToken pool. Price: ${price} ETH. sqrtPriceX96: ${tuffTokenSqrtPriceX96}`);
   await uniswapV3Pool.initialize(tuffTokenSqrtPriceX96);
 
-  console.log(`Excluding TuffToken pool from fees`);
+  console.log(`Excluding TuffToken Uniswap pool from fees`);
   await tuffTokenDiamond.excludeFromFee(uniswapV3Pool.address);
 
   return uniswapV3Pool;
