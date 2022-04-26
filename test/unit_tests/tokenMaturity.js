@@ -8,7 +8,7 @@ const {BigNumber, FixedNumber} = require("ethers");
 
 const utils = require("../../utils/test_utils");
 const {assertDepositToAave} = require("./aaveLPManager");
-const {consts, UNISWAP_POOL_BASE_FEE, TOKEN_DAYS_UNTIL_MATURITY} = require("../../utils/consts");
+const {consts, UNISWAP_POOL_BASE_FEE, TOKEN_DAYS_UNTIL_MATURITY, TOKEN_DECIMALS, TOKEN_TOTAL_SUPPLY} = require("../../utils/consts");
 
 describe('TokenMaturity', function () {
 
@@ -120,29 +120,12 @@ describe('TokenMaturity', function () {
         expect(isMatured).to.equal(true, "should have reached maturity");
     }
 
-    async function assertStartingTuffTokenTotalSupply() {
-
-        const decimals = parseFloat(await tuffTokenDiamond.decimals());
-        const expectedDecimals = 9;
-        expect(decimals).to.equal(expectedDecimals, "incorrect total supply");
-
-        const startingTuffTokenTotalSupply = parseFloat(await tuffTokenDiamond.totalSupply());
-        const supplyNoDecimals = 1000000000;
-        expect(startingTuffTokenTotalSupply).to.equal(supplyNoDecimals * 10 ** decimals, "incorrect total supply");
-
-        return {startingTuffTokenTotalSupply, decimals};
-    }
-
     async function assertSenderTransferSuccess(startingTuffTokenTotalSupply, desiredTuffTokenAmountLeftOver) {
         // Make transaction from first account to second.
         const sender = owner.address;
         const holder = accounts[0].address;
 
-        const senderStartingBalance = parseFloat(await tuffTokenDiamond.balanceOf(sender));
-        expect(senderStartingBalance).to.equal(startingTuffTokenTotalSupply,
-            "Sender should have total supply to start.");
-
-        const amount = (startingTuffTokenTotalSupply - desiredTuffTokenAmountLeftOver).toString(); // 100000 TUFF left
+        const amount = (startingTuffTokenTotalSupply - desiredTuffTokenAmountLeftOver).toString();
         await tuffTokenDiamond.transfer(holder, amount, {from: sender});
 
         const senderTuffTokenBalanceAfterTransfer = parseFloat(await tuffTokenDiamond.balanceOf(sender));
@@ -178,6 +161,7 @@ describe('TokenMaturity', function () {
         expect(senderTuffTokenBalanceAfterRedemption).to.equal(0,
             "Holder's balance was not reset");
 
+        // await tuffTokenDiamond.redeem();
         await expectRevert(tuffTokenDiamond.redeem(),
             "Address can only redeem once.");
 
@@ -185,7 +169,7 @@ describe('TokenMaturity', function () {
     }
 
     async function assertRedemptionFunctionValues(startingTuffTokenTotalSupply, contractStartingEthBalance) {
-        const endingTuffTokenTotalSupplyForRedemption = parseFloat(await tuffTokenDiamond.totalSupplyForRedemption());
+        const endingTuffTokenTotalSupplyForRedemption = await tuffTokenDiamond.totalSupplyForRedemption();
         expect(endingTuffTokenTotalSupplyForRedemption).to.equal(startingTuffTokenTotalSupply,
             "total supply used for redemption calculation should not have been affected by " +
             "holder redeeming (and burning) tokens");
@@ -207,44 +191,40 @@ describe('TokenMaturity', function () {
     }
 
     it('should handle token reaching maturity and holders redeeming', async () => {
-
         await assertTokenMaturity();
 
         let isLiquidated = await tuffTokenDiamond.getIsTreasuryLiquidated();
-
         expect(isLiquidated).to.equal(false, "should not have been liquidated");
 
-        const {startingTuffTokenTotalSupply, decimals} = await assertStartingTuffTokenTotalSupply();
-
+        const tuffTokenTotalSupply = await tuffTokenDiamond.totalSupply();
+        const startingOwnerTuffBal = await tuffTokenDiamond.balanceOf(owner.address);
         const contractStartingEthBalance = await tuffTokenDiamond.getCurrentContractEthBalance();
 
         await expect(tuffTokenDiamond.onTokenMaturity())
             .to.emit(tuffTokenDiamond, "TokenMatured")
-            .withArgs(new BN(contractStartingEthBalance.toString()), new BN(startingTuffTokenTotalSupply.toString()));
+            .withArgs(new BN(contractStartingEthBalance.toString()), new BN(tuffTokenTotalSupply.toString()));
 
         isLiquidated = await tuffTokenDiamond.getIsTreasuryLiquidated();
-
         expect(isLiquidated).to.equal(true, "should have been liquidated");
 
-        const desiredTuffTokenAmountLeftOver = 100000 * 10 ** decimals;
-
+        const desiredTuffTokenAmountLeftOver = 100000 * 10 ** TOKEN_DECIMALS;
         const {sender, holder, senderTuffTokenBalanceAfterTransfer} = await assertSenderTransferSuccess(
-            startingTuffTokenTotalSupply,
+            startingOwnerTuffBal,
             desiredTuffTokenAmountLeftOver
         );
         const expectedETHRedemptionAmount = await assertTokenRedemptionSuccess(
             desiredTuffTokenAmountLeftOver,
-            startingTuffTokenTotalSupply,
+            tuffTokenTotalSupply,
             contractStartingEthBalance,
             sender,
             holder,
             senderTuffTokenBalanceAfterTransfer
         );
 
-        await assertRedemptionFunctionValues(startingTuffTokenTotalSupply, contractStartingEthBalance);
+        await assertRedemptionFunctionValues(tuffTokenTotalSupply, contractStartingEthBalance);
 
         await assertBalanceAndSupplyImpact(
-            startingTuffTokenTotalSupply,
+            tuffTokenTotalSupply,
             desiredTuffTokenAmountLeftOver,
             contractStartingEthBalance,
             expectedETHRedemptionAmount
@@ -252,7 +232,6 @@ describe('TokenMaturity', function () {
 
         // allow a re-run
         await tuffTokenDiamond.onTokenMaturity();
-
     });
 
     it('should liquidate treasury', async () => {
@@ -304,7 +283,7 @@ describe('TokenMaturity', function () {
 
         //TODO: This buffer is likely from the poolFee that uniswap charges, this test needs to be updated to account
         // for that
-        const buffer = hre.ethers.utils.parseEther('0.025');
+        const buffer = hre.ethers.utils.parseEther('0.03');
         const ethDiff = BigNumber.from(expectedEth).sub(ethBalanceAfterLiquidation);
         expect(ethDiff).to.be.lte(buffer, "eth difference exceeds allowed buffer");
 

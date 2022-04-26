@@ -7,6 +7,7 @@ const {
     expectRevert, // Assertions for transactions that should fail
 } = require('@openzeppelin/test-helpers');
 const utils = require("../../utils/test_utils");
+const {TOKEN_TOTAL_SUPPLY} = require("../../utils/consts");
 
 describe("TuffGovernor", function () {
 
@@ -17,6 +18,8 @@ describe("TuffGovernor", function () {
     let tuffGovToken;
     let tuffGovernor;
     let timelockController;
+
+    let startingOwnerTuffBal;
 
     before(async function () {
 
@@ -37,9 +40,9 @@ describe("TuffGovernor", function () {
 
         await tuffGovToken.delegate(owner.address);
 
-        const amount = await tuffTokenDiamond.balanceOf(owner.address);
+        startingOwnerTuffBal = await tuffTokenDiamond.balanceOf(owner.address);
 
-        await utils.wrapTuffToGov(tuffTokenDiamond, tuffGovToken, amount);
+        await utils.wrapTuffToGov(tuffTokenDiamond, tuffGovToken, startingOwnerTuffBal);
 
     });
 
@@ -133,10 +136,10 @@ describe("TuffGovernor", function () {
             await tuffGovernor.proposals(proposalId);
 
         const holderVotingPower = await tuffGovToken.getVotes(owner.address);
-        const govBalace = await tuffGovToken.balanceOf(owner.address);
+        const govBal = await tuffGovToken.balanceOf(owner.address);
 
-        expect(govBalace.toString()).to.equal(`${utils.TUFF_TOTAL_SUPPLY}`, "Gov token balance should be equal to supply");
-        expect(holderVotingPower).to.equal(govBalace, "Voting power should equal token balance");
+        expect(govBal.toString()).to.equal(startingOwnerTuffBal, "Gov token balance should be equal to native token");
+        expect(holderVotingPower).to.equal(govBal, "Voting power should equal token balance");
 
         expect(forVotes).to.equal(holderVotingPower, "Votes 'for' should equal sender's voting power");
 

@@ -10,7 +10,7 @@ import {IUniswapV3Factory} from "@uniswap/v3-periphery/typechain/IUniswapV3Facto
 
 import {consts, TOKEN_DECIMALS, UNISWAP_POOL_BASE_FEE} from '../../utils/consts';
 import {
-  getSqrtPriceX96, getUniswapPoolContract, getWETH9Contract, printAcctBal, runCallbackImpersonatingAcct,
+  getSqrtPriceX96, printAcctBal,
   swapEthForWeth,
   swapTokens, transferTUFF
 } from '../../utils/test_utils';
@@ -21,24 +21,23 @@ describe("TuffToken", function () {
   let accounts: Signer[];
 
   let tuffTokenDiamond: TuffToken;
-  let uniswapV3Factory: IUniswapV3Factory;
 
   before(async function () {
     const {contractOwner} = await hre.getNamedAccounts();
     owner = await hre.ethers.getSigner(contractOwner);
 
-    //Per `hardhat.config.js`, the 0 and 1 index accounts are named accounts. They are reserved for deployment uses
+    //Per `hardhat.config.ts`, the 0 and 1 index accounts are named accounts. They are reserved for deployment uses
     [, , ...accounts] = await hre.ethers.getSigners();
   });
 
   beforeEach(async function () {
     const {TuffTokenDiamond} = await hre.deployments.fixture();
     tuffTokenDiamond = await hre.ethers.getContractAt(TuffTokenDiamond.abi, TuffTokenDiamond.address, owner) as TuffToken;
-    uniswapV3Factory = await hre.ethers.getContractAt("UniswapV3Factory",
-      consts("UNISWAP_V3_FACTORY_ADDR")) as IUniswapV3Factory;
   });
 
   it('should exist a pool between TUFF and WETH9, with liquidity', async () => {
+    const uniswapV3Factory = await hre.ethers.getContractAt("UniswapV3Factory",
+      consts("UNISWAP_V3_FACTORY_ADDR")) as IUniswapV3Factory;
     const tuffTokenPoolAddr = await uniswapV3Factory.getPool(
       consts("WETH9_ADDR"), tuffTokenDiamond.address, UNISWAP_POOL_BASE_FEE);
     expect(tuffTokenPoolAddr).to.not.equal(hre.ethers.constants.AddressZero);

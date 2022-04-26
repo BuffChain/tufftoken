@@ -3,6 +3,7 @@
 const {expect} = require("chai");
 const hre = require("hardhat");
 const {consts, TOKEN_TOTAL_SUPPLY, TOKEN_DECIMALS} = require("../../utils/consts");
+const {BigNumber} = require("ethers");
 
 describe("TuffToken", function () {
 
@@ -71,18 +72,19 @@ describe("TuffToken", function () {
     });
 
     it('should get decimals', async () => {
-        const decimals = (await tuffTokenDiamond.decimals());
+        const decimals = await tuffTokenDiamond.decimals();
         expect(decimals).to.equal(TOKEN_DECIMALS, "incorrect decimals");
     });
 
     it('should get totalSupply', async () => {
-        const totalSupply = parseFloat(await tuffTokenDiamond.totalSupply());
-        expect(totalSupply).to.equal(TOKEN_TOTAL_SUPPLY, "incorrect totalSupply");
+        const totalSupply = await tuffTokenDiamond.totalSupply();
+        const expectedTotalTokens = (BigNumber.from(10).pow(TOKEN_DECIMALS)).mul(TOKEN_TOTAL_SUPPLY);
+        expect(totalSupply).to.equal(expectedTotalTokens, "incorrect totalSupply");
     });
 
     it('should have TuffToken in the owner account', async () => {
-        const balance = parseFloat(await tuffTokenDiamond.balanceOf(owner.address));
-        expect(balance).to.equal(TOKEN_TOTAL_SUPPLY * 10 ** TOKEN_DECIMALS, "tokens weren't in the owner account");
+        const balance = await tuffTokenDiamond.balanceOf(owner.address);
+        expect(balance).to.be.gt(0, "tokens weren't in the owner account");
     });
 
     it('should initialize and get allowance', async () => {
@@ -240,49 +242,50 @@ describe("TuffToken", function () {
         const farmFeeAmount = await tuffTokenDiamond.calculateFee(amount, farmFee, takeFee);
         const devFeeAmount = await tuffTokenDiamond.calculateFee(amount, devFee, takeFee);
         return {
-            totalFeeAmount: parseFloat(farmFeeAmount) + parseFloat(devFeeAmount),
+            totalFeeAmount: farmFeeAmount.add(devFeeAmount),
             farmFeeAmount,
             devFeeAmount
         }
     }
 
     async function assetTransferBothIncludedInFee(sender, receiver, amount, isTokenMatured) {
-        const contractStartingBalance = parseFloat(await tuffTokenDiamond.balanceOf(tuffTokenDiamond.address));
+        const contractStartingBalance = await tuffTokenDiamond.balanceOf(tuffTokenDiamond.address);
+        const devWalletStartingBal = await tuffTokenDiamond.balanceOf(buffChainAddr);
 
         // Setup sender account
         await tuffTokenDiamond.includeInFee(sender.address);
         expect(await tuffTokenDiamond.isExcludedFromFee(sender.address)).to.equal(false, "account should not be excluded from fee");
         // Give sender account tokens to send
         await tuffTokenDiamond.transfer(sender.address, amount);
-        const senderStartingBalance = parseFloat(await tuffTokenDiamond.balanceOf(sender.address));
+        const senderStartingBalance = await tuffTokenDiamond.balanceOf(sender.address);
         expect(senderStartingBalance).to.equal(amount);
 
         // Setup receiver account
         await tuffTokenDiamond.includeInFee(receiver.address);
         expect(await tuffTokenDiamond.isExcludedFromFee(receiver.address)).to.equal(false, "account should not be excluded from fee");
-        const receiverStartingBalance = parseFloat(await tuffTokenDiamond.balanceOf(receiver.address));
+        const receiverStartingBalance = await tuffTokenDiamond.balanceOf(receiver.address);
         expect(receiverStartingBalance).to.equal(0);
 
         // Make transaction from first account to second
         await tuffTokenDiamond.connect(sender).transfer(receiver.address, amount);
 
         // Get ending balances after transaction
-        const senderEndingBalance = parseFloat(await tuffTokenDiamond.balanceOf(sender.address));
-        const receiverEndingBalance = parseFloat(await tuffTokenDiamond.balanceOf(receiver.address));
+        const senderEndingBalance = await tuffTokenDiamond.balanceOf(sender.address);
+        const receiverEndingBalance = await tuffTokenDiamond.balanceOf(receiver.address);
 
         // Get fees
         const takeFee = !isTokenMatured;
         const {totalFeeAmount, farmFeeAmount, devFeeAmount} = await getFees(amount, takeFee);
 
         // Then determine if fees were properly taken
-        expect(senderEndingBalance).to.equal(senderStartingBalance - amount, "Amount wasn't correctly taken from the sender");
-        expect(receiverEndingBalance).to.equal(receiverStartingBalance + amount - totalFeeAmount, "Amount wasn't correctly sent to the receiver");
+        expect(senderEndingBalance).to.equal(senderStartingBalance.sub(amount), "Amount wasn't correctly taken from the sender");
+        expect(receiverEndingBalance).to.equal(receiverStartingBalance.add(amount).sub(totalFeeAmount), "Amount wasn't correctly sent to the receiver");
 
-        const devWalletEndingBalance = parseFloat(await tuffTokenDiamond.balanceOf(buffChainAddr));
-        expect(devWalletEndingBalance).to.equal(devFeeAmount, "Fee wasn't correctly sent to dev wallet");
+        const devWalletEndingBal = await tuffTokenDiamond.balanceOf(buffChainAddr);
+        expect(devWalletEndingBal).to.equal(devWalletStartingBal.add(devFeeAmount), "Fee wasn't correctly sent to dev wallet");
 
-        const contractEndingBalance = parseFloat(await tuffTokenDiamond.balanceOf(tuffTokenDiamond.address));
-        expect(contractEndingBalance).to.equal(contractStartingBalance + parseFloat(farmFeeAmount), "Fee wasn't correctly sent to contract wallet");
+        const contractEndingBalance = await tuffTokenDiamond.balanceOf(tuffTokenDiamond.address);
+        expect(contractEndingBalance).to.equal(contractStartingBalance.add(farmFeeAmount), "Fee wasn't correctly sent to contract wallet");
     }
 
     it('should send token correctly - both included in fees - token has not matured', async () => {
@@ -308,7 +311,6 @@ describe("TuffToken", function () {
         expect(isTokenMatured).to.equal(true, "should have reached maturity");
 
         await assetTransferBothIncludedInFee(sender, receiver, amount, isTokenMatured);
-
     });
 
     it('should send token correctly on behalf of other account', async () => {

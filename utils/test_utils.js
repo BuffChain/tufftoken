@@ -134,9 +134,6 @@ async function swapEthForWeth(toAcct, qtyInWETH) {
     await runCallbackImpersonatingAcct(toAcct, async (acct) => {
         await weth9Contract.connect(acct).approve(acct.address, qtyInWETH);
         await weth9Contract.connect(acct).deposit({"value": qtyInWETH});
-
-        //Approve uniswap to transfer all WETH, if needed
-        // await weth9Contract.connect(acct).approve(uniswapSwapRouterContract.address, qtyInWETH);
     });
 
     return {weth9Contract, uniswapSwapRouterContract};
@@ -168,7 +165,11 @@ async function sendTokensToAddr(fromAcct, toAddr, daiAmount="") {
     const qtyInWETH = hre.ethers.utils.parseEther("20");
 
     //Swap ETH for WETH
-    const {weth9Contract, uniswapSwapRouterContract} = await swapEthForWeth(toAcct, qtyInWETH);
+    const weth9Contract = await getWETH9Contract()
+    await runCallbackImpersonatingAcct(toAcct, async (acct) => {
+        await weth9Contract.connect(acct).approve(consts("UNISWAP_V3_ROUTER_ADDR"), qtyInWETH);
+    });
+    const {uniswapSwapRouterContract} = await swapEthForWeth(toAcct, qtyInWETH);
 
     //If test specifies DAI amount, then give exact DAI amount, otherwise default to half of the WETH
     const daiContract = await getDAIContract();
