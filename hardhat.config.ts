@@ -104,13 +104,13 @@ const config: HardhatUserConfig = {
         },
         kovan: {
             live: true,
-            url: process.env.INFURA_URL,
-            accounts: [process.env.ETH_KOVAN_ACCOUNT_PRIV_KEY || ""]
+            url: process.env.INFURA_URL || "",
+            accounts: [process.env.ETH_KOVAN_ACCOUNT_PRIV_KEY || "0000000000000000000000000000000000000000000000000000000000000000"]
         },
         mainnet: {
             live: true,
-            url: process.env.INFURA_URL,
-            accounts: [process.env.ETH_MAINNET_ACCOUNT_PRIV_KEY || ""]
+            url: process.env.INFURA_URL || "",
+            accounts: [process.env.ETH_MAINNET_ACCOUNT_PRIV_KEY || "0000000000000000000000000000000000000000000000000000000000000000"]
         }
     },
     namedAccounts: {

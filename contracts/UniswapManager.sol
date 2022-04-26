@@ -83,7 +83,7 @@ contract UniswapManager {
         );
 
         //Multiple pool swaps are encoded through bytes called a `path`. A path is a sequence of token addresses and
-        // poolFees that define the pools used in the swaps.The format for pool encoding is (tokenIn, fee,
+        // poolFees that define the pools used in the swaps. The format for pool encoding is (tokenIn, fee,
         // tokenOut/tokenIn, fee, tokenOut) where tokenIn/tokenOut parameter is the shared token across the pools.
         // Since we are swapping `inputToken` to WETH9 and then WETH9 to `outputToken` the path encoding is
         // (inputToken, 0.3%, WETH9, 0.3%, outputToken).
@@ -133,6 +133,7 @@ contract UniswapManager {
             amountIn
         );
 
+        //TODO: Need to fix amountOutMinimum set to 0!
         // Naively set amountOutMinimum to 0. In production, use an oracle or other data source to choose a safer value for amountOutMinimum.
         // We also set the sqrtPriceLimitx96 to be 0 to ensure we swap our exact input amount.
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter

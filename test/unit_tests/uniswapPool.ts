@@ -4,7 +4,7 @@ import hre from "hardhat";
 import {Signer} from "ethers";
 import {expect} from "chai";
 
-import {TuffToken} from "../../src/types/contracts/TuffToken";
+import {TuffToken} from "../../src/types";
 import {IUniswapV3Factory} from "@uniswap/v3-periphery/typechain/IUniswapV3Factory";
 
 

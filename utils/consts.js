@@ -87,7 +87,8 @@ module.exports.TOKEN_DAYS_UNTIL_MATURITY = 6 * 365;
 
 module.exports.UNISWAP_POOL_BASE_FEE = 3000;
 
-module.exports.BUFFCHAIN_TOTAL_MINTED_PERCENTAGE = 15; //15%, will be divided by 100 as a BigNumber
-module.exports.BUFFCHAIN_INIT_LIQUIDITY_PERCENTAGE = 50; //50%, will be divided by 100 as a BigNumber
+module.exports.BUFFCHAIN_TOTAL_TUFF_PERCENTAGE = 15; //15%, will be divided by 100 as a BigNumber
+module.exports.BUFFCHAIN_INIT_TUFF_LIQUIDITY_PERCENTAGE = 50; //50%, will be divided by 100 as a BigNumber
+module.exports.BUFFCHAIN_INIT_WETH_LIQUIDITY_WETH = hre.ethers.utils.parseEther("10");
 
 module.exports.consts = consts;

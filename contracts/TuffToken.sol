@@ -20,7 +20,6 @@ contract TuffToken is Context, IERC20 {
         _;
     }
 
-    //TODO: Is this needed?
     using SafeMath for uint256;
     using Address for address;
 
