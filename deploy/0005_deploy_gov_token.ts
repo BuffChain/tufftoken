@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: agpl-3.0
 
 import hre from 'hardhat';
+
 const AccessControlABI = require('../artifacts/@openzeppelin/contracts/access/AccessControl.sol/AccessControl.json').abi;
 
 module.exports = async () => {
