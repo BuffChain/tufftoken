@@ -308,22 +308,6 @@ contract AaveLPManager is Context {
         return aTokenAddress;
     }
 
-    /**
-     * @dev Emitted when a swap occurs to balance an under-balanced token
-     */
-    event AaveLPManagerBalanceSwap(address tokenSwappedFor, uint256 amount);
-
-    //Using the struct to avoid Stack too deep error
-    struct BalanceMetadata {
-        address[] supportedTokens;
-        uint256[] tokensValueInWeth;
-        uint256[] tokensTargetWeight;
-        uint256 totalBalanceInWeth;
-        uint24 poolFee;
-        uint24 decimalPrecision;
-        uint256 treasuryBalance;
-    }
-
     //This will be called from a keeper when actualPercentage deviates too far from targetPercentage. We will first
     // need to calculate current/actual percentages, then determine which tokens are over/under-invested, and finally
     // swap and deposit to balance the tokens based on their targetedPercentages
@@ -331,88 +315,86 @@ contract AaveLPManager is Context {
     // we do not have to sort, which helps saves on gas
     function balanceAaveLendingPool() public aaveInitLock {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
-        BalanceMetadata memory bm;
 
-        bm.supportedTokens = getAllAaveSupportedTokens();
-        bm.tokensValueInWeth = new uint256[](
-            bm.supportedTokens.length
+        address[] memory supportedTokens = getAllAaveSupportedTokens();
+        uint256[] memory tokensValueInWeth = new uint256[](
+            supportedTokens.length
         );
-        bm.tokensTargetWeight = new uint256[](
-            bm.supportedTokens.length
+        uint256[] memory tokensTargetWeight = new uint256[](
+            supportedTokens.length
         );
 
-        bm.totalBalanceInWeth = 0;
-        bm.poolFee = 3000;
-        bm.decimalPrecision = 10**5;
-
-        bm.treasuryBalance = IERC20(address(this)).balanceOf(
-            address(this)
-        );
+        uint256 totalBalanceInWeth = 0;
+        uint24 poolFee = 3000;
 
         // First loop through all tokens to aggregate their collective value and weights
-        for (uint256 i = 0; i < bm.supportedTokens.length; i++) {
-            uint256 aTokenBalance = getATokenBalance(bm.supportedTokens[i]);
+        for (uint256 i = 0; i < supportedTokens.length; i++) {
+            uint256 aTokenBalance = getATokenBalance(supportedTokens[i]);
 
             // Get the value of each token in the same denomination, in this case WETH
             uint32 period = 60; //TODO: Make 3600?
             uint256 wethQuote = IUniswapPriceConsumer(address(this))
                 .getUniswapQuote(
                     ss.wethAddr,
-                    bm.supportedTokens[i],
-                    bm.poolFee,
+                    supportedTokens[i],
+                    poolFee,
                     period
                 );
 
             //Track balances
             uint256 tokenValueInWeth = SafeMath.mul(aTokenBalance, wethQuote);
-            bm.tokensValueInWeth[i] = tokenValueInWeth;
+            tokensValueInWeth[i] = tokenValueInWeth;
 
-            bm.totalBalanceInWeth = SafeMath.add(
-                bm.totalBalanceInWeth,
+            totalBalanceInWeth = SafeMath.add(
+                totalBalanceInWeth,
                 tokenValueInWeth
             );
         }
 
         //Then, loop through again to balance tokens
-        for (uint256 i = 0; i < bm.supportedTokens.length; i++) {
+        for (uint256 i = 0; i < supportedTokens.length; i++) {
             //Calculate target percentage
-            uint256 tokenTargetWeight = getAaveTokenTargetedPercentage(bm.supportedTokens[i]);
+            uint256 tokenTargetWeight = getAaveTokenTargetedPercentage(
+                supportedTokens[i]
+            );
             uint256 tokenTargetPercentage = SafeMath.div(
-                SafeMath.mul(tokenTargetWeight, bm.decimalPrecision),
+                tokenTargetWeight,
                 ss.totalTargetWeight
             );
 
             //Calculate actual percentage
             uint256 tokenActualPercentage = SafeMath.div(
-                SafeMath.mul(bm.tokensValueInWeth[i], bm.decimalPrecision),
-                bm.totalBalanceInWeth
+                tokensValueInWeth[i],
+                totalBalanceInWeth
             );
 
-            require(tokenTargetPercentage < uint(-1), "Cannot cast tokenTargetPercentage - out of range of int max");
-            require(tokenActualPercentage < uint(-1), "Cannot cast tokenActualPercentage - out of range of int max");
+            require(
+                tokenTargetPercentage < uint256(-1),
+                "Cannot cast tokenTargetPercentage - out of range of int max"
+            );
+            require(
+                tokenActualPercentage < uint256(-1),
+                "Cannot cast tokenActualPercentage - out of range of int max"
+            );
 
             //Only balance if token is under-allocated more than our buffer amount
-            int256 iPercentageDiff = int(tokenTargetPercentage) - int(tokenActualPercentage);
+            int256 iPercentageDiff = int256(tokenTargetPercentage) -
+                int256(tokenActualPercentage);
             if (iPercentageDiff > 0) {
-//                console.log("++++++++++++");
-//                console.log(bm.treasuryBalance);
-//                console.log(bm.supportedTokens.length);
+                //Convert percentage to WETH value
+                uint256 balanceOutAmountInWeth = SafeMath.mul(
+                    totalBalanceInWeth,
+                    uint256(iPercentageDiff)
+                );
 
-                //Get proportional balance for the token
-                uint256 balanceIn = SafeMath.div(bm.treasuryBalance, bm.supportedTokens.length);
-//                console.log(balanceIn);
+                IUniswapManager(address(this)).swapExactInputSingle(
+                    supportedTokens[i],
+                    poolFee,
+                    ss.wethAddr,
+                    balanceOutAmountInWeth
+                );
 
-                if (balanceIn > 0) {
-                    IUniswapManager(address(this)).swapExactInputMultihop(
-                        address(this),
-                        bm.poolFee,
-                        bm.poolFee,
-                        bm.supportedTokens[i],
-                        balanceIn
-                    );
-
-                    emit AaveLPManagerBalanceSwap(bm.supportedTokens[i], balanceIn);
-                }
+                //TODO: Add event when balance swap occurs
             }
         }
     }

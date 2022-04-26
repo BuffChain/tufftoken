@@ -242,11 +242,8 @@ describe('AaveLPManager', function () {
         const tokenAddr = consts("DAI_ADDR");
         const qtyInDAI = hre.ethers.utils.parseEther("2000");
         await assertDepositToAave(tuffTokenDiamond, qtyInDAI, true);
-        // Simulate the TuffToken treasury capturing fees by directly transferring TUFF to TuffToken's address
-        await utils.transferTUFF(tuffTokenDiamond.address);
 
         //First, get how much token we have before balancing
-        const startingTreasuryAmount = await tuffTokenDiamond.balanceOf(tuffTokenDiamond.address);
         const startingATokenBal = await tuffTokenDiamond.getATokenBalance(tokenAddr);
 
         //Next, set a token to a higher target percentage s.t. it is now underbalanced
@@ -255,23 +252,11 @@ describe('AaveLPManager', function () {
         await tuffTokenDiamond.setAaveTokenTargetedPercentage(tokenAddr, newTargetPercentage);
 
         //Run the balancing
-        // await tuffTokenDiamond.balanceAaveLendingPool();
-        const balancingTxResponse = await tuffTokenDiamond.balanceAaveLendingPool();
-        const balancingTxReceipt = await balancingTxResponse.wait();
+        await tuffTokenDiamond.balanceAaveLendingPool();
 
-        //Finally, confirm that we added to the under-balanced token (other than a buffer for interest made during
-        // this time)
-        const balanceSwapEvent = balancingTxReceipt.events.filter(event => event.event === 'AaveLPManagerBalanceSwap');
-        expect(balanceSwapEvent.length).to.equal(1);
-        const {tokenSwappedFor, amount} = balanceSwapEvent[0].args;
-        expect(tokenSwappedFor).to.equal(tokenAddr);
-        expect(amount).to.equal(startingTreasuryAmount);
-
-        const interestBuffer = hre.ethers.utils.parseEther('0.00001');
-        // const interestBuffer = hre.ethers.utils.formatEther('10000000000000');
+        //Finally, confirm that we improved the underbalanced token's situation
         const endingATokenBal = await tuffTokenDiamond.getATokenBalance(tokenAddr);
-        const tokenBalanceDiff = BigNumber.from(endingATokenBal).sub(startingATokenBal);
-        expect(tokenBalanceDiff).to.be.gt(interestBuffer);
+        expect(new BN(endingATokenBal.toString())).to.be.bignumber.greaterThan(new BN(startingATokenBal.toString()));
     });
 
     it("should not balance tokens when all are within buffer range", async () => {
