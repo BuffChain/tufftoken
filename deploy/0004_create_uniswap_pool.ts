@@ -9,15 +9,15 @@ import {
 } from '@uniswap/v3-periphery/artifacts/contracts/NonfungiblePositionManager.sol/NonfungiblePositionManager.json';
 import {NonfungiblePositionManager, TuffToken} from '../src/types';
 import {Address} from "hardhat-deploy/dist/types";
-import {BUFFCHAIN_INIT_LIQUIDITY_PERCENTAGE} from '../utils/consts';
+import {BUFFCHAIN_INIT_TUFF_LIQUIDITY_PERCENTAGE, BUFFCHAIN_INIT_WETH_LIQUIDITY_WETH} from '../utils/consts';
 import {IUniswapV3Factory} from "@uniswap/v3-periphery/typechain/IUniswapV3Factory";
 import {IUniswapV3Pool} from "@uniswap/v3-periphery/typechain/IUniswapV3Pool";
 
 const {consts, UNISWAP_POOL_BASE_FEE} = require("../utils/consts");
 const {logDeploymentTx} = require("../utils/deployment_helpers");
 
-//TODO: No test utils in dpeloyments
-const {getSqrtPriceX96, getWETH9Contract} = require("../utils/test_utils");
+//TODO: No test utils in deployments
+const {getSqrtPriceX96, getWETH9Contract, printAcctBal} = require("../utils/test_utils");
 
 interface Immutables {
     factory: string;
@@ -106,18 +106,17 @@ async function addLiquidityToPool(poolContract: IUniswapV3Pool, tuffTokenDiamond
     //Use a portion of BuffChain's TUFF tokens as liquidity
     //TODO: do we also want to use TuffDAO treasury? That would _likely_ be another deployment script
     console.log("-----STARTING BALANCES-----");
-    const {tuffBal} = await printBuffChainBal(tuffTokenDiamond, buffChain);
-    const buffChainsTuffLiquidity = tuffBal.mul(BUFFCHAIN_INIT_LIQUIDITY_PERCENTAGE).div(100);
-    //TODO: no magic number
-    const buffChainsWethLiquidity = hre.ethers.utils.parseEther("10");
+    const {tuffBal} = await printAcctBal(tuffTokenDiamond, buffChain);
+    const buffChainsTuffLiquidity = tuffBal.mul(BUFFCHAIN_INIT_TUFF_LIQUIDITY_PERCENTAGE).div(100);
+    const buffChainsWethLiquidity = BUFFCHAIN_INIT_WETH_LIQUIDITY_WETH;
 
     await tuffTokenDiamond.connect(buffChainAcct).approve(nonfungiblePositionManager.address, buffChainsTuffLiquidity);
     await weth9Contract.connect(buffChainAcct).approve(nonfungiblePositionManager.address, buffChainsWethLiquidity);
 
     const block = await hre.ethers.provider.getBlock("latest");
-    //TODO: No magic number
-    const deadline = block.timestamp + 200;
+    const deadline = block.timestamp + 60 * 20; //20 minutes from the latest block;
 
+    console.log(`Minting WETH9/TUFF liquidity position for [${buffChain}]`);
     await nonfungiblePositionManager.connect(buffChainAcct).mint(
         {
             token0: immutables.token0,
@@ -137,20 +136,7 @@ async function addLiquidityToPool(poolContract: IUniswapV3Pool, tuffTokenDiamond
     const tokenId = await nonfungiblePositionManager.tokenOfOwnerByIndex(buffChain, 0);
 
     console.log("-----ENDING BALANCES-----");
-    await printBuffChainBal(tuffTokenDiamond, buffChain);
-}
-
-async function printBuffChainBal(tuffTokenDiamond: Contract, buffChain: Address) {
-    const ethBal = BigNumber.from(await hre.ethers.provider.getBalance(buffChain));
-    console.log(`[${buffChain}] has [${hre.ethers.utils.formatEther(ethBal)}] ETH`);
-
-    const wethBal = BigNumber.from(await (await getWETH9Contract()).balanceOf(buffChain));
-    console.log(`[${buffChain}] has [${hre.ethers.utils.formatEther(wethBal)}] WETH`);
-
-    const tuffBal = BigNumber.from(await tuffTokenDiamond.balanceOf(buffChain));
-    console.log(`[${buffChain}] has [${tuffBal.toString()}] TUFF`);
-
-    return {ethBal, wethBal, tuffBal};
+    await printAcctBal(tuffTokenDiamond, buffChain);
 }
 
 module.exports = async () => {

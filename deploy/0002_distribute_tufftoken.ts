@@ -3,7 +3,7 @@
 import hre from "hardhat";
 import {BigNumber} from "ethers";
 import {TuffToken} from '../src/types';
-import {BUFFCHAIN_TOTAL_MINTED_PERCENTAGE, TOKEN_DECIMALS, TOKEN_TOTAL_SUPPLY} from "../utils/consts";
+import {BUFFCHAIN_TOTAL_TUFF_PERCENTAGE, TOKEN_DECIMALS, TOKEN_TOTAL_SUPPLY} from "../utils/consts";
 
 module.exports = async () => {
     console.log("[DEPLOY][v0002] - Distributing tokens to initial holders");
@@ -17,7 +17,7 @@ module.exports = async () => {
 
     //Transfer BuffChain's TUFF tokens
     const totalTokens = (BigNumber.from(10).pow(TOKEN_DECIMALS)).mul(TOKEN_TOTAL_SUPPLY);
-    const buffChainTotalCut = totalTokens.mul(BUFFCHAIN_TOTAL_MINTED_PERCENTAGE).div(100);
+    const buffChainTotalCut = totalTokens.mul(BUFFCHAIN_TOTAL_TUFF_PERCENTAGE).div(100);
     console.log(`Sending [${buffChainTotalCut}] TUFF to buffChain [${buffChain}]`);
     await (tuffTokenDiamond.connect(contractOwnerAcct) as TuffToken).transfer(buffChain, buffChainTotalCut);
 
