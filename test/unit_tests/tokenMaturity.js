@@ -161,7 +161,6 @@ describe('TokenMaturity', function () {
         expect(senderTuffTokenBalanceAfterRedemption).to.equal(0,
             "Holder's balance was not reset");
 
-        // await tuffTokenDiamond.redeem();
         await expectRevert(tuffTokenDiamond.redeem(),
             "Address can only redeem once.");
 

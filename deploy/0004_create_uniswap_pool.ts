@@ -97,7 +97,7 @@ async function addLiquidityToPool(poolContract: IUniswapV3Pool, tuffTokenDiamond
     const state = await getPoolState(poolContract);
 
     const nonfungiblePositionManager = await hre.ethers.getContractAt(
-        NonfungiblePositionManagerABI, consts("UNISWAP_V3_NonfungiblePositionManager_ADDR")
+        NonfungiblePositionManagerABI, consts("UNISWAP_V3_NONFUNGIBLEPOSITIONMANAGER_ADDR")
     ) as NonfungiblePositionManager;
 
     const buffChainAcct = await hre.ethers.getSigner(buffChain);
