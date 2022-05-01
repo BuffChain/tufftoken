@@ -140,7 +140,7 @@ async function addLiquidityToPool(poolContract: IUniswapV3Pool, tuffTokenDiamond
 }
 
 module.exports = async () => {
-    console.log("[DEPLOY][v0004] - Creating Uniswap pool and providing liquidity");
+    console.log("[DEPLOY][v0005] - Creating Uniswap pool and providing liquidity");
 
     const {deployments, getNamedAccounts} = hre;
     const {contractOwner, buffChain} = await getNamedAccounts();

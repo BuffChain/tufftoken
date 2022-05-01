@@ -9,7 +9,7 @@ const {
 const {logDeploymentTx} = require("../utils/deployment_helpers");
 
 module.exports = async () => {
-    console.log("[DEPLOY][v0001] - Deploying and initializing TuffTokenDiamond");
+    console.log("[DEPLOY][v0002] - Deploying and initializing TuffTokenDiamond");
 
     const {deployments, getNamedAccounts} = hre;
     const {deployer, contractOwner, buffChain} = await getNamedAccounts();

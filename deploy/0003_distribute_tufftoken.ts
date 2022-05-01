@@ -6,7 +6,7 @@ import {TuffToken} from '../src/types';
 import {BUFFCHAIN_TOTAL_TUFF_PERCENTAGE, TOKEN_DECIMALS, TOKEN_TOTAL_SUPPLY} from "../utils/consts";
 
 module.exports = async () => {
-    console.log("[DEPLOY][v0002] - Distributing tokens to initial holders");
+    console.log("[DEPLOY][v0003] - Distributing tokens to initial holders");
 
     const {deployments, getNamedAccounts} = hre;
     const {contractOwner, buffChain} = await getNamedAccounts();

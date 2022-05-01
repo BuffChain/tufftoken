@@ -5,15 +5,13 @@ import hre from 'hardhat';
 const AccessControlABI = require('../artifacts/@openzeppelin/contracts/access/AccessControl.sol/AccessControl.json').abi;
 
 module.exports = async () => {
-    console.log("[DEPLOY][v0005] - Deploying TuffGov token");
+    console.log("[DEPLOY][v0001] - Deploying TuffGov token");
 
     const {deployments, getNamedAccounts} = hre;
     const {deployer, contractOwner} = await getNamedAccounts();
 
     console.log(`Deployer address [${deployer}]`);
     console.log(`Contract owner address [${contractOwner}]`);
-
-    const tuffTokenDiamond = await deployments.get("TuffTokenDiamond");
 
     let tuffDAOToken = await deployments.deploy('TuffDAOToken', {
         from: contractOwner,
@@ -22,11 +20,6 @@ module.exports = async () => {
     });
 
     console.log(`TuffDAOToken address [${tuffDAOToken.address}]`);
-
-    // @ts-ignore
-    const tuffTokenDiamondContract = await hre.ethers.getContractAt(tuffTokenDiamond.abi, tuffTokenDiamond.address, contractOwner);
-
-    await tuffTokenDiamondContract.excludeFromFee(tuffDAOToken.address);
 
     let timelockController = await deployments.deploy('TimelockController', {
         from: contractOwner,
