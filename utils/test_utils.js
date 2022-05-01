@@ -240,13 +240,13 @@ async function getUniswapPriceQuote(tokenA, tokenB, poolFee, period) {
     return Math.pow(1.0001, avgTick);
 }
 
-const wrapTuffToGov = async (tuffToken, tuffGovToken, amount) => {
-    await tuffToken.approve(tuffGovToken.address, amount);
-    await tuffGovToken.deposit(amount)
+const wrapTuffToGov = async (tuffToken, tuffDAOToken, amount) => {
+    await tuffToken.approve(tuffDAOToken.address, amount);
+    await tuffDAOToken.deposit(amount)
 }
 
-const unwrapGovToTuff = async (tuffGovToken, amount) => {
-    await tuffGovToken.withdraw(amount)
+const unwrapGovToTuff = async (tuffDAOToken, amount) => {
+    await tuffDAOToken.withdraw(amount)
 }
 
 async function printAcctBal(tuffTokenDiamond, acctAddr) {

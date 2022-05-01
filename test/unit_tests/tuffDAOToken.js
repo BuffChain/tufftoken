@@ -8,13 +8,13 @@ const {
 } = require('@openzeppelin/test-helpers');
 const utils = require("../../utils/test_utils");
 
-describe("TuffGovToken", function () {
+describe("TuffDAOToken", function () {
 
     let owner;
     let accounts;
 
     let tuffTokenDiamond;
-    let tuffGovToken;
+    let tuffDAOToken;
 
     before(async function () {
 
@@ -24,10 +24,10 @@ describe("TuffGovToken", function () {
         //Per `hardhat.config.ts`, the 0 and 1 index accounts are named accounts. They are reserved for deployment uses
         [, , ...accounts] = await hre.ethers.getSigners();
 
-        const {TuffTokenDiamond, TuffGovToken} = await hre.deployments.fixture();
+        const {TuffTokenDiamond, TuffDAOToken} = await hre.deployments.fixture();
         tuffTokenDiamond = await hre.ethers.getContractAt(TuffTokenDiamond.abi, TuffTokenDiamond.address, owner);
 
-        tuffGovToken = await hre.ethers.getContractAt(TuffGovToken.abi, TuffGovToken.address, owner);
+        tuffDAOToken = await hre.ethers.getContractAt(TuffDAOToken.abi, TuffDAOToken.address, owner);
 
     });
 
@@ -36,15 +36,15 @@ describe("TuffGovToken", function () {
         const startingTuffBalance = await tuffTokenDiamond.balanceOf(account);
         expect(startingTuffBalance).to.equal(amount, "Unexpected tuff starting balance");
 
-        const startingTuffGovBalance = await tuffGovToken.balanceOf(account);
+        const startingTuffGovBalance = await tuffDAOToken.balanceOf(account);
         expect(startingTuffGovBalance).to.equal(0, "Unexpected gov starting balance");
 
-        await utils.wrapTuffToGov(tuffTokenDiamond, tuffGovToken, amount.toString());
+        await utils.wrapTuffToGov(tuffTokenDiamond, tuffDAOToken, amount.toString());
 
         const tuffBalanceAfterWrap = await tuffTokenDiamond.balanceOf(account);
         expect(tuffBalanceAfterWrap).to.equal(startingTuffGovBalance, "Unexpected tuff balance after wrap");
 
-        const tuffGovBalanceAfterWrap = await tuffGovToken.balanceOf(account);
+        const tuffGovBalanceAfterWrap = await tuffDAOToken.balanceOf(account);
         expect(tuffGovBalanceAfterWrap).to.equal(startingTuffBalance, "Unexpected tuff gov balance after wrap");
 
     }
@@ -53,16 +53,16 @@ describe("TuffGovToken", function () {
 
         const sender = owner.address;
         const startingTuffBalance = await tuffTokenDiamond.balanceOf(sender);
-        const startingTuffGovBalance = await tuffGovToken.balanceOf(sender);
+        const startingTuffGovBalance = await tuffDAOToken.balanceOf(sender);
 
         await assertTuffWasWrapped(sender, startingTuffBalance);
 
-        await utils.unwrapGovToTuff(tuffGovToken, startingTuffBalance.toString());
+        await utils.unwrapGovToTuff(tuffDAOToken, startingTuffBalance.toString());
 
         const tuffBalanceAfterUnwrap = await tuffTokenDiamond.balanceOf(sender);
         expect(tuffBalanceAfterUnwrap).to.equal(startingTuffBalance, "Unexpected tuff balance after unwrap");
 
-        const tuffGovBalanceAfterUnWrap = await tuffGovToken.balanceOf(sender);
+        const tuffGovBalanceAfterUnWrap = await tuffDAOToken.balanceOf(sender);
         expect(tuffGovBalanceAfterUnWrap).to.equal(startingTuffGovBalance, "Unexpected tuff gov balance after unwrap");
     }
 
@@ -87,29 +87,29 @@ describe("TuffGovToken", function () {
 
         await assertTuffWasWrapped(sender, tuffBalance);
 
-        let delegate = await tuffGovToken.delegates(sender);
+        let delegate = await tuffDAOToken.delegates(sender);
         expect(delegate).to.equal(hre.ethers.constants.AddressZero, "Should not have delegate set");
 
-        let checkPoints = await tuffGovToken.numCheckpoints(sender);
+        let checkPoints = await tuffDAOToken.numCheckpoints(sender);
         expect(checkPoints).to.equal(0, "Should not have reached any checkpoints");
 
-        let weight = await tuffGovToken.getVotes(sender);
+        let weight = await tuffDAOToken.getVotes(sender);
         expect(weight).to.equal(0, "Should not have any voting power");
 
-        await tuffGovToken.delegate(sender);
+        await tuffDAOToken.delegate(sender);
 
-        delegate = await tuffGovToken.delegates(sender);
+        delegate = await tuffDAOToken.delegates(sender);
         expect(delegate).to.equal(sender, "Should have delegated self");
 
-        checkPoints = await tuffGovToken.numCheckpoints(sender);
+        checkPoints = await tuffDAOToken.numCheckpoints(sender);
         expect(checkPoints).to.equal(1, "Should have reached checkpoint");
 
-        weight = await tuffGovToken.getVotes(sender);
+        weight = await tuffDAOToken.getVotes(sender);
         expect(weight).to.equal(tuffBalance.toString(), "Should have voting power equal to balance of wrapped token");
 
-        await utils.unwrapGovToTuff(tuffGovToken, tuffBalance)
+        await utils.unwrapGovToTuff(tuffDAOToken, tuffBalance)
 
-        weight = await tuffGovToken.getVotes(sender);
+        weight = await tuffDAOToken.getVotes(sender);
         expect(weight).to.equal(0, "Should not have any voting power");
 
     });

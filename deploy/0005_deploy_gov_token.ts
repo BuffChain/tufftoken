@@ -15,18 +15,18 @@ module.exports = async () => {
 
     const tuffTokenDiamond = await deployments.get("TuffTokenDiamond");
 
-    let tuffGovToken = await deployments.deploy('TuffGovToken', {
+    let tuffDAOToken = await deployments.deploy('TuffDAOToken', {
         from: contractOwner,
-        args: [tuffTokenDiamond.address],
+        args: ["TuffDAOToken", "TuffDAO"],
         log: true
     });
 
-    console.log(`TuffGovToken address [${tuffGovToken.address}]`);
+    console.log(`TuffDAOToken address [${tuffDAOToken.address}]`);
 
     // @ts-ignore
     const tuffTokenDiamondContract = await hre.ethers.getContractAt(tuffTokenDiamond.abi, tuffTokenDiamond.address, contractOwner);
 
-    await tuffTokenDiamondContract.excludeFromFee(tuffGovToken.address);
+    await tuffTokenDiamondContract.excludeFromFee(tuffDAOToken.address);
 
     let timelockController = await deployments.deploy('TimelockController', {
         from: contractOwner,
@@ -39,7 +39,7 @@ module.exports = async () => {
 
     let tuffGovernor = await deployments.deploy('TuffGovernor', {
         from: contractOwner,
-        args: [tuffGovToken.address, timelockController.address],
+        args: [tuffDAOToken.address, timelockController.address],
         log: true
     });
 
