@@ -1,15 +1,18 @@
 // SPDX-License-Identifier: agpl-3.0
 
-const hre = require("hardhat");
+import hre from 'hardhat';
 
-const {consts, UNISWAP_POOL_BASE_FEE, TOKEN_NAME, TOKEN_SYMBOL, TOKEN_DECIMALS, TOKEN_FARM_FEE, TOKEN_DEV_FEE,
+const {
+    consts, UNISWAP_POOL_BASE_FEE, TOKEN_NAME, TOKEN_SYMBOL, TOKEN_DECIMALS, TOKEN_FARM_FEE, TOKEN_DEV_FEE,
     TOKEN_TOTAL_SUPPLY, TOKEN_DAYS_UNTIL_MATURITY
 } = require("../utils/consts");
 const {logDeploymentTx} = require("../utils/deployment_helpers");
 
 module.exports = async () => {
+    console.log("[DEPLOY][v0001] - Deploying and initializing TuffTokenDiamond");
+
     const {deployments, getNamedAccounts} = hre;
-    const {deployer, contractOwner} = await getNamedAccounts();
+    const {deployer, contractOwner, buffChain} = await getNamedAccounts();
 
     console.log(`Deployer address [${deployer}]`);
     console.log(`Contract owner address [${contractOwner}]`);
@@ -27,6 +30,7 @@ module.exports = async () => {
         ],
         log: true
     });
+    // @ts-ignore
     let tuffTokenDiamondContract = await hre.ethers.getContractAt(tuffTokenDiamond.abi, tuffTokenDiamond.address, contractOwner);
     const tuffTokenAddress = await tuffTokenDiamondContract.address;
     console.log(`TuffTokenDiamond address [${tuffTokenAddress}]`);
@@ -39,7 +43,7 @@ module.exports = async () => {
             TOKEN_DECIMALS,
             TOKEN_FARM_FEE,
             TOKEN_DEV_FEE,
-            consts("DEV_WALLET_ADDR"),
+            buffChain,
             TOKEN_TOTAL_SUPPLY
         );
         logDeploymentTx("Initialized TuffToken:", initTx);
@@ -47,7 +51,7 @@ module.exports = async () => {
 
     if (!await tuffTokenDiamondContract.isAaveInit()) {
         let tx = await tuffTokenDiamondContract.initAaveLPManager(
-            consts("AAVE_LENDINGPOOL_PROVIDER_ADDR"),  consts("AAVE_PROTOCOL_DATA_PROVIDER_ADDR"),
+            consts("AAVE_LENDINGPOOL_PROVIDER_ADDR"), consts("AAVE_PROTOCOL_DATA_PROVIDER_ADDR"),
             consts("WETH9_ADDR")
         );
         logDeploymentTx("Initialized AaveLPManager:", tx);
@@ -80,7 +84,6 @@ module.exports = async () => {
         );
         logDeploymentTx("Initialized UniswapManager:", initTx);
     }
-
 
     if (!await tuffTokenDiamondContract.isUniswapPriceConsumerInit()) {
         let initTx = await tuffTokenDiamondContract.initUniswapPriceConsumer(consts("UNISWAP_V3_FACTORY_ADDR"));

@@ -1,19 +1,19 @@
 import * as fs from 'fs';
 import path from "path";
 
+import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-waffle';
 import '@nomiclabs/hardhat-web3';
 import 'hardhat-deploy';
 import 'hardhat-deploy-ethers';
 import 'hardhat-gas-reporter';
+import '@typechain/hardhat'; //Generate types from ABI of compiled contracts
 import {TASK_DEPLOY_MAIN} from 'hardhat-deploy';
-import {task, extendEnvironment, extendConfig, HardhatUserConfig, subtask} from 'hardhat/config';
+import {task, extendEnvironment, HardhatUserConfig, subtask} from 'hardhat/config';
 
 import 'dotenv/config';
 import {HardhatNetworkConfig} from "hardhat/src/types/config";
 import {
-    HardhatConfig,
-    HardhatNetworkForkingConfig,
     HardhatRuntimeEnvironment,
     RunSuperFunction,
     TaskArguments
@@ -34,10 +34,7 @@ declare module 'hardhat/types/config' {
     }
 }
 
-/**
- * @type import('hardhat/config').HardhatUserConfig
- */
-module.exports = {
+const config: HardhatUserConfig = {
     paths: {
         tests: "./test/unit_tests"
     },
@@ -85,13 +82,16 @@ module.exports = {
     },
     networks: {
         hardhat: {
+            live: false,
             forking: {
                 url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMAPI_KEY}`,
 
                 //Feel free to update at any time. This is here to make local development and caching easier
-                blockNumber: 14411890
+                blockNumber: 14623970
             },
-            timeout: 30000,
+            accounts: {
+                mnemonic: process.env.ETH_HARDHAT_ACCOUNT_MNEMONIC
+            }
 
             // mining: {
             //     auto: false,
@@ -99,11 +99,18 @@ module.exports = {
             // }
         },
         mainnet_cloudflare: {
+            live: false,
             url: "https://cloudflare-eth.com"
         },
         kovan: {
-            url: process.env.INFURA_URL,
-            accounts: [process.env.ETH_ACCOUNT_PRIV_KEY]
+            live: true,
+            url: process.env.INFURA_URL || "",
+            accounts: [process.env.ETH_KOVAN_ACCOUNT_PRIV_KEY || "0000000000000000000000000000000000000000000000000000000000000000"]
+        },
+        mainnet: {
+            live: true,
+            url: process.env.INFURA_URL || "",
+            accounts: [process.env.ETH_MAINNET_ACCOUNT_PRIV_KEY || "0000000000000000000000000000000000000000000000000000000000000000"]
         }
     },
     namedAccounts: {
@@ -116,6 +123,16 @@ module.exports = {
             default: 1, //For tests and hardhat network, use accounts[1]
             1: '', //TODO: Multi-sig ETH account for mainnet
             "kovan": '0x4d5031A3BF5b4828932D0e1C3006cC860b97aC3c',
+        },
+        buffChain: {
+            default: '0x4d5031A3BF5b4828932D0e1C3006cC860b97aC3c',
+            1: '', //TODO: Multi-sig ETH account for mainnet
+            "kovan": '',
+        },
+        tuffDAO: {
+            default: '0x46E7BDD2b003a98C85dA07b930cd3354E97D7F0d',
+            1: '', //TODO: Multi-sig ETH account for mainnet
+            "kovan": '',
         }
     },
     external: {
@@ -127,8 +144,19 @@ module.exports = {
     },
     mocha: {
         timeout: 30000
+    },
+    typechain: {
+        outDir: "src/types",
+        target: "ethers-v5",
+        externalArtifacts: ['node_modules/@uniswap/v3-periphery/artifacts/contracts/NonfungiblePositionManager.sol/NonfungiblePositionManager.json']
+    },
+    backTest: {
+        startBlockNumber: 0,
+        endBlockNumber: 0,
     }
 };
+
+export default config;
 
 extendEnvironment((hre: HardhatRuntimeEnvironment) => {
     if (hre.hardhatArguments.verbose) {

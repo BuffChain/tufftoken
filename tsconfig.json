@@ -1,11 +1,23 @@
 {
+  "ts-node": {
+    "compilerOptions": {
+      "module": "CommonJS"
+    }
+  },
   "compilerOptions": {
     "target": "es2018",
     "module": "commonjs",
     "strict": true,
     "esModuleInterop": true,
-    "outDir": "dist"
+    "allowJs": true,
+    "outDir": "dist",
+    "resolveJsonModule": true
   },
-  "include": ["./scripts", "./test"],
-  "files": ["./hardhat.config.ts"]
+  "files": ["./hardhat.config.ts"],
+  "include": [
+    "src/**/*",
+    "deploy/**/*",
+    "utils/**/*",
+    "test/**/*"
+  ]
 }

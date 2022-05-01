@@ -56,9 +56,6 @@ There are a few additional quirks I would like to call out:
 - The key feature to support diamond storage was released in solidity v0.6.4. Thus, all contracts must compile with 
 versions higher than that
 - You can mix and match different storage solutions, but that should only be a last resort. It is untested
-- //TODO: Public vs private within diamond storage?
-- //TODO: Contract ownership?
-- //TODO: Use address(this) everywhere since the state and storage are based in the diamond contract, and facets are just used for their logic?
 
 ## Testing
 
