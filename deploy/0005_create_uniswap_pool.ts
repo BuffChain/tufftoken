@@ -157,4 +157,4 @@ module.exports = async () => {
     await addLiquidityToPool(uniswapV3Pool, tuffTokenDiamond, buffChain);
 };
 
-module.exports.tags = ['v0004'];
+module.exports.tags = ['v0005'];

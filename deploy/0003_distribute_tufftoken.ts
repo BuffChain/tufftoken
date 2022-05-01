@@ -25,4 +25,4 @@ module.exports = async () => {
     // the contractOwnerAcct
 };
 
-module.exports.tags = ['v0002'];
+module.exports.tags = ['v0003'];

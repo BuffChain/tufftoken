@@ -14,12 +14,11 @@ describe("TuffGovernor", function () {
     let owner;
     let accounts;
 
-    let tuffTokenDiamond;
     let tuffDAOToken;
     let tuffGovernor;
     let timelockController;
 
-    let startingOwnerTuffBal;
+    let startingOwnerTuffDAOBal;
 
     before(async function () {
 
@@ -29,8 +28,7 @@ describe("TuffGovernor", function () {
         //Per `hardhat.config.ts`, the 0 and 1 index accounts are named accounts. They are reserved for deployment uses
         [, , ...accounts] = await hre.ethers.getSigners();
 
-        const {TuffTokenDiamond, TuffDAOToken, TimelockController, TuffGovernor} = await hre.deployments.fixture();
-        tuffTokenDiamond = await hre.ethers.getContractAt(TuffTokenDiamond.abi, TuffTokenDiamond.address, owner);
+        const {TuffDAOToken, TimelockController, TuffGovernor} = await hre.deployments.fixture();
 
         tuffDAOToken = await hre.ethers.getContractAt(TuffDAOToken.abi, TuffDAOToken.address, owner);
 
@@ -40,14 +38,13 @@ describe("TuffGovernor", function () {
 
         await tuffDAOToken.delegate(owner.address);
 
-        startingOwnerTuffBal = await tuffTokenDiamond.balanceOf(owner.address);
+        startingOwnerTuffDAOBal = await tuffDAOToken.balanceOf(owner.address);
 
-        await utils.wrapTuffToGov(tuffTokenDiamond, tuffDAOToken, startingOwnerTuffBal);
 
     });
 
     async function assertProposalCreated(description) {
-        const tokenAddress = tuffTokenDiamond.address
+        const tokenAddress = tuffDAOToken.address
         const token = await hre.ethers.getContractAt('ERC20', tokenAddress);
         const calldata = token.interface.encodeFunctionData('name', []);
 
@@ -138,7 +135,7 @@ describe("TuffGovernor", function () {
         const holderVotingPower = await tuffDAOToken.getVotes(owner.address);
         const govBal = await tuffDAOToken.balanceOf(owner.address);
 
-        expect(govBal.toString()).to.equal(startingOwnerTuffBal, "Gov token balance should be equal to native token");
+        expect(govBal.toString()).to.equal(startingOwnerTuffDAOBal, "Gov token balance should be equal to native token");
         expect(holderVotingPower).to.equal(govBal, "Voting power should equal token balance");
 
         expect(forVotes).to.equal(holderVotingPower, "Votes 'for' should equal sender's voting power");

@@ -240,15 +240,6 @@ async function getUniswapPriceQuote(tokenA, tokenB, poolFee, period) {
     return Math.pow(1.0001, avgTick);
 }
 
-const wrapTuffToGov = async (tuffToken, tuffDAOToken, amount) => {
-    await tuffToken.approve(tuffDAOToken.address, amount);
-    await tuffDAOToken.deposit(amount)
-}
-
-const unwrapGovToTuff = async (tuffDAOToken, amount) => {
-    await tuffDAOToken.withdraw(amount)
-}
-
 async function printAcctBal(tuffTokenDiamond, acctAddr) {
     const ethBal = BigNumber.from(await hre.ethers.provider.getBalance(acctAddr));
     console.log(`[${acctAddr}] has [${hre.ethers.utils.formatEther(ethBal)}] ETH`);
@@ -277,7 +268,5 @@ module.exports = {
     getSqrtPriceX96,
     getUniswapPoolContract,
     getUniswapPriceQuote,
-    wrapTuffToGov,
-    unwrapGovToTuff,
     printAcctBal
 }

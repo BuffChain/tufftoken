@@ -31,4 +31,4 @@ module.exports = async () => {
     await swapEthForWeth(buffChainAcct, wethAmt);
 };
 
-module.exports.tags = ['v0003', 'test'];
+module.exports.tags = ['v0004', 'test'];

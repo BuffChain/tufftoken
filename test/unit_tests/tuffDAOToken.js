@@ -13,7 +13,6 @@ describe("TuffDAOToken", function () {
     let owner;
     let accounts;
 
-    let tuffTokenDiamond;
     let tuffDAOToken;
 
     before(async function () {
@@ -24,68 +23,18 @@ describe("TuffDAOToken", function () {
         //Per `hardhat.config.ts`, the 0 and 1 index accounts are named accounts. They are reserved for deployment uses
         [, , ...accounts] = await hre.ethers.getSigners();
 
-        const {TuffTokenDiamond, TuffDAOToken} = await hre.deployments.fixture();
-        tuffTokenDiamond = await hre.ethers.getContractAt(TuffTokenDiamond.abi, TuffTokenDiamond.address, owner);
+        const {TuffDAOToken} = await hre.deployments.fixture();
 
         tuffDAOToken = await hre.ethers.getContractAt(TuffDAOToken.abi, TuffDAOToken.address, owner);
 
     });
 
-    async function assertTuffWasWrapped(account, amount) {
-
-        const startingTuffBalance = await tuffTokenDiamond.balanceOf(account);
-        expect(startingTuffBalance).to.equal(amount, "Unexpected tuff starting balance");
-
-        const startingTuffGovBalance = await tuffDAOToken.balanceOf(account);
-        expect(startingTuffGovBalance).to.equal(0, "Unexpected gov starting balance");
-
-        await utils.wrapTuffToGov(tuffTokenDiamond, tuffDAOToken, amount.toString());
-
-        const tuffBalanceAfterWrap = await tuffTokenDiamond.balanceOf(account);
-        expect(tuffBalanceAfterWrap).to.equal(startingTuffGovBalance, "Unexpected tuff balance after wrap");
-
-        const tuffGovBalanceAfterWrap = await tuffDAOToken.balanceOf(account);
-        expect(tuffGovBalanceAfterWrap).to.equal(startingTuffBalance, "Unexpected tuff gov balance after wrap");
-
-    }
-
-    async function assertTuffGovConversions() {
-
-        const sender = owner.address;
-        const startingTuffBalance = await tuffTokenDiamond.balanceOf(sender);
-        const startingTuffGovBalance = await tuffDAOToken.balanceOf(sender);
-
-        await assertTuffWasWrapped(sender, startingTuffBalance);
-
-        await utils.unwrapGovToTuff(tuffDAOToken, startingTuffBalance.toString());
-
-        const tuffBalanceAfterUnwrap = await tuffTokenDiamond.balanceOf(sender);
-        expect(tuffBalanceAfterUnwrap).to.equal(startingTuffBalance, "Unexpected tuff balance after unwrap");
-
-        const tuffGovBalanceAfterUnWrap = await tuffDAOToken.balanceOf(sender);
-        expect(tuffGovBalanceAfterUnWrap).to.equal(startingTuffGovBalance, "Unexpected tuff gov balance after unwrap");
-    }
-
-    it("should conversion between Tuff and TuffGov", async () => {
-        await assertTuffGovConversions();
-    });
 
     it("should modify voting power", async () => {
 
         const sender = owner.address;
-        const tuffBalance = await tuffTokenDiamond.balanceOf(sender);
-
-        let isExcludedFromFee = await tuffTokenDiamond.isExcludedFromFee(sender);
-
-        expect(isExcludedFromFee).to.equal(true, "Should be excluded from fee");
-
-        await tuffTokenDiamond.includeInFee(sender);
-
-        isExcludedFromFee = await tuffTokenDiamond.isExcludedFromFee(sender);
-
-        expect(isExcludedFromFee).to.equal(false, "Should not be excluded from fee");
-
-        await assertTuffWasWrapped(sender, tuffBalance);
+        const tuffDAOBalance = await tuffDAOToken.balanceOf(sender);
+        expect(tuffDAOBalance > 0).to.equal(true, "Should have a positive TuffDAO balance.");
 
         let delegate = await tuffDAOToken.delegates(sender);
         expect(delegate).to.equal(hre.ethers.constants.AddressZero, "Should not have delegate set");
@@ -105,9 +54,9 @@ describe("TuffDAOToken", function () {
         expect(checkPoints).to.equal(1, "Should have reached checkpoint");
 
         weight = await tuffDAOToken.getVotes(sender);
-        expect(weight).to.equal(tuffBalance.toString(), "Should have voting power equal to balance of wrapped token");
+        expect(weight).to.equal(tuffDAOBalance.toString(), "Should have voting power equal to balance of DAO token");
 
-        await utils.unwrapGovToTuff(tuffDAOToken, tuffBalance)
+        await tuffDAOToken.delegate(hre.ethers.constants.AddressZero);
 
         weight = await tuffDAOToken.getVotes(sender);
         expect(weight).to.equal(0, "Should not have any voting power");

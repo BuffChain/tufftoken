@@ -19,7 +19,6 @@ contract TuffDAOToken is Context, ERC20, ERC20Permit, ERC20Votes {
     string _name;
     string _symbol;
     uint8 _decimals;
-    uint256 _totalSupply;
 
     constructor(string memory name_, string memory symbol_)
         ERC20(name_, symbol_)
@@ -28,7 +27,8 @@ contract TuffDAOToken is Context, ERC20, ERC20Permit, ERC20Votes {
         _name = name_;
         _symbol = symbol_;
         _decimals = 9;
-        _totalSupply = 1000000000 * 10 ** _decimals;
+        uint256 _totalSupply = 1000000000 * 10 ** _decimals;
+        _mint(_msgSender(), _totalSupply);
     }
 
     function name() public view override returns (string memory) {
@@ -41,15 +41,6 @@ contract TuffDAOToken is Context, ERC20, ERC20Permit, ERC20Votes {
 
     function decimals() public view override returns (uint8) {
         return _decimals;
-    }
-
-    function totalSupply()
-    public
-    view
-    override
-    returns (uint256)
-    {
-        return _totalSupply;
     }
 
     // The functions below are overrides required by Solidity.

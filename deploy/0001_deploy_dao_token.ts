@@ -59,4 +59,4 @@ module.exports = async () => {
     await accessControl.revokeRole(adminRole, deployer);
 };
 
-module.exports.tags = ['v0005'];
+module.exports.tags = ['v0001'];

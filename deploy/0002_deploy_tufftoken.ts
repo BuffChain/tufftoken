@@ -91,4 +91,4 @@ module.exports = async () => {
     }
 };
 
-module.exports.tags = ['v0001'];
+module.exports.tags = ['v0002'];
