@@ -8,8 +8,22 @@ import "@openzeppelin/contracts/utils/Address.sol";
 
 import {TuffTokenLib} from "./TuffTokenLib.sol";
 import "./TokenMaturity.sol";
+import {TuffOwner} from "./TuffOwner.sol";
 
 contract TuffToken is Context, IERC20 {
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyOwner() {
+        TuffOwner tuffOwner = TuffOwner(address(this));
+        require(
+            msg.sender == address(this) ||
+                tuffOwner.getTuffOwner() == msg.sender,
+            "Ownable: caller is not the owner"
+        );
+        _;
+    }
+
     modifier tuffTokenInitLock() {
         require(
             isTuffTokenInit(),
@@ -34,7 +48,7 @@ contract TuffToken is Context, IERC20 {
         uint256 devFee,
         address devWalletAddress,
         uint256 totalSupply
-    ) public {
+    ) public onlyOwner {
         require(
             !isTuffTokenInit(),
             string(
@@ -99,7 +113,7 @@ contract TuffToken is Context, IERC20 {
         return ss.farmFee;
     }
 
-    function setFarmFee(uint256 _farmFee) public tuffTokenInitLock {
+    function setFarmFee(uint256 _farmFee) public tuffTokenInitLock onlyOwner {
         TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
         ss.farmFee = _farmFee;
     }
@@ -109,7 +123,7 @@ contract TuffToken is Context, IERC20 {
         return ss.devFee;
     }
 
-    function setDevFee(uint256 _devFee) public tuffTokenInitLock {
+    function setDevFee(uint256 _devFee) public tuffTokenInitLock onlyOwner {
         TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
         ss.devFee = _devFee;
     }
@@ -127,6 +141,7 @@ contract TuffToken is Context, IERC20 {
     function setDevWalletAddress(address _devWalletAddress)
         public
         tuffTokenInitLock
+        onlyOwner
     {
         TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
         ss.devWalletAddress = _devWalletAddress;
@@ -200,7 +215,10 @@ contract TuffToken is Context, IERC20 {
     ) internal virtual tuffTokenInitLock {
         uint256 currentAllowance = allowance(owner, spender);
         if (currentAllowance != type(uint256).max) {
-            require(currentAllowance >= amount, "ERC20: insufficient allowance");
+            require(
+                currentAllowance >= amount,
+                "ERC20: insufficient allowance"
+            );
             unchecked {
                 _approve(owner, spender, currentAllowance - amount);
             }
@@ -219,7 +237,12 @@ contract TuffToken is Context, IERC20 {
      *
      * - `spender` cannot be the zero address.
      */
-    function increaseAllowance(address spender, uint256 addedValue) public virtual tuffTokenInitLock returns (bool) {
+    function increaseAllowance(address spender, uint256 addedValue)
+        public
+        virtual
+        tuffTokenInitLock
+        returns (bool)
+    {
         address owner = _msgSender();
         _approve(owner, spender, allowance(owner, spender) + addedValue);
         return true;
@@ -239,10 +262,18 @@ contract TuffToken is Context, IERC20 {
      * - `spender` must have allowance for the caller of at least
      * `subtractedValue`.
      */
-    function decreaseAllowance(address spender, uint256 subtractedValue) public virtual tuffTokenInitLock returns (bool) {
+    function decreaseAllowance(address spender, uint256 subtractedValue)
+        public
+        virtual
+        tuffTokenInitLock
+        returns (bool)
+    {
         address owner = _msgSender();
         uint256 currentAllowance = allowance(owner, spender);
-        require(currentAllowance >= subtractedValue, "ERC20: decreased allowance below zero");
+        require(
+            currentAllowance >= subtractedValue,
+            "ERC20: decreased allowance below zero"
+        );
         unchecked {
             _approve(owner, spender, currentAllowance - subtractedValue);
         }
@@ -250,12 +281,16 @@ contract TuffToken is Context, IERC20 {
         return true;
     }
 
-    function excludeFromFee(address account) public tuffTokenInitLock {
+    function excludeFromFee(address account)
+        public
+        tuffTokenInitLock
+        onlyOwner
+    {
         TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
         ss.isExcludedFromFee[account] = true;
     }
 
-    function includeInFee(address account) public tuffTokenInitLock {
+    function includeInFee(address account) public tuffTokenInitLock onlyOwner {
         TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
         ss.isExcludedFromFee[account] = false;
     }
@@ -264,6 +299,7 @@ contract TuffToken is Context, IERC20 {
         public
         view
         tuffTokenInitLock
+        onlyOwner
         returns (bool)
     {
         TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
@@ -345,10 +381,7 @@ contract TuffToken is Context, IERC20 {
         TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();
 
         uint256 fromBal = ss.balances[from];
-        require(
-            fromBal >= amount,
-            "Sender does not have adequate funds."
-        );
+        require(fromBal >= amount, "Sender does not have adequate funds.");
 
         //indicates if fee should be deducted from transfer
         bool takeFee = true;
@@ -391,7 +424,11 @@ contract TuffToken is Context, IERC20 {
         }
     }
 
-    function burn(address account, uint256 amount) public tuffTokenInitLock {
+    function burn(address account, uint256 amount)
+        public
+        tuffTokenInitLock
+        onlyOwner
+    {
         require(account != address(0), "ERC20: burn from the zero address");
 
         TuffTokenLib.StateStorage storage ss = TuffTokenLib.getState();

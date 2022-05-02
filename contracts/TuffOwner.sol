@@ -1,0 +1,88 @@
+pragma solidity ^0.8.0;
+
+import "./TuffOwnerLib.sol";
+
+/**
+ * @dev inspired by https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol
+ * owner() is already defined in the TuffTokenDiamond, we cannot import openzepplin's Ownable contract as it shadows
+ * the existing definition.
+ */
+
+contract TuffOwner {
+    modifier tuffOwnerInitLock() {
+        require(
+            isTuffOwnerInit(),
+            string(
+                abi.encodePacked(TuffOwnerLib.NAMESPACE, ": ", "UNINITIALIZED")
+            )
+        );
+        _;
+    }
+
+    function isTuffOwnerInit() public view returns (bool) {
+        TuffOwnerLib.StateStorage storage ss = TuffOwnerLib.getState();
+        return ss.isInit;
+    }
+
+    function initTuffOwner(address initialOwner) public {
+        _transferOwnership(initialOwner);
+    }
+
+    event OwnershipTransferred(
+        address indexed previousOwner,
+        address indexed newOwner
+    );
+
+    /**
+     * @dev Returns the address of the current owner.
+     */
+    function getTuffOwner() public view virtual returns (address) {
+        TuffOwnerLib.StateStorage storage ss = TuffOwnerLib.getState();
+        return ss._owner;
+    }
+
+    /**
+     * @dev Throws if called by any account other than the owner.
+     */
+    modifier onlyOwner() {
+        require(
+            msg.sender == address(this) || getTuffOwner() == msg.sender,
+            "Ownable: caller is not the owner"
+        );
+        _;
+    }
+
+    /**
+     * @dev Leaves the contract without owner. It will not be possible to call
+     * `onlyOwner` functions anymore. Can only be called by the current owner.
+     *
+     * NOTE: Renouncing ownership will leave the contract without an owner,
+     * thereby removing any functionality that is only available to the owner.
+     */
+    function renounceOwnership() public virtual onlyOwner {
+        _transferOwnership(address(0));
+    }
+
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * Can only be called by the current owner.
+     */
+    function transferTuffOwnership(address newOwner) public virtual onlyOwner {
+        require(
+            newOwner != address(0),
+            "Ownable: new owner is the zero address"
+        );
+        _transferOwnership(newOwner);
+    }
+
+    /**
+     * @dev Transfers ownership of the contract to a new account (`newOwner`).
+     * Internal function without access restriction.
+     */
+    function _transferOwnership(address newOwner) internal virtual {
+        TuffOwnerLib.StateStorage storage ss = TuffOwnerLib.getState();
+        address oldOwner = ss._owner;
+        ss._owner = newOwner;
+        emit OwnershipTransferred(oldOwner, newOwner);
+    }
+}
