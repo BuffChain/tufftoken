@@ -14,7 +14,7 @@ describe('TuffKeeper', function () {
     let owner;
     let accounts;
 
-    let tuffTokenDiamond;
+    let tuffVBTDiamond;
 
     before(async function () {
         const {contractOwner} = await hre.getNamedAccounts();
@@ -25,18 +25,18 @@ describe('TuffKeeper', function () {
     });
 
     beforeEach(async function () {
-        const {TuffTokenDiamond} = await hre.deployments.fixture();
-        tuffTokenDiamond = await hre.ethers.getContractAt(TuffTokenDiamond.abi, TuffTokenDiamond.address, owner);
+        const {TuffVBTDiamond} = await hre.deployments.fixture();
+        tuffVBTDiamond = await hre.ethers.getContractAt(TuffVBTDiamond.abi, TuffVBTDiamond.address, owner);
 
-        await utils.sendTokensToAddr(accounts.at(-1), tuffTokenDiamond.address);
+        await utils.sendTokensToAddr(accounts.at(-1), tuffVBTDiamond.address);
 
-        await tuffTokenDiamond.depositToAave(consts("DAI_ADDR"), hre.ethers.utils.parseEther("2000"));
+        await tuffVBTDiamond.depositToAave(consts("DAI_ADDR"), hre.ethers.utils.parseEther("2000"));
     });
 
 
     it('should perform upkeep on token maturity', async () => {
 
-        const interval = await tuffTokenDiamond.getTokenMaturityInterval();
+        const interval = await tuffVBTDiamond.getTokenMaturityInterval();
         const dayInSeconds = 86400;
 
         expect(interval).to.equal(dayInSeconds, "interval should be 1 day.");
@@ -48,7 +48,7 @@ describe('TuffKeeper', function () {
 
     it('should perform upkeep on balancing assets', async () => {
 
-        const interval = await tuffTokenDiamond.getBalanceAssetsInterval();
+        const interval = await tuffVBTDiamond.getBalanceAssetsInterval();
         const weekInSeconds = 86400 * 7;
 
         expect(interval).to.equal(weekInSeconds, "interval should be 1 week.");
@@ -58,25 +58,25 @@ describe('TuffKeeper', function () {
     });
 
     async function getLastTokenMaturityTimestamp() {
-        return await tuffTokenDiamond.getLastTokenMaturityTimestamp();
+        return await tuffVBTDiamond.getLastTokenMaturityTimestamp();
     }
 
     async function getLastBalanceAssetsTimestamp() {
-        return await tuffTokenDiamond.getLastBalanceAssetsTimestamp();
+        return await tuffVBTDiamond.getLastBalanceAssetsTimestamp();
     }
 
     async function setTokenMaturityInterval(newInterval) {
-        await tuffTokenDiamond.setTokenMaturityInterval(newInterval);
+        await tuffVBTDiamond.setTokenMaturityInterval(newInterval);
     }
 
     async function setBalanceAssetsInterval(newInterval) {
-        await tuffTokenDiamond.setBalanceAssetsInterval(newInterval);
+        await tuffVBTDiamond.setBalanceAssetsInterval(newInterval);
     }
 
     async function assertUpkeep(setInterval, getTimestamp) {
         const startingTimeStamp = await getTimestamp();
 
-        let [needed, performData] = await tuffTokenDiamond.checkUpkeep(randomBytes(0));
+        let [needed, performData] = await tuffVBTDiamond.checkUpkeep(randomBytes(0));
 
         expect(needed).to.equal(false, "should not need upkeep yet.");
 
@@ -97,11 +97,11 @@ describe('TuffKeeper', function () {
 
         expect(latestTimestamp > startingBlockTimestamp).to.equal(true, "should have mined a block.");
 
-        [needed, performData] = await tuffTokenDiamond.checkUpkeep(randomBytes(0));
+        [needed, performData] = await tuffVBTDiamond.checkUpkeep(randomBytes(0));
 
         expect(needed).to.equal(true, "should need upkeep.");
 
-        await tuffTokenDiamond.performUpkeep(performData);
+        await tuffVBTDiamond.performUpkeep(performData);
 
         const endingTimestamp = await getTimestamp();
 

@@ -76,8 +76,8 @@ function consts(constsKey) {
 }
 
 //Network agnostic constants
-module.exports.TOKEN_NAME = 'TuffToken';
-module.exports.TOKEN_SYMBOL = 'TUFF';
+module.exports.TOKEN_NAME = 'TUFF VBT: DAI USDC USDT';
+module.exports.TOKEN_SYMBOL = 'tDUU';
 module.exports.TOKEN_DECIMALS = 9;
 module.exports.TOKEN_FARM_FEE = 10;
 module.exports.TOKEN_DEV_FEE = 1;

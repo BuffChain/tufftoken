@@ -13,13 +13,13 @@ module.exports = async () => {
     console.log(`Deployer address [${deployer}]`);
     console.log(`Contract owner address [${contractOwner}]`);
 
-    let tuffDAOToken = await deployments.deploy('TuffDAOToken', {
+    let tuffToken = await deployments.deploy('TuffToken', {
         from: contractOwner,
-        args: ["TuffDAOToken", "TuffDAO"],
+        args: ["TuffToken", "Tuff Token DAO"],
         log: true
     });
 
-    console.log(`TuffDAOToken address [${tuffDAOToken.address}]`);
+    console.log(`TuffToken address [${tuffToken.address}]`);
 
     let timelockController = await deployments.deploy('TimelockController', {
         from: contractOwner,
@@ -32,7 +32,7 @@ module.exports = async () => {
 
     let tuffGovernor = await deployments.deploy('TuffGovernor', {
         from: contractOwner,
-        args: [tuffDAOToken.address, timelockController.address],
+        args: [tuffToken.address, timelockController.address],
         log: true
     });
 

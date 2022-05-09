@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: agpl-3.0
 
 pragma solidity ^0.8.0;
-import {TuffToken} from "./TuffToken.sol";
+import {TuffVBT} from "./TuffVBT.sol";
 import {TokenMaturityLib} from "./TokenMaturityLib.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import {UniswapManager} from "./UniswapManager.sol";
@@ -47,8 +47,8 @@ contract TokenMaturity {
 
         ss.isTreasuryLiquidated = false;
 
-        TuffToken tuffToken = TuffToken(payable(address(this)));
-        ss.totalSupplyForRedemption = tuffToken.totalSupply();
+        TuffVBT tuffVBT = TuffVBT(payable(address(this)));
+        ss.totalSupplyForRedemption = tuffVBT.totalSupply();
         ss.startingEthBalance = address(this).balance;
 
         ss.isInit = true;
@@ -184,8 +184,8 @@ contract TokenMaturity {
 
         require(!_hasRedeemed, "Address can only redeem once.");
 
-        TuffToken tuffToken = TuffToken(payable(address(this)));
-        uint256 ownerBalance = tuffToken.balanceOf(account);
+        TuffVBT tuffVBT = TuffVBT(payable(address(this)));
+        uint256 ownerBalance = tuffVBT.balanceOf(account);
 
         require(ownerBalance > 0, "Owner balance needs to be greater than 0.");
 
@@ -193,7 +193,7 @@ contract TokenMaturity {
 
         account.transfer(redemptionAmount);
 
-        tuffToken.burn(account, ownerBalance);
+        tuffVBT.burn(account, ownerBalance);
 
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
         ss.ownersRedeemed[account] = true;
@@ -249,7 +249,7 @@ contract TokenMaturity {
         uint256 ethBalance = getCurrentContractEthBalance();
         setContractStartingEthBalance(ethBalance);
 
-        uint256 redeemableTotalSupply = TuffToken(payable(address(this)))
+        uint256 redeemableTotalSupply = TuffVBT(payable(address(this)))
             .totalSupply();
         setTotalSupplyForRedemption(redeemableTotalSupply);
 

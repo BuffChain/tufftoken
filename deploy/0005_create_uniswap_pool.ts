@@ -7,7 +7,7 @@ import {nearestUsableTick} from '@uniswap/v3-sdk';
 import {
     abi as NonfungiblePositionManagerABI
 } from '@uniswap/v3-periphery/artifacts/contracts/NonfungiblePositionManager.sol/NonfungiblePositionManager.json';
-import {NonfungiblePositionManager, TuffToken} from '../src/types';
+import {NonfungiblePositionManager, TuffVBT} from '../src/types';
 import {Address} from "hardhat-deploy/dist/types";
 import {BUFFCHAIN_INIT_TUFF_LIQUIDITY_PERCENTAGE, BUFFCHAIN_INIT_WETH_LIQUIDITY_WETH} from '../utils/consts';
 import {IUniswapV3Factory} from "@uniswap/v3-periphery/typechain/IUniswapV3Factory";
@@ -66,33 +66,33 @@ async function getPoolState(poolContract: Contract) {
     return PoolState;
 }
 
-async function createPool(uniswapV3Factory: IUniswapV3Factory, tuffTokenDiamond: TuffToken) {
-    let tuffTokenPoolAddr = await uniswapV3Factory.getPool(consts("WETH9_ADDR"), tuffTokenDiamond.address, UNISWAP_POOL_BASE_FEE);
-    if (!tuffTokenPoolAddr || tuffTokenPoolAddr === hre.ethers.constants.AddressZero) {
-        console.log(`TuffToken pool not found, creating one now...`);
+async function createPool(uniswapV3Factory: IUniswapV3Factory, tuffVBTDiamond: TuffVBT) {
+    let tuffVBTPoolAddr = await uniswapV3Factory.getPool(consts("WETH9_ADDR"), tuffVBTDiamond.address, UNISWAP_POOL_BASE_FEE);
+    if (!tuffVBTPoolAddr || tuffVBTPoolAddr === hre.ethers.constants.AddressZero) {
+        console.log(`TuffVBT pool not found, creating one now...`);
 
-        let createPoolTx = await uniswapV3Factory.createPool(consts("WETH9_ADDR"), tuffTokenDiamond.address, UNISWAP_POOL_BASE_FEE);
+        let createPoolTx = await uniswapV3Factory.createPool(consts("WETH9_ADDR"), tuffVBTDiamond.address, UNISWAP_POOL_BASE_FEE);
         logDeploymentTx("Created pool:", createPoolTx);
 
-        tuffTokenPoolAddr = await uniswapV3Factory.getPool(consts("WETH9_ADDR"), tuffTokenDiamond.address, UNISWAP_POOL_BASE_FEE);
+        tuffVBTPoolAddr = await uniswapV3Factory.getPool(consts("WETH9_ADDR"), tuffVBTDiamond.address, UNISWAP_POOL_BASE_FEE);
     }
-    console.log(`TuffToken pool address [${tuffTokenPoolAddr}]`);
+    console.log(`TuffVBT pool address [${tuffVBTPoolAddr}]`);
 
-    const uniswapV3Pool = await hre.ethers.getContractAt("UniswapV3Pool", tuffTokenPoolAddr) as IUniswapV3Pool;
+    const uniswapV3Pool = await hre.ethers.getContractAt("UniswapV3Pool", tuffVBTPoolAddr) as IUniswapV3Pool;
 
     const price = consts("TUFF_STARTING_PRICE");
-    const tuffTokenSqrtPriceX96 = getSqrtPriceX96(price);
+    const tuffVBTSqrtPriceX96 = getSqrtPriceX96(price);
 
-    console.log(`Initializing TuffToken pool. Price: ${price} ETH. sqrtPriceX96: ${tuffTokenSqrtPriceX96}`);
-    await uniswapV3Pool.initialize(tuffTokenSqrtPriceX96);
+    console.log(`Initializing TuffVBT pool. Price: ${price} ETH. sqrtPriceX96: ${tuffVBTSqrtPriceX96}`);
+    await uniswapV3Pool.initialize(tuffVBTSqrtPriceX96);
 
-    console.log(`Excluding TuffToken Uniswap pool from fees`);
-    await tuffTokenDiamond.excludeFromFee(uniswapV3Pool.address);
+    console.log(`Excluding TuffVBT Uniswap pool from fees`);
+    await tuffVBTDiamond.excludeFromFee(uniswapV3Pool.address);
 
     return uniswapV3Pool;
 }
 
-async function addLiquidityToPool(poolContract: IUniswapV3Pool, tuffTokenDiamond: TuffToken, buffChain: Address) {
+async function addLiquidityToPool(poolContract: IUniswapV3Pool, tuffVBTDiamond: TuffVBT, buffChain: Address) {
     const immutables = await getPoolImmutables(poolContract);
     const state = await getPoolState(poolContract);
 
@@ -106,11 +106,11 @@ async function addLiquidityToPool(poolContract: IUniswapV3Pool, tuffTokenDiamond
     //Use a portion of BuffChain's TUFF tokens as liquidity
     //TODO: do we also want to use TuffDAO treasury? That would _likely_ be another deployment script
     console.log("-----STARTING BALANCES-----");
-    const {tuffBal} = await printAcctBal(tuffTokenDiamond, buffChain);
+    const {tuffBal} = await printAcctBal(tuffVBTDiamond, buffChain);
     const buffChainsTuffLiquidity = tuffBal.mul(BUFFCHAIN_INIT_TUFF_LIQUIDITY_PERCENTAGE).div(100);
     const buffChainsWethLiquidity = BUFFCHAIN_INIT_WETH_LIQUIDITY_WETH;
 
-    await tuffTokenDiamond.connect(buffChainAcct).approve(nonfungiblePositionManager.address, buffChainsTuffLiquidity);
+    await tuffVBTDiamond.connect(buffChainAcct).approve(nonfungiblePositionManager.address, buffChainsTuffLiquidity);
     await weth9Contract.connect(buffChainAcct).approve(nonfungiblePositionManager.address, buffChainsWethLiquidity);
 
     const block = await hre.ethers.provider.getBlock("latest");
@@ -136,7 +136,7 @@ async function addLiquidityToPool(poolContract: IUniswapV3Pool, tuffTokenDiamond
     const tokenId = await nonfungiblePositionManager.tokenOfOwnerByIndex(buffChain, 0);
 
     console.log("-----ENDING BALANCES-----");
-    await printAcctBal(tuffTokenDiamond, buffChain);
+    await printAcctBal(tuffVBTDiamond, buffChain);
 }
 
 module.exports = async () => {
@@ -146,15 +146,15 @@ module.exports = async () => {
     const {contractOwner, buffChain} = await getNamedAccounts();
     const contractOwnerAcct = await hre.ethers.getSigner(contractOwner);
 
-    const TuffTokenDiamond = await deployments.get("TuffTokenDiamond");
-    const tuffTokenDiamond = await hre.ethers.getContractAt(
-        TuffTokenDiamond.abi, TuffTokenDiamond.address, contractOwnerAcct) as TuffToken;
+    const TuffVBTDiamond = await deployments.get("TuffVBTDiamond");
+    const tuffVBTDiamond = await hre.ethers.getContractAt(
+        TuffVBTDiamond.abi, TuffVBTDiamond.address, contractOwnerAcct) as TuffVBT;
 
     const uniswapV3Factory = await hre.ethers.getContractAt(
         "UniswapV3Factory", consts("UNISWAP_V3_FACTORY_ADDR")) as IUniswapV3Factory;
 
-    const uniswapV3Pool = await createPool(uniswapV3Factory, tuffTokenDiamond);
-    await addLiquidityToPool(uniswapV3Pool, tuffTokenDiamond, buffChain);
+    const uniswapV3Pool = await createPool(uniswapV3Factory, tuffVBTDiamond);
+    await addLiquidityToPool(uniswapV3Pool, tuffVBTDiamond, buffChain);
 };
 
 module.exports.tags = ['v0005'];

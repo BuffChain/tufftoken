@@ -2,7 +2,7 @@
 
 import hre from "hardhat";
 import {BigNumber} from "ethers";
-import {TuffToken} from '../src/types';
+import {TuffVBT} from '../src/types';
 import {BUFFCHAIN_TOTAL_TUFF_PERCENTAGE, TOKEN_DECIMALS, TOKEN_TOTAL_SUPPLY} from "../utils/consts";
 
 module.exports = async () => {
@@ -12,14 +12,14 @@ module.exports = async () => {
     const {contractOwner, buffChain} = await getNamedAccounts();
     const contractOwnerAcct = await hre.ethers.getSigner(contractOwner);
 
-    const TuffTokenDiamond = await deployments.get("TuffTokenDiamond");
-    const tuffTokenDiamond = await hre.ethers.getContractAt(TuffTokenDiamond.abi, TuffTokenDiamond.address, contractOwnerAcct) as TuffToken;
+    const TuffVBTDiamond = await deployments.get("TuffVBTDiamond");
+    const tuffVBTDiamond = await hre.ethers.getContractAt(TuffVBTDiamond.abi, TuffVBTDiamond.address, contractOwnerAcct) as TuffVBT;
 
     //Transfer BuffChain's TUFF tokens
     const totalTokens = (BigNumber.from(10).pow(TOKEN_DECIMALS)).mul(TOKEN_TOTAL_SUPPLY);
     const buffChainTotalCut = totalTokens.mul(BUFFCHAIN_TOTAL_TUFF_PERCENTAGE).div(100);
     console.log(`Sending [${buffChainTotalCut}] TUFF to buffChain [${buffChain}]`);
-    await (tuffTokenDiamond.connect(contractOwnerAcct) as TuffToken).transfer(buffChain, buffChainTotalCut);
+    await (tuffVBTDiamond.connect(contractOwnerAcct) as TuffVBT).transfer(buffChain, buffChainTotalCut);
 
     //TODO: Create a json map of holder addresses and amount to supply. Read them in and send the appropriate tokens
     // the contractOwnerAcct
