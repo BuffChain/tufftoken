@@ -4,15 +4,13 @@ import hre from "hardhat";
 import {Signer} from "ethers";
 import {expect} from "chai";
 
-import {TuffVBT} from "../../src/types";
-import {IUniswapV3Factory} from "@uniswap/v3-periphery/typechain/IUniswapV3Factory";
-
+import {TuffVBT, IUniswapV3Factory} from "../../src/types";
 
 import {consts, TOKEN_DECIMALS, UNISWAP_POOL_BASE_FEE} from '../../utils/consts';
 import {
   getSqrtPriceX96, printAcctBal,
   swapEthForWeth,
-  swapTokens, transferTUFF
+  swapTokens, transferTuffDUU
 } from '../../utils/test_utils';
 
 describe("UniswapPool Deployment", function () {
@@ -31,8 +29,8 @@ describe("UniswapPool Deployment", function () {
   });
 
   beforeEach(async function () {
-    const {TuffVBTDiamond} = await hre.deployments.fixture();
-    tuffVBTDiamond = await hre.ethers.getContractAt(TuffVBTDiamond.abi, TuffVBTDiamond.address, owner) as TuffVBT;
+      const {tDUU} = await hre.deployments.fixture();
+      tuffVBTDiamond = await hre.ethers.getContractAt(tDUU.abi, tDUU.address, owner) as TuffVBT;
   });
 
   it('should exist a pool between TUFF and WETH9, with liquidity', async () => {
@@ -65,7 +63,7 @@ describe("UniswapPool Deployment", function () {
     const tuffAmt = hre.ethers.utils.parseUnits("250", TOKEN_DECIMALS);
     const wethAmt = hre.ethers.utils.parseEther("20");
 
-    await transferTUFF(recipientAddr);
+    await transferTuffDUU(recipientAddr);
     const {weth9Contract} = await swapEthForWeth(recipient, wethAmt);
     const startingTuffBalance = await tuffVBTDiamond.balanceOf(recipientAddr);
     const startingWethBalance = await weth9Contract.balanceOf(recipientAddr);
@@ -86,7 +84,7 @@ describe("UniswapPool Deployment", function () {
     const startingWethAmt = hre.ethers.utils.parseEther("20");
     const swapWethAmt = hre.ethers.utils.parseUnits("1", "gwei");
 
-    await transferTUFF(recipientAddr, "400000");
+    await transferTuffDUU(recipientAddr, "400000");
     const {weth9Contract} = await swapEthForWeth(recipient, startingWethAmt);
     const startingTuffBalance = await tuffVBTDiamond.balanceOf(recipientAddr);
     const startingWethBalance = await weth9Contract.balanceOf(recipientAddr);

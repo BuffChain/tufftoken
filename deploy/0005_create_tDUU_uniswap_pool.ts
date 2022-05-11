@@ -7,11 +7,9 @@ import {nearestUsableTick} from '@uniswap/v3-sdk';
 import {
     abi as NonfungiblePositionManagerABI
 } from '@uniswap/v3-periphery/artifacts/contracts/NonfungiblePositionManager.sol/NonfungiblePositionManager.json';
-import {NonfungiblePositionManager, TuffVBT} from '../src/types';
+import {NonfungiblePositionManager, IUniswapV3Pool, IUniswapV3Factory, TuffVBT} from '../src/types';
 import {Address} from "hardhat-deploy/dist/types";
-import {BUFFCHAIN_INIT_TUFF_LIQUIDITY_PERCENTAGE, BUFFCHAIN_INIT_WETH_LIQUIDITY_WETH} from '../utils/consts';
-import {IUniswapV3Factory} from "@uniswap/v3-periphery/typechain/IUniswapV3Factory";
-import {IUniswapV3Pool} from "@uniswap/v3-periphery/typechain/IUniswapV3Pool";
+import {BUFFCHAIN_INIT_TUFF_LIQUIDITY_PERCENTAGE, BUFFCHAIN_INIT_WETH_LIQUIDITY_WETH, TOKEN_SYMBOL} from '../utils/consts';
 
 const {consts, UNISWAP_POOL_BASE_FEE} = require("../utils/consts");
 const {logDeploymentTx} = require("../utils/deployment_helpers");
@@ -66,33 +64,33 @@ async function getPoolState(poolContract: Contract) {
     return PoolState;
 }
 
-async function createPool(uniswapV3Factory: IUniswapV3Factory, tuffVBTDiamond: TuffVBT) {
-    let tuffVBTPoolAddr = await uniswapV3Factory.getPool(consts("WETH9_ADDR"), tuffVBTDiamond.address, UNISWAP_POOL_BASE_FEE);
-    if (!tuffVBTPoolAddr || tuffVBTPoolAddr === hre.ethers.constants.AddressZero) {
-        console.log(`TuffVBT pool not found, creating one now...`);
+async function createPool(uniswapV3Factory: IUniswapV3Factory, tDUUDiamond: TuffVBT) {
+    let tDUUPoolAddr = await uniswapV3Factory.getPool(consts("WETH9_ADDR"), tDUUDiamond.address, UNISWAP_POOL_BASE_FEE);
+    if (!tDUUPoolAddr || tDUUPoolAddr === hre.ethers.constants.AddressZero) {
+        console.log(`${TOKEN_SYMBOL} pool not found, creating one now...`);
 
-        let createPoolTx = await uniswapV3Factory.createPool(consts("WETH9_ADDR"), tuffVBTDiamond.address, UNISWAP_POOL_BASE_FEE);
+        let createPoolTx = await uniswapV3Factory.createPool(consts("WETH9_ADDR"), tDUUDiamond.address, UNISWAP_POOL_BASE_FEE);
         logDeploymentTx("Created pool:", createPoolTx);
 
-        tuffVBTPoolAddr = await uniswapV3Factory.getPool(consts("WETH9_ADDR"), tuffVBTDiamond.address, UNISWAP_POOL_BASE_FEE);
+        tDUUPoolAddr = await uniswapV3Factory.getPool(consts("WETH9_ADDR"), tDUUDiamond.address, UNISWAP_POOL_BASE_FEE);
     }
-    console.log(`TuffVBT pool address [${tuffVBTPoolAddr}]`);
+    console.log(`${TOKEN_SYMBOL} Uniswap pool address [${tDUUPoolAddr}]`);
 
-    const uniswapV3Pool = await hre.ethers.getContractAt("UniswapV3Pool", tuffVBTPoolAddr) as IUniswapV3Pool;
+    const tDUUUniswapPool = await hre.ethers.getContractAt("UniswapV3Pool", tDUUPoolAddr) as IUniswapV3Pool;
 
     const price = consts("TUFF_STARTING_PRICE");
-    const tuffVBTSqrtPriceX96 = getSqrtPriceX96(price);
+    const tDUUSqrtPriceX96 = getSqrtPriceX96(price);
 
-    console.log(`Initializing TuffVBT pool. Price: ${price} ETH. sqrtPriceX96: ${tuffVBTSqrtPriceX96}`);
-    await uniswapV3Pool.initialize(tuffVBTSqrtPriceX96);
+    console.log(`Initializing TuffVBT pool. Price: ${price} ETH. sqrtPriceX96: ${tDUUSqrtPriceX96}`);
+    await tDUUUniswapPool.initialize(tDUUSqrtPriceX96);
 
     console.log(`Excluding TuffVBT Uniswap pool from fees`);
-    await tuffVBTDiamond.excludeFromFee(uniswapV3Pool.address);
+    await tDUUDiamond.excludeFromFee(tDUUUniswapPool.address);
 
-    return uniswapV3Pool;
+    return tDUUUniswapPool;
 }
 
-async function addLiquidityToPool(poolContract: IUniswapV3Pool, tuffVBTDiamond: TuffVBT, buffChain: Address) {
+async function addLiquidityToPool(poolContract: IUniswapV3Pool, tDUUDiamond: TuffVBT, buffChain: Address) {
     const immutables = await getPoolImmutables(poolContract);
     const state = await getPoolState(poolContract);
 
@@ -106,11 +104,11 @@ async function addLiquidityToPool(poolContract: IUniswapV3Pool, tuffVBTDiamond: 
     //Use a portion of BuffChain's TUFF tokens as liquidity
     //TODO: do we also want to use TuffDAO treasury? That would _likely_ be another deployment script
     console.log("-----STARTING BALANCES-----");
-    const {tuffBal} = await printAcctBal(tuffVBTDiamond, buffChain);
+    const {tuffBal} = await printAcctBal(tDUUDiamond, buffChain);
     const buffChainsTuffLiquidity = tuffBal.mul(BUFFCHAIN_INIT_TUFF_LIQUIDITY_PERCENTAGE).div(100);
     const buffChainsWethLiquidity = BUFFCHAIN_INIT_WETH_LIQUIDITY_WETH;
 
-    await tuffVBTDiamond.connect(buffChainAcct).approve(nonfungiblePositionManager.address, buffChainsTuffLiquidity);
+    await tDUUDiamond.connect(buffChainAcct).approve(nonfungiblePositionManager.address, buffChainsTuffLiquidity);
     await weth9Contract.connect(buffChainAcct).approve(nonfungiblePositionManager.address, buffChainsWethLiquidity);
 
     const block = await hre.ethers.provider.getBlock("latest");
@@ -136,25 +134,25 @@ async function addLiquidityToPool(poolContract: IUniswapV3Pool, tuffVBTDiamond: 
     const tokenId = await nonfungiblePositionManager.tokenOfOwnerByIndex(buffChain, 0);
 
     console.log("-----ENDING BALANCES-----");
-    await printAcctBal(tuffVBTDiamond, buffChain);
+    await printAcctBal(tDUUDiamond, buffChain);
 }
 
 module.exports = async () => {
-    console.log("[DEPLOY][v0005] - Creating Uniswap pool and providing liquidity");
+    console.log(`[DEPLOY][v0005] - Creating Uniswap pool and providing liquidity for ${TOKEN_SYMBOL}`);
 
     const {deployments, getNamedAccounts} = hre;
     const {contractOwner, buffChain} = await getNamedAccounts();
     const contractOwnerAcct = await hre.ethers.getSigner(contractOwner);
 
-    const TuffVBTDiamond = await deployments.get("TuffVBTDiamond");
-    const tuffVBTDiamond = await hre.ethers.getContractAt(
-        TuffVBTDiamond.abi, TuffVBTDiamond.address, contractOwnerAcct) as TuffVBT;
+    const tuffDUUDeployment = await deployments.get(TOKEN_SYMBOL);
+    const tuffDUU = await hre.ethers.getContractAt(
+        tuffDUUDeployment.abi, tuffDUUDeployment.address, contractOwnerAcct) as TuffVBT;
 
     const uniswapV3Factory = await hre.ethers.getContractAt(
         "UniswapV3Factory", consts("UNISWAP_V3_FACTORY_ADDR")) as IUniswapV3Factory;
 
-    const uniswapV3Pool = await createPool(uniswapV3Factory, tuffVBTDiamond);
-    await addLiquidityToPool(uniswapV3Pool, tuffVBTDiamond, buffChain);
+    const uniswapV3Pool = await createPool(uniswapV3Factory, tuffDUU);
+    await addLiquidityToPool(uniswapV3Pool, tuffDUU, buffChain);
 };
 
 module.exports.tags = ['v0005'];

@@ -61,8 +61,8 @@ describe('AaveLPManager', function () {
     });
 
     beforeEach(async function () {
-        const {TuffVBTDiamond} = await hre.deployments.fixture();
-        tuffVBTDiamond = await hre.ethers.getContractAt(TuffVBTDiamond.abi, TuffVBTDiamond.address, owner);
+        const {tDUU} = await hre.deployments.fixture();
+        tuffVBTDiamond = await hre.ethers.getContractAt(tDUU.abi, tDUU.address, owner);
 
         await utils.sendTokensToAddr(accounts.at(-1), tuffVBTDiamond.address);
     });
@@ -241,9 +241,9 @@ describe('AaveLPManager', function () {
         //Setup
         const tokenAddr = consts("DAI_ADDR");
         const qtyInDAI = hre.ethers.utils.parseEther("2000");
-        await assertDepositToAave(tuffTokenDiamond, qtyInDAI, true);
+        await assertDepositToAave(tuffVBTDiamond, qtyInDAI, true);
         // Simulate the TuffToken treasury capturing fees by directly transferring TUFF to TuffToken's address
-        await utils.transferTUFF(tuffTokenDiamond.address, "400000");
+        await utils.transferTuffDUU(tuffVBTDiamond.address, "400000");
 
         //First, get how much token we have before balancing
         const startingATokenBal = await tuffVBTDiamond.getATokenBalance(tokenAddr);
@@ -254,7 +254,7 @@ describe('AaveLPManager', function () {
         await tuffVBTDiamond.setAaveTokenTargetedPercentage(tokenAddr, newTargetPercentage);
 
         //Run the balancing
-        const balancingTxResponse = await tuffTokenDiamond.balanceAaveLendingPool();
+        const balancingTxResponse = await tuffVBTDiamond.balanceAaveLendingPool();
         const balancingTxReceipt = await balancingTxResponse.wait();
 
         //Finally, confirm that we added to the under-balanced token (other than a buffer for interest made during
@@ -267,7 +267,7 @@ describe('AaveLPManager', function () {
 
         const interestBuffer = hre.ethers.utils.parseEther('0.00001');
         // const interestBuffer = hre.ethers.utils.formatEther('10000000000000');
-        const endingATokenBal = await tuffTokenDiamond.getATokenBalance(tokenAddr);
+        const endingATokenBal = await tuffVBTDiamond.getATokenBalance(tokenAddr);
         const tokenBalanceDiff = BigNumber.from(endingATokenBal).sub(startingATokenBal);
         expect(tokenBalanceDiff).to.be.gt(interestBuffer);
     });

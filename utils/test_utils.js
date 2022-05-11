@@ -7,7 +7,7 @@ const IERC20ABI = require("@uniswap/v3-core/artifacts/contracts/interfaces/IERC2
 const IUniswapV3FactoryABI = require("@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Factory.sol/IUniswapV3Factory.json").abi;
 const IUniswapV3PoolABI = require("@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json").abi;
 
-const {consts, TOKEN_DECIMALS} = require("./consts");
+const {consts, TOKEN_DECIMALS, TOKEN_SYMBOL} = require("./consts");
 const {Contract, BigNumber} = require("ethers");
 const {Address} = require("hardhat-deploy/dist/types");
 
@@ -67,29 +67,29 @@ async function transferETH(fromAccount, toAddr, amount = "100") {
  * @param amount: Amount of TUFF tokens to transfer. Defaults to 10000
  * @returns {Promise<void>}
  */
-async function transferTUFF(toAddr, amount = "10000") {
+async function transferTuffDUU(toAddr, amount = "10000") {
     const {deployments, getNamedAccounts} = hre;
 
     const {contractOwner} = await getNamedAccounts();
-    const TuffVBTDiamond = await deployments.get("TuffVBTDiamond");
-    const tuffVBTDiamond = await hre.ethers.getContractAt(
-        TuffVBTDiamond.abi, TuffVBTDiamond.address, contractOwner);
+    const tuffDUUDeployment = await deployments.get(TOKEN_SYMBOL);
+    const tuffDUU = await hre.ethers.getContractAt(
+        tuffDUUDeployment.abi, tuffDUUDeployment.address, contractOwner);
 
     if (hre.hardhatArguments.verbose) {
         console.log(`[${contractOwner}] has [${hre.ethers.utils.formatEther(
-            await tuffVBTDiamond.balanceOf(contractOwner))}] TUFF`);
+            await tuffDUU.balanceOf(contractOwner))}] ${TOKEN_SYMBOL}`);
         console.log(`[${toAddr}] has [${hre.ethers.utils.formatEther(
-            await tuffVBTDiamond.balanceOf(toAddr))}] TUFF`);
+            await tuffDUU.balanceOf(toAddr))}] ${TOKEN_SYMBOL}`);
     }
 
     const tuffAmt = hre.ethers.utils.parseUnits(amount, TOKEN_DECIMALS);
-    await tuffVBTDiamond.transfer(toAddr, tuffAmt, {from: contractOwner});
+    await tuffDUU.transfer(toAddr, tuffAmt, {from: contractOwner});
 
     if (hre.hardhatArguments.verbose) {
         console.log(`[${contractOwner}] has [${hre.ethers.utils.formatEther(
-            await tuffVBTDiamond.balanceOf(contractOwner))}] TUFF`);
+            await tuffDUU.balanceOf(contractOwner))}] ${TOKEN_SYMBOL}`);
         console.log(`[${toAddr}] has [${hre.ethers.utils.formatEther(
-            await tuffVBTDiamond.balanceOf(toAddr))}] TUFF`);
+            await tuffDUU.balanceOf(toAddr))}] ${TOKEN_SYMBOL}`);
     }
 
     return tuffAmt;
@@ -262,7 +262,7 @@ module.exports = {
     getADAIContract,
     getERC20Contract,
     transferETH,
-    transferTUFF,
+    transferTuffDUU: transferTuffDUU,
     swapEthForWeth,
     swapTokens,
     runCallbackImpersonatingAcct,

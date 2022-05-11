@@ -11,7 +11,6 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
 /**
  * Implementation of openzepplin governance https://docs.openzeppelin.com/contracts/4.x/governance#governor
  */
-
 contract TuffGovernor is
     Governor,
     GovernorCompatibilityBravo,
@@ -74,7 +73,7 @@ contract TuffGovernor is
     function getVotes(address account, uint256 blockNumber)
         public
         view
-        override(IGovernor, GovernorVotes)
+        override(Governor, IGovernor)
         returns (uint256)
     {
         return super.getVotes(account, blockNumber);

@@ -9,6 +9,7 @@ module.exports = async () => {
 
     const {deployments, getNamedAccounts} = hre;
     const {deployer, contractOwner} = await getNamedAccounts();
+    const contractOwnerAcct = await hre.ethers.getSigner(contractOwner);
 
     console.log(`Deployer address [${deployer}]`);
     console.log(`Contract owner address [${contractOwner}]`);
@@ -18,7 +19,6 @@ module.exports = async () => {
         args: ["TuffToken", "Tuff Token DAO"],
         log: true
     });
-
     console.log(`TuffToken address [${tuffToken.address}]`);
 
     let timelockController = await deployments.deploy('TimelockController', {
@@ -27,7 +27,6 @@ module.exports = async () => {
         args: [0, [], []],
         log: true
     });
-
     console.log(`TimelockController address [${timelockController.address}]`);
 
     let tuffGovernor = await deployments.deploy('TuffGovernor', {
@@ -35,7 +34,6 @@ module.exports = async () => {
         args: [tuffToken.address, timelockController.address],
         log: true
     });
-
     console.log(`TuffGovernor address [${await tuffGovernor.address}]`);
 
     //https://docs.openzeppelin.com/defender/guide-timelock-roles
@@ -43,8 +41,7 @@ module.exports = async () => {
     const executorRole = '0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63';
     const adminRole = '0x5f58e3a2316349923ce3780f8d587db2d72378aed66a8261c916544fa6846ca5';
 
-    // @ts-ignore
-    let accessControl = await hre.ethers.getContractAt(AccessControlABI, timelockController.address, contractOwner);
+    let accessControl = await hre.ethers.getContractAt(AccessControlABI, timelockController.address, contractOwnerAcct);
 
     // access control: https://docs.openzeppelin.com/contracts/4.x/governance#timelock
     await accessControl.grantRole(proposerRole, tuffGovernor.address);
