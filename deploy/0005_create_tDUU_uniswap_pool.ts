@@ -64,33 +64,33 @@ async function getPoolState(poolContract: Contract) {
     return PoolState;
 }
 
-async function createPool(uniswapV3Factory: IUniswapV3Factory, tDUUDiamond: TuffVBT) {
-    let tDUUPoolAddr = await uniswapV3Factory.getPool(consts("WETH9_ADDR"), tDUUDiamond.address, UNISWAP_POOL_BASE_FEE);
-    if (!tDUUPoolAddr || tDUUPoolAddr === hre.ethers.constants.AddressZero) {
+async function createPool(uniswapV3Factory: IUniswapV3Factory, tuffDUU: TuffVBT) {
+    let tuffDUUPoolAddr = await uniswapV3Factory.getPool(consts("WETH9_ADDR"), tuffDUU.address, UNISWAP_POOL_BASE_FEE);
+    if (!tuffDUUPoolAddr || tuffDUUPoolAddr === hre.ethers.constants.AddressZero) {
         console.log(`${TOKEN_SYMBOL} pool not found, creating one now...`);
 
-        let createPoolTx = await uniswapV3Factory.createPool(consts("WETH9_ADDR"), tDUUDiamond.address, UNISWAP_POOL_BASE_FEE);
+        let createPoolTx = await uniswapV3Factory.createPool(consts("WETH9_ADDR"), tuffDUU.address, UNISWAP_POOL_BASE_FEE);
         logDeploymentTx("Created pool:", createPoolTx);
 
-        tDUUPoolAddr = await uniswapV3Factory.getPool(consts("WETH9_ADDR"), tDUUDiamond.address, UNISWAP_POOL_BASE_FEE);
+        tuffDUUPoolAddr = await uniswapV3Factory.getPool(consts("WETH9_ADDR"), tuffDUU.address, UNISWAP_POOL_BASE_FEE);
     }
-    console.log(`${TOKEN_SYMBOL} Uniswap pool address [${tDUUPoolAddr}]`);
+    console.log(`${TOKEN_SYMBOL} Uniswap pool address [${tuffDUUPoolAddr}]`);
 
-    const tDUUUniswapPool = await hre.ethers.getContractAt("UniswapV3Pool", tDUUPoolAddr) as IUniswapV3Pool;
+    const tuffDUUUniswapPool = await hre.ethers.getContractAt("UniswapV3Pool", tuffDUUPoolAddr) as IUniswapV3Pool;
 
     const price = consts("TUFF_STARTING_PRICE");
-    const tDUUSqrtPriceX96 = getSqrtPriceX96(price);
+    const tuffDUUSqrtPriceX96 = getSqrtPriceX96(price);
 
-    console.log(`Initializing TuffVBT pool. Price: ${price} ETH. sqrtPriceX96: ${tDUUSqrtPriceX96}`);
-    await tDUUUniswapPool.initialize(tDUUSqrtPriceX96);
+    console.log(`Initializing TuffVBT pool. Price: ${price} ETH. sqrtPriceX96: ${tuffDUUSqrtPriceX96}`);
+    await tuffDUUUniswapPool.initialize(tuffDUUSqrtPriceX96);
 
     console.log(`Excluding TuffVBT Uniswap pool from fees`);
-    await tDUUDiamond.excludeFromFee(tDUUUniswapPool.address);
+    await tuffDUU.excludeFromFee(tuffDUUUniswapPool.address);
 
-    return tDUUUniswapPool;
+    return tuffDUUUniswapPool;
 }
 
-async function addLiquidityToPool(poolContract: IUniswapV3Pool, tDUUDiamond: TuffVBT, buffChain: Address) {
+async function addLiquidityToPool(poolContract: IUniswapV3Pool, tuffDUU: TuffVBT, buffChain: Address) {
     const immutables = await getPoolImmutables(poolContract);
     const state = await getPoolState(poolContract);
 
@@ -104,11 +104,11 @@ async function addLiquidityToPool(poolContract: IUniswapV3Pool, tDUUDiamond: Tuf
     //Use a portion of BuffChain's TUFF tokens as liquidity
     //TODO: do we also want to use TuffDAO treasury? That would _likely_ be another deployment script
     console.log("-----STARTING BALANCES-----");
-    const {tuffBal} = await printAcctBal(tDUUDiamond, buffChain);
+    const {tuffBal} = await printAcctBal(tuffDUU, buffChain);
     const buffChainsTuffLiquidity = tuffBal.mul(BUFFCHAIN_INIT_TUFF_LIQUIDITY_PERCENTAGE).div(100);
     const buffChainsWethLiquidity = BUFFCHAIN_INIT_WETH_LIQUIDITY_WETH;
 
-    await tDUUDiamond.connect(buffChainAcct).approve(nonfungiblePositionManager.address, buffChainsTuffLiquidity);
+    await tuffDUU.connect(buffChainAcct).approve(nonfungiblePositionManager.address, buffChainsTuffLiquidity);
     await weth9Contract.connect(buffChainAcct).approve(nonfungiblePositionManager.address, buffChainsWethLiquidity);
 
     const block = await hre.ethers.provider.getBlock("latest");
@@ -134,7 +134,7 @@ async function addLiquidityToPool(poolContract: IUniswapV3Pool, tDUUDiamond: Tuf
     const tokenId = await nonfungiblePositionManager.tokenOfOwnerByIndex(buffChain, 0);
 
     console.log("-----ENDING BALANCES-----");
-    await printAcctBal(tDUUDiamond, buffChain);
+    await printAcctBal(tuffDUU, buffChain);
 }
 
 module.exports = async () => {

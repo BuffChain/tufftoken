@@ -8,8 +8,7 @@ const IUniswapV3FactoryABI = require("@uniswap/v3-core/artifacts/contracts/inter
 const IUniswapV3PoolABI = require("@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json").abi;
 
 const {consts, TOKEN_DECIMALS, TOKEN_SYMBOL} = require("./consts");
-const {Contract, BigNumber} = require("ethers");
-const {Address} = require("hardhat-deploy/dist/types");
+const {BigNumber} = require("ethers");
 
 async function getDAIContract() {
     return await hre.ethers.getContractAt(IERC20ABI, consts("DAI_ADDR"));
@@ -250,7 +249,7 @@ async function printAcctBal(tuffVBTDiamond, acctAddr) {
     console.log(`[${acctAddr}] has [${hre.ethers.utils.formatEther(wethBal)}] WETH`);
 
     const tuffBal = BigNumber.from(await tuffVBTDiamond.balanceOf(acctAddr));
-    console.log(`[${acctAddr}] has [${tuffBal.toString()}] TUFF`);
+    console.log(`[${acctAddr}] has [${tuffBal.toString()}] ${TOKEN_SYMBOL}`);
 
     return {ethBal, wethBal, tuffBal};
 }
