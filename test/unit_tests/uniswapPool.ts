@@ -4,7 +4,7 @@ import hre from "hardhat";
 import {Signer} from "ethers";
 import {expect} from "chai";
 
-import {TuffToken} from "../../src/types";
+import {TuffVBT} from "../../src/types";
 import {IUniswapV3Factory} from "@uniswap/v3-periphery/typechain/IUniswapV3Factory";
 
 
@@ -20,7 +20,7 @@ describe("UniswapPool Deployment", function () {
   let owner: Signer;
   let accounts: Signer[];
 
-  let tuffTokenDiamond: TuffToken;
+  let tuffVBTDiamond: TuffVBT;
 
   before(async function () {
     const {contractOwner} = await hre.getNamedAccounts();
@@ -31,17 +31,17 @@ describe("UniswapPool Deployment", function () {
   });
 
   beforeEach(async function () {
-    const {TuffTokenDiamond} = await hre.deployments.fixture();
-    tuffTokenDiamond = await hre.ethers.getContractAt(TuffTokenDiamond.abi, TuffTokenDiamond.address, owner) as TuffToken;
+    const {TuffVBTDiamond} = await hre.deployments.fixture();
+    tuffVBTDiamond = await hre.ethers.getContractAt(TuffVBTDiamond.abi, TuffVBTDiamond.address, owner) as TuffVBT;
   });
 
   it('should exist a pool between TUFF and WETH9, with liquidity', async () => {
     const uniswapV3Factory = await hre.ethers.getContractAt("UniswapV3Factory",
       consts("UNISWAP_V3_FACTORY_ADDR")) as IUniswapV3Factory;
-    const tuffTokenPoolAddr = await uniswapV3Factory.getPool(
-      consts("WETH9_ADDR"), tuffTokenDiamond.address, UNISWAP_POOL_BASE_FEE);
-    expect(tuffTokenPoolAddr).to.not.equal(hre.ethers.constants.AddressZero);
-    const tuff_weth9Pool = await hre.ethers.getContractAt("UniswapV3Pool", tuffTokenPoolAddr);
+    const tuffVBTPoolAddr = await uniswapV3Factory.getPool(
+      consts("WETH9_ADDR"), tuffVBTDiamond.address, UNISWAP_POOL_BASE_FEE);
+    expect(tuffVBTPoolAddr).to.not.equal(hre.ethers.constants.AddressZero);
+    const tuff_weth9Pool = await hre.ethers.getContractAt("UniswapV3Pool", tuffVBTPoolAddr);
 
     const [fee, tickSpacing, maxLiquidityPerTick, liquidity, slot] = await Promise.all([
       tuff_weth9Pool.fee(),
@@ -67,13 +67,13 @@ describe("UniswapPool Deployment", function () {
 
     await transferTUFF(recipientAddr);
     const {weth9Contract} = await swapEthForWeth(recipient, wethAmt);
-    const startingTuffBalance = await tuffTokenDiamond.balanceOf(recipientAddr);
+    const startingTuffBalance = await tuffVBTDiamond.balanceOf(recipientAddr);
     const startingWethBalance = await weth9Contract.balanceOf(recipientAddr);
 
     await weth9Contract.connect(recipient).approve(consts("UNISWAP_V3_ROUTER_ADDR"), hre.ethers.constants.MaxUint256);
-    await swapTokens(recipient, weth9Contract.address, tuffTokenDiamond.address, tuffAmt);
+    await swapTokens(recipient, weth9Contract.address, tuffVBTDiamond.address, tuffAmt);
 
-    const endingTuffBalance = await tuffTokenDiamond.balanceOf(recipientAddr);
+    const endingTuffBalance = await tuffVBTDiamond.balanceOf(recipientAddr);
     const endingWethBalance = await weth9Contract.balanceOf(recipientAddr);
     expect(endingTuffBalance).to.equal(startingTuffBalance.add(tuffAmt));
     expect(endingWethBalance).to.be.lt(startingWethBalance);
@@ -88,14 +88,14 @@ describe("UniswapPool Deployment", function () {
 
     await transferTUFF(recipientAddr, "400000");
     const {weth9Contract} = await swapEthForWeth(recipient, startingWethAmt);
-    const startingTuffBalance = await tuffTokenDiamond.balanceOf(recipientAddr);
+    const startingTuffBalance = await tuffVBTDiamond.balanceOf(recipientAddr);
     const startingWethBalance = await weth9Contract.balanceOf(recipientAddr);
-    await printAcctBal(tuffTokenDiamond, recipientAddr);
+    await printAcctBal(tuffVBTDiamond, recipientAddr);
 
-    await tuffTokenDiamond.connect(recipient).approve(consts("UNISWAP_V3_ROUTER_ADDR"), hre.ethers.constants.MaxUint256);
-    await swapTokens(recipient, tuffTokenDiamond.address, weth9Contract.address, swapWethAmt);
+    await tuffVBTDiamond.connect(recipient).approve(consts("UNISWAP_V3_ROUTER_ADDR"), hre.ethers.constants.MaxUint256);
+    await swapTokens(recipient, tuffVBTDiamond.address, weth9Contract.address, swapWethAmt);
 
-    const endingTuffBalance = await tuffTokenDiamond.balanceOf(recipientAddr);
+    const endingTuffBalance = await tuffVBTDiamond.balanceOf(recipientAddr);
     const endingWethBalance = await weth9Contract.balanceOf(recipientAddr);
     expect(endingWethBalance).to.equal(startingWethBalance.add(swapWethAmt));
     expect(endingTuffBalance).to.be.lt(startingTuffBalance);

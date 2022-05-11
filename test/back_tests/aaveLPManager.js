@@ -19,7 +19,7 @@ describe('AaveLPManager', function () {
     let owner;
     let accounts;
 
-    let tuffTokenDiamond;
+    let tuffVBTDiamond;
     let aaveDaiIncome;
 
     before(async function () {
@@ -31,11 +31,11 @@ describe('AaveLPManager', function () {
     });
 
     beforeEach(async function () {
-        const {TuffTokenDiamond} = await hre.deployments.fixture();
-        tuffTokenDiamond = await hre.ethers.getContractAt(TuffTokenDiamond.abi, TuffTokenDiamond.address, owner);
+        const {TuffVBTDiamond} = await hre.deployments.fixture();
+        tuffVBTDiamond = await hre.ethers.getContractAt(TuffVBTDiamond.abi, TuffVBTDiamond.address, owner);
 
-        await utils.sendTokensToAddr(accounts.at(-1), tuffTokenDiamond.address, daiAmt);
-        aaveDaiIncome = await tuffTokenDiamond.getAaveIncome(consts("DAI_ADDR"));
+        await utils.sendTokensToAddr(accounts.at(-1), tuffVBTDiamond.address, daiAmt);
+        aaveDaiIncome = await tuffVBTDiamond.getAaveIncome(consts("DAI_ADDR"));
 
         //Aave formats this unit based on 27 places
         // https://docs.aave.com/developers/v/2.0/the-core-protocol/lendingpool#getreservenormalizedincome
@@ -45,7 +45,7 @@ describe('AaveLPManager', function () {
     it('should have increased income', async () => {
         await backTestUtils.simulateBlockChainActivity();
 
-        const updateAaveDaiIncome = await tuffTokenDiamond.getAaveIncome(consts("DAI_ADDR"));
+        const updateAaveDaiIncome = await tuffVBTDiamond.getAaveIncome(consts("DAI_ADDR"));
         const actualIncomeDiff = updateAaveDaiIncome.sub(aaveDaiIncome);
         const expectedDiff = hre.ethers.BigNumber.from("267592266198234737084");
 
@@ -60,21 +60,21 @@ describe('AaveLPManager', function () {
 
         //Check that the account has no aDAI
         const adaiContract = await utils.getADAIContract();
-        let startAdaiQty = await adaiContract.balanceOf(tuffTokenDiamond.address);
+        let startAdaiQty = await adaiContract.balanceOf(tuffVBTDiamond.address);
         expect(new BN(0)).to.be.bignumber.equal(new BN(startAdaiQty.toString()));
 
         //Make the call to deposit DAI into Aave
-        await tuffTokenDiamond.depositToAave(consts("DAI_ADDR"), qtyInDAI);
+        await tuffVBTDiamond.depositToAave(consts("DAI_ADDR"), qtyInDAI);
 
         //Check that the account now has aDAI equal to the DAI we deposited
-        startAdaiQty = await adaiContract.balanceOf(tuffTokenDiamond.address);
+        startAdaiQty = await adaiContract.balanceOf(tuffVBTDiamond.address);
         expect(new BN(qtyInDAI.toString())).to.be.bignumber.equal(new BN(startAdaiQty.toString()));
 
         //Mine new txs and blocks to simulate activity and time passing
         await backTestUtils.simulateBlockChainActivity();
 
         //Check that we have earned aDAI
-        const endAdaiQty = await adaiContract.balanceOf(tuffTokenDiamond.address);
+        const endAdaiQty = await adaiContract.balanceOf(tuffVBTDiamond.address);
         expect(new BN(endAdaiQty.toString())).to.be.bignumber.greaterThan(new BN(startAdaiQty.toString()));
         console.log(`Started with ${hre.ethers.utils.formatEther(startAdaiQty)} aDAI and ended with ${hre.ethers.utils.formatEther(endAdaiQty)} aDAI`);
     });

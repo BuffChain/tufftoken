@@ -61,7 +61,7 @@ async function transferETH(fromAccount, toAddr, amount = "100") {
 }
 
 /**
- * Upon deployment of TuffToken, the `contractOwner` account is supplied with all TUFF tokens. Thus, we use this
+ * Upon deployment of TuffVBT, the `contractOwner` account is supplied with all TUFF tokens. Thus, we use this
  * account to transfer tokens to the desired address
  * @param toAddr: The address to receive TUFF tokens
  * @param amount: Amount of TUFF tokens to transfer. Defaults to 10000
@@ -71,25 +71,25 @@ async function transferTUFF(toAddr, amount = "10000") {
     const {deployments, getNamedAccounts} = hre;
 
     const {contractOwner} = await getNamedAccounts();
-    const TuffTokenDiamond = await deployments.get("TuffTokenDiamond");
-    const tuffTokenDiamond = await hre.ethers.getContractAt(
-        TuffTokenDiamond.abi, TuffTokenDiamond.address, contractOwner);
+    const TuffVBTDiamond = await deployments.get("TuffVBTDiamond");
+    const tuffVBTDiamond = await hre.ethers.getContractAt(
+        TuffVBTDiamond.abi, TuffVBTDiamond.address, contractOwner);
 
     if (hre.hardhatArguments.verbose) {
         console.log(`[${contractOwner}] has [${hre.ethers.utils.formatEther(
-            await tuffTokenDiamond.balanceOf(contractOwner))}] TUFF`);
+            await tuffVBTDiamond.balanceOf(contractOwner))}] TUFF`);
         console.log(`[${toAddr}] has [${hre.ethers.utils.formatEther(
-            await tuffTokenDiamond.balanceOf(toAddr))}] TUFF`);
+            await tuffVBTDiamond.balanceOf(toAddr))}] TUFF`);
     }
 
     const tuffAmt = hre.ethers.utils.parseUnits(amount, TOKEN_DECIMALS);
-    await tuffTokenDiamond.transfer(toAddr, tuffAmt, {from: contractOwner});
+    await tuffVBTDiamond.transfer(toAddr, tuffAmt, {from: contractOwner});
 
     if (hre.hardhatArguments.verbose) {
         console.log(`[${contractOwner}] has [${hre.ethers.utils.formatEther(
-            await tuffTokenDiamond.balanceOf(contractOwner))}] TUFF`);
+            await tuffVBTDiamond.balanceOf(contractOwner))}] TUFF`);
         console.log(`[${toAddr}] has [${hre.ethers.utils.formatEther(
-            await tuffTokenDiamond.balanceOf(toAddr))}] TUFF`);
+            await tuffVBTDiamond.balanceOf(toAddr))}] TUFF`);
     }
 
     return tuffAmt;
@@ -242,23 +242,14 @@ async function getUniswapPriceQuote(tokenA, tokenB, poolFee, period) {
     return Math.pow(1.0001, avgTick);
 }
 
-const wrapTuffToGov = async (tuffToken, tuffGovToken, amount) => {
-    await tuffToken.approve(tuffGovToken.address, amount);
-    await tuffGovToken.deposit(amount)
-}
-
-const unwrapGovToTuff = async (tuffGovToken, amount) => {
-    await tuffGovToken.withdraw(amount)
-}
-
-async function printAcctBal(tuffTokenDiamond, acctAddr) {
+async function printAcctBal(tuffVBTDiamond, acctAddr) {
     const ethBal = BigNumber.from(await hre.ethers.provider.getBalance(acctAddr));
     console.log(`[${acctAddr}] has [${hre.ethers.utils.formatEther(ethBal)}] ETH`);
 
     const wethBal = BigNumber.from(await (await getWETH9Contract()).balanceOf(acctAddr));
     console.log(`[${acctAddr}] has [${hre.ethers.utils.formatEther(wethBal)}] WETH`);
 
-    const tuffBal = BigNumber.from(await tuffTokenDiamond.balanceOf(acctAddr));
+    const tuffBal = BigNumber.from(await tuffVBTDiamond.balanceOf(acctAddr));
     console.log(`[${acctAddr}] has [${tuffBal.toString()}] TUFF`);
 
     return {ethBal, wethBal, tuffBal};
@@ -279,7 +270,5 @@ module.exports = {
     getSqrtPriceX96,
     getUniswapPoolContract,
     getUniswapPriceQuote,
-    wrapTuffToGov,
-    unwrapGovToTuff,
     printAcctBal
 }

@@ -5,7 +5,7 @@ import hre from 'hardhat';
 const AccessControlABI = require('../artifacts/@openzeppelin/contracts/access/AccessControl.sol/AccessControl.json').abi;
 
 module.exports = async () => {
-    console.log("[DEPLOY][v0005] - Deploying TuffGov token");
+    console.log("[DEPLOY][v0001] - Deploying TUFF Token");
 
     const {deployments, getNamedAccounts} = hre;
     const {deployer, contractOwner} = await getNamedAccounts();
@@ -13,20 +13,13 @@ module.exports = async () => {
     console.log(`Deployer address [${deployer}]`);
     console.log(`Contract owner address [${contractOwner}]`);
 
-    const tuffTokenDiamond = await deployments.get("TuffTokenDiamond");
-
-    let tuffGovToken = await deployments.deploy('TuffGovToken', {
+    let tuffToken = await deployments.deploy('TuffToken', {
         from: contractOwner,
-        args: [tuffTokenDiamond.address],
+        args: ["TuffToken", "Tuff Token DAO"],
         log: true
     });
 
-    console.log(`TuffGovToken address [${tuffGovToken.address}]`);
-
-    // @ts-ignore
-    const tuffTokenDiamondContract = await hre.ethers.getContractAt(tuffTokenDiamond.abi, tuffTokenDiamond.address, contractOwner);
-
-    await tuffTokenDiamondContract.excludeFromFee(tuffGovToken.address);
+    console.log(`TuffToken address [${tuffToken.address}]`);
 
     let timelockController = await deployments.deploy('TimelockController', {
         from: contractOwner,
@@ -39,7 +32,7 @@ module.exports = async () => {
 
     let tuffGovernor = await deployments.deploy('TuffGovernor', {
         from: contractOwner,
-        args: [tuffGovToken.address, timelockController.address],
+        args: [tuffToken.address, timelockController.address],
         log: true
     });
 
@@ -59,4 +52,4 @@ module.exports = async () => {
     await accessControl.revokeRole(adminRole, deployer);
 };
 
-module.exports.tags = ['v0005'];
+module.exports.tags = ['v0001'];

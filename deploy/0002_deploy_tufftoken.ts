@@ -9,7 +9,7 @@ const {
 const {logDeploymentTx} = require("../utils/deployment_helpers");
 
 module.exports = async () => {
-    console.log("[DEPLOY][v0001] - Deploying and initializing TuffTokenDiamond");
+    console.log("[DEPLOY][v0002] - Deploying and initializing TuffVBTDiamond");
 
     const {deployments, getNamedAccounts} = hre;
     const {deployer, contractOwner, buffChain} = await getNamedAccounts();
@@ -17,11 +17,11 @@ module.exports = async () => {
     console.log(`Deployer address [${deployer}]`);
     console.log(`Contract owner address [${contractOwner}]`);
 
-    let tuffTokenDiamond = await deployments.diamond.deploy('TuffTokenDiamond', {
+    let tuffVBTDiamond = await deployments.diamond.deploy('TuffVBTDiamond', {
         from: deployer,
         owner: contractOwner,
         facets: [
-            "TuffToken",
+            "TuffVBT",
             "AaveLPManager",
             "TuffKeeper",
             "TokenMaturity",
@@ -31,12 +31,12 @@ module.exports = async () => {
         log: true
     });
     // @ts-ignore
-    let tuffTokenDiamondContract = await hre.ethers.getContractAt(tuffTokenDiamond.abi, tuffTokenDiamond.address, contractOwner);
-    const tuffTokenAddress = await tuffTokenDiamondContract.address;
-    console.log(`TuffTokenDiamond address [${tuffTokenAddress}]`);
+    let tuffVBTDiamondContract = await hre.ethers.getContractAt(tuffVBTDiamond.abi, tuffVBTDiamond.address, contractOwner);
+    const tuffVBTAddress = await tuffVBTDiamondContract.address;
+    console.log(`TuffVBTDiamond address [${tuffVBTAddress}]`);
 
-    if (!await tuffTokenDiamondContract.isTuffTokenInit()) {
-        let initTx = await tuffTokenDiamondContract.initTuffToken(
+    if (!await tuffVBTDiamondContract.isTuffVBTInit()) {
+        let initTx = await tuffVBTDiamondContract.initTuffVBT(
             contractOwner,
             TOKEN_NAME,
             TOKEN_SYMBOL,
@@ -46,38 +46,38 @@ module.exports = async () => {
             buffChain,
             TOKEN_TOTAL_SUPPLY
         );
-        logDeploymentTx("Initialized TuffToken:", initTx);
+        logDeploymentTx("Initialized Tuff VBT:", initTx);
     }
 
-    if (!await tuffTokenDiamondContract.isAaveInit()) {
-        let tx = await tuffTokenDiamondContract.initAaveLPManager(
+    if (!await tuffVBTDiamondContract.isAaveInit()) {
+        let tx = await tuffVBTDiamondContract.initAaveLPManager(
             consts("AAVE_LENDINGPOOL_PROVIDER_ADDR"), consts("AAVE_PROTOCOL_DATA_PROVIDER_ADDR"),
             consts("WETH9_ADDR")
         );
         logDeploymentTx("Initialized AaveLPManager:", tx);
 
-        tx = await tuffTokenDiamondContract.addAaveSupportedToken(consts("DAI_ADDR"), 5000);
+        tx = await tuffVBTDiamondContract.addAaveSupportedToken(consts("DAI_ADDR"), 5000);
         logDeploymentTx("Added DAI support to AaveLPManager:", tx);
 
-        tx = await tuffTokenDiamondContract.addAaveSupportedToken(consts("USDC_ADDR"), 2500);
+        tx = await tuffVBTDiamondContract.addAaveSupportedToken(consts("USDC_ADDR"), 2500);
         logDeploymentTx("Added USDC support to AaveLPManager:", tx);
 
-        tx = await tuffTokenDiamondContract.addAaveSupportedToken(consts("USDT_ADDR"), 2500);
+        tx = await tuffVBTDiamondContract.addAaveSupportedToken(consts("USDT_ADDR"), 2500);
         logDeploymentTx("Added USDT support to AaveLPManager:", tx);
     }
 
-    if (!await tuffTokenDiamondContract.isTuffKeeperInit()) {
-        let initTx = await tuffTokenDiamondContract.initTuffKeeper();
+    if (!await tuffVBTDiamondContract.isTuffKeeperInit()) {
+        let initTx = await tuffVBTDiamondContract.initTuffKeeper();
         logDeploymentTx("Initialized TuffKeeper:", initTx);
     }
 
-    if (!await tuffTokenDiamondContract.isTokenMaturityInit()) {
-        let initTx = await tuffTokenDiamondContract.initTokenMaturity(TOKEN_DAYS_UNTIL_MATURITY);
+    if (!await tuffVBTDiamondContract.isTokenMaturityInit()) {
+        let initTx = await tuffVBTDiamondContract.initTokenMaturity(TOKEN_DAYS_UNTIL_MATURITY);
         logDeploymentTx("Initialized TokenMaturity:", initTx);
     }
 
-    if (!await tuffTokenDiamondContract.isUniswapManagerInit()) {
-        let initTx = await tuffTokenDiamondContract.initUniswapManager(
+    if (!await tuffVBTDiamondContract.isUniswapManagerInit()) {
+        let initTx = await tuffVBTDiamondContract.initUniswapManager(
             consts("UNISWAP_V3_ROUTER_ADDR"),
             consts("WETH9_ADDR"),
             UNISWAP_POOL_BASE_FEE
@@ -85,10 +85,10 @@ module.exports = async () => {
         logDeploymentTx("Initialized UniswapManager:", initTx);
     }
 
-    if (!await tuffTokenDiamondContract.isUniswapPriceConsumerInit()) {
-        let initTx = await tuffTokenDiamondContract.initUniswapPriceConsumer(consts("UNISWAP_V3_FACTORY_ADDR"));
+    if (!await tuffVBTDiamondContract.isUniswapPriceConsumerInit()) {
+        let initTx = await tuffVBTDiamondContract.initUniswapPriceConsumer(consts("UNISWAP_V3_FACTORY_ADDR"));
         logDeploymentTx("Initialized UniswapPriceConsumer:", initTx);
     }
 };
 
-module.exports.tags = ['v0001'];
+module.exports.tags = ['v0002'];
