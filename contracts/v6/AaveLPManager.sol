@@ -14,6 +14,8 @@ import {AaveLPManagerLib} from "./AaveLPManagerLib.sol";
 import {IUniswapManager} from "./IUniswapManager.sol";
 import {IUniswapPriceConsumer} from "./IUniswapPriceConsumer.sol";
 
+import "hardhat/console.sol";
+
 contract AaveLPManager is Context {
     modifier aaveInitLock() {
         require(
@@ -394,15 +396,17 @@ contract AaveLPManager is Context {
             //Only balance if token is under-allocated more than our buffer amount
             int256 iPercentageDiff = int(tokenTargetPercentage) - int(tokenActualPercentage);
             if (iPercentageDiff > 0) {
-//                console.log("++++++++++++");
-//                console.log(bm.treasuryBalance);
-//                console.log(bm.supportedTokens.length);
+                console.log("++++++++++++");
+                console.log(bm.treasuryBalance);
+                console.log(bm.supportedTokens.length);
 
                 //Get proportional balance for the token
                 uint256 balanceIn = SafeMath.div(bm.treasuryBalance, bm.supportedTokens.length);
-//                console.log(balanceIn);
+                console.log(balanceIn);
 
                 if (balanceIn > 0) {
+                    IERC20(address(this)).approve(address(this), balanceIn);
+
                     IUniswapManager(address(this)).swapExactInputMultihop(
                         address(this),
                         bm.poolFee,

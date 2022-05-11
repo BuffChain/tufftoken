@@ -55,7 +55,6 @@ contract UniswapManager {
         ss.isInit = true;
     }
 
-    //TODO: Fix this
     /// based on https://docs.uniswap.org/protocol/guides/swaps/multihop-swaps
     function swapExactInputMultihop(
         address inputToken,
@@ -67,13 +66,13 @@ contract UniswapManager {
         UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
             .getState();
 
-//        //Transfer `amountIn` of `inputToken` to this contract
-//        TransferHelper.safeTransferFrom(
-//            inputToken,
-//            address(this),
-//            address(this),
-//            amountIn
-//        );
+        //Transfer `amountIn` of `inputToken` to this contract
+        TransferHelper.safeTransferFrom(
+            inputToken,
+            address(this),
+            address(this),
+            amountIn
+        );
 
         //Approve the router to spend `inputToken`
         TransferHelper.safeApprove(
@@ -116,17 +115,15 @@ contract UniswapManager {
         UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
             .getState();
 
-        // msg.sender must approve this contract
-
-        // Transfer the specified amount of DAI to this contract.
+        //Transfer the specified amount of `inputToken` to this contract
         TransferHelper.safeTransferFrom(
             inputToken,
-            address(this),
+            msg.sender,
             address(this),
             amountIn
         );
 
-        // Approve the router to spend DAI.
+        //Approve the router to spend `inputToken`
         TransferHelper.safeApprove(
             inputToken,
             address(ss.swapRouter),
@@ -178,7 +175,6 @@ contract UniswapManager {
         );
 
         //Approve the router to spend the specified `amountInMaximum` of `inputToken`
-        TransferHelper.safeApprove(inputToken, address(ss.swapRouter), amountInMaximum);
         TransferHelper.safeApprove(
             inputToken,
             address(ss.swapRouter),

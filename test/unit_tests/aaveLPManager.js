@@ -243,7 +243,7 @@ describe('AaveLPManager', function () {
         const qtyInDAI = hre.ethers.utils.parseEther("2000");
         await assertDepositToAave(tuffTokenDiamond, qtyInDAI, true);
         // Simulate the TuffToken treasury capturing fees by directly transferring TUFF to TuffToken's address
-        await utils.transferTUFF(tuffTokenDiamond.address);
+        await utils.transferTUFF(tuffTokenDiamond.address, "400000");
 
         //First, get how much token we have before balancing
         const startingTreasuryAmount = await tuffTokenDiamond.balanceOf(tuffTokenDiamond.address);
@@ -255,7 +255,6 @@ describe('AaveLPManager', function () {
         await tuffTokenDiamond.setAaveTokenTargetedPercentage(tokenAddr, newTargetPercentage);
 
         //Run the balancing
-        // await tuffTokenDiamond.balanceAaveLendingPool();
         const balancingTxResponse = await tuffTokenDiamond.balanceAaveLendingPool();
         const balancingTxReceipt = await balancingTxResponse.wait();
 

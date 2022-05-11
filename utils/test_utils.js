@@ -91,6 +91,8 @@ async function transferTUFF(toAddr, amount = "10000") {
         console.log(`[${toAddr}] has [${hre.ethers.utils.formatEther(
             await tuffTokenDiamond.balanceOf(toAddr))}] TUFF`);
     }
+
+    return tuffAmt;
 }
 
 /**

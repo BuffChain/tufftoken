@@ -2,8 +2,16 @@
 
 import hre from "hardhat";
 import {BigNumber} from "ethers";
-import {TuffToken} from '../src/types';
-import {BUFFCHAIN_TOTAL_TUFF_PERCENTAGE, TOKEN_DECIMALS, TOKEN_TOTAL_SUPPLY} from "../utils/consts";
+import {TuffToken, UniswapPriceConsumer} from '../src/types';
+type TuffTokenDiamond = TuffToken & UniswapPriceConsumer;
+
+import {
+    BUFFCHAIN_TOTAL_TUFF_PERCENTAGE,
+    consts,
+    TOKEN_DECIMALS,
+    TOKEN_TOTAL_SUPPLY,
+    UNISWAP_POOL_BASE_FEE
+} from "../utils/consts";
 
 module.exports = async () => {
     console.log("[DEPLOY][v0002] - Distributing tokens to initial holders");
@@ -12,8 +20,17 @@ module.exports = async () => {
     const {contractOwner, buffChain} = await getNamedAccounts();
     const contractOwnerAcct = await hre.ethers.getSigner(contractOwner);
 
-    const TuffTokenDiamond = await deployments.get("TuffTokenDiamond");
-    const tuffTokenDiamond = await hre.ethers.getContractAt(TuffTokenDiamond.abi, TuffTokenDiamond.address, contractOwnerAcct) as TuffToken;
+    const tuffTokenDiamondDeployment = await deployments.get("TuffTokenDiamond");
+    const tuffTokenDiamond = await hre.ethers.getContractAt(tuffTokenDiamondDeployment.abi, tuffTokenDiamondDeployment.address, contractOwnerAcct) as TuffTokenDiamond;
+
+    const usdcWethQuote = await tuffTokenDiamond.getUniswapQuote(
+        consts("USDC_ADDR"),
+        consts("WETH9_ADDR"),
+        UNISWAP_POOL_BASE_FEE,
+        3600
+    );
+
+    console.log(`Current ETH price: $${usdcWethQuote}`);
 
     //Transfer BuffChain's TUFF tokens
     const totalTokens = (BigNumber.from(10).pow(TOKEN_DECIMALS)).mul(TOKEN_TOTAL_SUPPLY);

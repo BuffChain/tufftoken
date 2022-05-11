@@ -1,8 +1,11 @@
 // SPDX-License-Identifier: agpl-3.0
 pragma solidity >=0.7.0;
 
-import "@uniswap/v3-periphery/contracts/libraries/OracleLibrary.sol";
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
+import "@uniswap/v3-core/contracts/libraries/TickMath.sol";
+import "@uniswap/v3-core/contracts/libraries/FixedPoint96.sol";
+import "@uniswap/v3-core/contracts/libraries/FullMath.sol";
+import "@uniswap/v3-periphery/contracts/libraries/OracleLibrary.sol";
 
 import {UniswapPriceConsumerLib} from "./UniswapPriceConsumerLib.sol";
 
@@ -53,7 +56,7 @@ contract UniswapPriceConsumer {
         address _tokenB,
         uint24 _fee,
         uint32 _period
-    ) external view uniswapPriceConsumerInitLock returns (uint256 quoteAmount) {
+    ) external view uniswapPriceConsumerInitLock returns (uint256) {
         UniswapPriceConsumerLib.StateStorage
             storage ss = UniswapPriceConsumerLib.getState();
 
@@ -72,6 +75,22 @@ contract UniswapPriceConsumer {
                 )
             )
         );
+
+//        if (twapInterval == 0) {
+//            (sqrtPriceX96, , , , , , ) = IUniswapV3Pool(poolAddress).slot0();
+//            return FullMath.mulDiv(sqrtPriceX96, sqrtPriceX96, FixedPoint96.Q96);
+//        } else {
+//            uint32[] memory secondsAgos = new uint32[](2);
+//            secondsAgos[0] = twapInterval;
+//            secondsAgos[1] = 0;
+//            (int56[] memory tickCumulatives, ) = IUniswapV3Pool(poolAddress).observe(secondsAgos);
+//            uint160 sqrtPriceX96 = TickMath.getSqrtRatioAtTick(
+//                int24((tickCumulatives[1] - tickCumulatives[0]) / twapInterval)
+//            );
+//
+//
+//            return FullMath.mulDiv(sqrtPriceX96, sqrtPriceX96, FixedPoint96.Q96);
+//        }
 
         (int24 timeWeightedAverageTick, ) = OracleLibrary.consult(
             _poolAddr,
