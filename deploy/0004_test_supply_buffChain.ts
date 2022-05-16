@@ -6,10 +6,10 @@ import {swapEthForWeth} from '../utils/test_utils';
 
 module.exports = async () => {
     if (hre.network.live) {
-        console.log("[DEPLOY][v0003] - Deploying to a live network, not supplying buffChain with ETH or WETH");
+        console.log("[DEPLOY][v0004] - Deploying to a live network, not supplying buffChain with ETH or WETH");
         return;
     } else {
-        console.log("[DEPLOY][v0003] - Supplying ETH and WETH to buffChain");
+        console.log("[DEPLOY][v0004] - Supplying ETH and WETH to buffChain");
     }
 
     const {getNamedAccounts} = hre;
@@ -31,4 +31,4 @@ module.exports = async () => {
     await swapEthForWeth(buffChainAcct, wethAmt);
 };
 
-module.exports.tags = ['v0003', 'test'];
+module.exports.tags = ['v0004', 'test'];

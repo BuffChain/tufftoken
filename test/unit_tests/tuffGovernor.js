@@ -14,12 +14,11 @@ describe("TuffGovernor", function () {
     let owner;
     let accounts;
 
-    let tuffTokenDiamond;
-    let tuffGovToken;
+    let tuffToken;
     let tuffGovernor;
     let timelockController;
 
-    let startingOwnerTuffBal;
+    let startingOwnerTuffDAOBal;
 
     before(async function () {
 
@@ -29,25 +28,23 @@ describe("TuffGovernor", function () {
         //Per `hardhat.config.ts`, the 0 and 1 index accounts are named accounts. They are reserved for deployment uses
         [, , ...accounts] = await hre.ethers.getSigners();
 
-        const {TuffTokenDiamond, TuffGovToken, TimelockController, TuffGovernor} = await hre.deployments.fixture();
-        tuffTokenDiamond = await hre.ethers.getContractAt(TuffTokenDiamond.abi, TuffTokenDiamond.address, owner);
+        const {TuffToken, TimelockController, TuffGovernor} = await hre.deployments.fixture();
 
-        tuffGovToken = await hre.ethers.getContractAt(TuffGovToken.abi, TuffGovToken.address, owner);
+        tuffToken = await hre.ethers.getContractAt(TuffToken.abi, TuffToken.address, owner);
 
         timelockController = await hre.ethers.getContractAt(TimelockController.abi, TimelockController.address, owner);
 
         tuffGovernor = await hre.ethers.getContractAt(TuffGovernor.abi, TuffGovernor.address, owner);
 
-        await tuffGovToken.delegate(owner.address);
+        await tuffToken.delegate(owner.address);
 
-        startingOwnerTuffBal = await tuffTokenDiamond.balanceOf(owner.address);
+        startingOwnerTuffDAOBal = await tuffToken.balanceOf(owner.address);
 
-        await utils.wrapTuffToGov(tuffTokenDiamond, tuffGovToken, startingOwnerTuffBal);
 
     });
 
     async function assertProposalCreated(description) {
-        const tokenAddress = tuffTokenDiamond.address
+        const tokenAddress = tuffToken.address
         const token = await hre.ethers.getContractAt('ERC20', tokenAddress);
         const calldata = token.interface.encodeFunctionData('name', []);
 
@@ -135,10 +132,10 @@ describe("TuffGovernor", function () {
         const [id, proposer, eta, startBlock, endBlock, forVotes, againstVotes, abstainVotes, canceled, executed] =
             await tuffGovernor.proposals(proposalId);
 
-        const holderVotingPower = await tuffGovToken.getVotes(owner.address);
-        const govBal = await tuffGovToken.balanceOf(owner.address);
+        const holderVotingPower = await tuffToken.getVotes(owner.address);
+        const govBal = await tuffToken.balanceOf(owner.address);
 
-        expect(govBal.toString()).to.equal(startingOwnerTuffBal, "Gov token balance should be equal to native token");
+        expect(govBal.toString()).to.equal(startingOwnerTuffDAOBal, "Gov token balance should be equal to native token");
         expect(holderVotingPower).to.equal(govBal, "Voting power should equal token balance");
 
         expect(forVotes).to.equal(holderVotingPower, "Votes 'for' should equal sender's voting power");
