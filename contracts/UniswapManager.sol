@@ -4,10 +4,17 @@ pragma abicoder v2;
 
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
+import "./TuffOwner.sol";
 
 import {UniswapManagerLib} from "./UniswapManagerLib.sol";
 
 contract UniswapManager {
+
+    modifier onlyOwner() {
+        TuffOwner(address(this)).requireOnlyOwner();
+        _;
+    }
+
     modifier uniswapManagerInitLock() {
         require(
             isUniswapManagerInit(),
@@ -34,7 +41,7 @@ contract UniswapManager {
         ISwapRouter _swapRouter,
         address WETHAddress,
         uint24 basePoolFee
-    ) public {
+    ) public onlyOwner {
         require(
             !isUniswapManagerInit(),
             string(
@@ -63,7 +70,7 @@ contract UniswapManager {
         uint256 poolBFee,
         address outputToken,
         uint256 amountIn
-    ) external returns (uint256 amountOut) {
+    ) external onlyOwner returns (uint256 amountOut) {
         UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
             .getState();
 
@@ -112,7 +119,7 @@ contract UniswapManager {
         uint24 poolFee,
         address outputToken,
         uint256 amountIn
-    ) external returns (uint256 amountOut) {
+    ) external onlyOwner returns (uint256 amountOut) {
         UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
             .getState();
 
@@ -164,7 +171,7 @@ contract UniswapManager {
         uint24 poolFee,
         uint256 amountOut,
         uint256 amountInMaximum
-    ) external returns (uint256 amountIn) {
+    ) external onlyOwner returns (uint256 amountIn) {
         UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
             .getState();
 

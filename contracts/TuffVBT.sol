@@ -8,20 +8,12 @@ import "@openzeppelin/contracts/utils/Address.sol";
 
 import {TuffVBTLib} from "./TuffVBTLib.sol";
 import "./TokenMaturity.sol";
-import {TuffOwner} from "./TuffOwner.sol";
+import "./TuffOwner.sol";
 
 contract TuffVBT is Context, IERC20 {
 
-    /**
-    * @dev Throws if called by any account other than the owner.
-    */
     modifier onlyOwner() {
-        TuffOwner tuffOwner = TuffOwner(address(this));
-        require(
-            msg.sender == address(this) ||
-            tuffOwner.getTuffOwner() == msg.sender,
-            "Ownable: caller is not the owner"
-        );
+        TuffOwner(address(this)).requireOnlyOwner();
         _;
     }
 

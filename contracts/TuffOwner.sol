@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: agpl-3.0
 pragma solidity ^0.8.0;
 
 import "./TuffOwnerLib.sol";
@@ -9,6 +10,7 @@ import "./TuffOwnerLib.sol";
  */
 
 contract TuffOwner {
+
     modifier tuffOwnerInitLock() {
         require(
             isTuffOwnerInit(),
@@ -41,15 +43,19 @@ contract TuffOwner {
         return ss._owner;
     }
 
+    modifier onlyOwner() {
+        requireOnlyOwner();
+        _;
+    }
+
     /**
      * @dev Throws if called by any account other than the owner.
      */
-    modifier onlyOwner() {
+    function requireOnlyOwner() public view {
         require(
-            msg.sender == address(this) || getTuffOwner() == msg.sender,
+            msg.sender == address(this) || msg.sender == getTuffOwner(),
             "Ownable: caller is not the owner"
         );
-        _;
     }
 
     /**

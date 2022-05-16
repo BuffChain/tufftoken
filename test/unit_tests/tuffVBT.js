@@ -2,8 +2,9 @@
 
 const {expect} = require("chai");
 const hre = require("hardhat");
-const {consts, TOKEN_TOTAL_SUPPLY, TOKEN_DECIMALS, TOKEN_SYMBOL, TOKEN_NAME} = require("../../utils/consts");
+const {TOKEN_TOTAL_SUPPLY, TOKEN_DECIMALS, TOKEN_SYMBOL, TOKEN_NAME, TOKEN_DEV_FEE} = require("../../utils/consts");
 const {BigNumber} = require("ethers");
+const {expectRevert} = require("@openzeppelin/test-helpers");
 
 describe("TuffVBT", function () {
 
@@ -344,4 +345,25 @@ describe("TuffVBT", function () {
         expect(senderEndingBalance).to.equal(senderStartingBalance - amount, "Amount wasn't correctly taken from the sender");
         expect(receiverEndingBalance).to.equal(receiverStartingBalance + amount - totalFeeAmount, "Amount wasn't correctly sent to the receiver");
     });
+
+    it('should fail due to only owner check', async () => {
+
+        let devFee = await tuffVBTDiamond.getDevFee();
+        expect(devFee).to.equal(TOKEN_DEV_FEE, "unexpected starting dev fee");
+
+        await tuffVBTDiamond.setDevFee(2);
+        devFee = await tuffVBTDiamond.getDevFee();
+        expect(devFee).to.equal(2, "unexpected dev fee");
+
+        const nonOwnerAccount = accounts[3];
+
+        await tuffVBTDiamond.connect(nonOwnerAccount).setDevFee(3)
+
+        // await expectRevert(await tuffVBTDiamond.connect(nonOwnerAccount).setDevFee(3),
+        //     "Ownable: caller is not the owner");
+
+        devFee = await tuffVBTDiamond.getDevFee();
+        expect(devFee).to.equal(2, "dev fee should be left unchanged");
+    });
+
 });
