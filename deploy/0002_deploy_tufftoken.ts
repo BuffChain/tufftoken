@@ -21,6 +21,7 @@ module.exports = async () => {
         from: deployer,
         owner: contractOwner,
         facets: [
+            "TuffOwner",
             "TuffVBT",
             "AaveLPManager",
             "TuffKeeper",
@@ -34,6 +35,13 @@ module.exports = async () => {
     let tuffVBTDiamondContract = await hre.ethers.getContractAt(tuffVBTDiamond.abi, tuffVBTDiamond.address, contractOwner);
     const tuffVBTAddress = await tuffVBTDiamondContract.address;
     console.log(`TuffVBTDiamond address [${tuffVBTAddress}]`);
+
+    if (!await tuffVBTDiamondContract.isTuffOwnerInit()) {
+        let initTx = await tuffVBTDiamondContract.initTuffOwner(
+            contractOwner
+        );
+        logDeploymentTx("Initialized TuffOwner:", initTx);
+    }
 
     if (!await tuffVBTDiamondContract.isTuffVBTInit()) {
         let initTx = await tuffVBTDiamondContract.initTuffVBT(
