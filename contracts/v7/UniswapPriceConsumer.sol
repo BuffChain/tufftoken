@@ -8,7 +8,6 @@ import {UniswapPriceConsumerLib} from "./UniswapPriceConsumerLib.sol";
 import "./ITuffOwnerV7.sol";
 
 contract UniswapPriceConsumer {
-
     modifier onlyOwner() {
         ITuffOwnerV7(address(this)).requireOnlyOwner(msg.sender);
         _;
@@ -60,7 +59,13 @@ contract UniswapPriceConsumer {
         address _tokenB,
         uint24 _fee,
         uint32 _period
-    ) external view uniswapPriceConsumerInitLock onlyOwner returns (uint256 quoteAmount) {
+    )
+        external
+        view
+        uniswapPriceConsumerInitLock
+        onlyOwner
+        returns (uint256 quoteAmount)
+    {
         UniswapPriceConsumerLib.StateStorage
             storage ss = UniswapPriceConsumerLib.getState();
 

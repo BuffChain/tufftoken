@@ -12,7 +12,6 @@ import {IAaveLPManager} from "./IAaveLPManager.sol";
 import "./TuffOwner.sol";
 
 contract TokenMaturity {
-
     modifier onlyOwner() {
         TuffOwner(address(this)).requireOnlyOwner(msg.sender);
         _;
@@ -323,7 +322,12 @@ contract TokenMaturity {
     }
 
     //    unwraps WETH and returns remaining WETH balance
-    function unwrapWETH() public tokenMaturityInitLock onlyOwner returns (uint256) {
+    function unwrapWETH()
+        public
+        tokenMaturityInitLock
+        onlyOwner
+        returns (uint256)
+    {
         UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
             .getState();
 

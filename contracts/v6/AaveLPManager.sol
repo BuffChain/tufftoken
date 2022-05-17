@@ -156,7 +156,11 @@ contract AaveLPManager is Context {
         ss.tokenMetadata[tokenAddr].aToken = aTokenAddr;
     }
 
-    function removeAaveSupportedToken(address tokenAddr) public aaveInitLock onlyOwner {
+    function removeAaveSupportedToken(address tokenAddr)
+        public
+        aaveInitLock
+        onlyOwner
+    {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
 
         (bool _isSupportedToken, uint256 _tokenIndex) = isAaveSupportedToken(
@@ -236,7 +240,12 @@ contract AaveLPManager is Context {
             LendingPool(getAaveLPAddr()).getReserveNormalizedIncome(tokenAddr);
     }
 
-    function liquidateAaveTreasury() public aaveInitLock onlyOwner returns (bool) {
+    function liquidateAaveTreasury()
+        public
+        aaveInitLock
+        onlyOwner
+        returns (bool)
+    {
         address[] memory supportedTokens = getAllAaveSupportedTokens();
         bool allTokensWithdrawn = true;
         for (uint256 i = 0; i < supportedTokens.length; i++) {

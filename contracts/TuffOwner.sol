@@ -11,7 +11,6 @@ import "hardhat/console.sol";
  */
 
 contract TuffOwner {
-
     modifier tuffOwnerInitLock() {
         require(
             isTuffOwnerInit(),
