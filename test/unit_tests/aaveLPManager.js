@@ -278,6 +278,30 @@ describe('AaveLPManager', function () {
         const tokenBalanceDiff = BigNumber.from(endingATokenBal).sub(startingATokenBal);
         expect(tokenBalanceDiff).to.be.lte(interestBuffer);
     });
+
+    it('should fail due to only owner check', async () => {
+
+        const tokenAddr = consts("WETH9_ADDR");
+        const tokenWeight = 2500;
+
+        await tuffVBTDiamond.addAaveSupportedToken(tokenAddr, tokenWeight);
+        let supportedTokens = await tuffVBTDiamond.getAllAaveSupportedTokens();
+        expect(supportedTokens).to.contain(tokenAddr);
+
+        await tuffVBTDiamond.removeAaveSupportedToken(tokenAddr);
+        supportedTokens = await tuffVBTDiamond.getAllAaveSupportedTokens();
+        expect(supportedTokens).to.not.contain(tokenAddr);
+
+        const nonOwnerAccountAddress = accounts[1].address;
+        await tuffVBTDiamond.transferTuffOwnership(nonOwnerAccountAddress);
+
+        await expectRevert(tuffVBTDiamond.addAaveSupportedToken(tokenAddr, tokenWeight),
+            "Ownable: caller is not the owner");
+
+        supportedTokens = await tuffVBTDiamond.getAllAaveSupportedTokens();
+        expect(supportedTokens).to.not.contain(tokenAddr);
+
+    });
 });
 
 exports.assertDepositToAave = assertDepositToAave;

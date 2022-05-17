@@ -299,4 +299,20 @@ describe('TokenMaturity', function () {
             console.log(`difference from expected to actual:                         ${hre.ethers.utils.formatEther(ethDiff.toString())}`);
         }
     });
+
+    it('should fail due to only owner check', async () => {
+
+        await tuffVBTDiamond.setContractMaturityTimestamp(1);
+        let timestamp = await tuffVBTDiamond.getContractMaturityTimestamp();
+        expect(timestamp).to.equal(1, "unexpected timestamp");
+
+        const nonOwnerAccountAddress = accounts[1].address;
+        await tuffVBTDiamond.transferTuffOwnership(nonOwnerAccountAddress);
+
+        await expectRevert(tuffVBTDiamond.setContractMaturityTimestamp(2),
+            "Ownable: caller is not the owner");
+
+        timestamp = await tuffVBTDiamond.getContractMaturityTimestamp();
+        expect(timestamp).to.equal(1, "timestamp should be left unchanged");
+    });
 });
