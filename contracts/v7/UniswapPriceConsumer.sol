@@ -10,7 +10,7 @@ import "./ITuffOwnerV7.sol";
 contract UniswapPriceConsumer {
 
     modifier onlyOwner() {
-        ITuffOwnerV7(address(this)).requireOnlyOwner();
+        ITuffOwnerV7(address(this)).requireOnlyOwner(msg.sender);
         _;
     }
 

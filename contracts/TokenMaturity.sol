@@ -14,7 +14,7 @@ import "./TuffOwner.sol";
 contract TokenMaturity {
 
     modifier onlyOwner() {
-        TuffOwner(address(this)).requireOnlyOwner();
+        TuffOwner(address(this)).requireOnlyOwner(msg.sender);
         _;
     }
 

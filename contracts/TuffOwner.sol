@@ -2,6 +2,7 @@
 pragma solidity ^0.8.0;
 
 import "./TuffOwnerLib.sol";
+import "hardhat/console.sol";
 
 /**
  * @dev inspired by https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol
@@ -27,6 +28,16 @@ contract TuffOwner {
     }
 
     function initTuffOwner(address initialOwner) public {
+        require(
+            !isTuffOwnerInit(),
+            string(
+                abi.encodePacked(
+                    TuffOwnerLib.NAMESPACE,
+                    ": ",
+                    "ALREADY_INITIALIZED"
+                )
+            )
+        );
         _transferOwnership(initialOwner);
     }
 
@@ -44,16 +55,16 @@ contract TuffOwner {
     }
 
     modifier onlyOwner() {
-        requireOnlyOwner();
+        requireOnlyOwner(msg.sender);
         _;
     }
 
     /**
      * @dev Throws if called by any account other than the owner.
      */
-    function requireOnlyOwner() public view {
+    function requireOnlyOwner(address sender) public view {
         require(
-            msg.sender == address(this) || msg.sender == getTuffOwner(),
+            sender == address(this) || sender == getTuffOwner(),
             "Ownable: caller is not the owner"
         );
     }

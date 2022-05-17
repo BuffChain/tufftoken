@@ -17,7 +17,7 @@ import "./ITuffOwnerV6.sol";
 
 contract AaveLPManager is Context {
     modifier onlyOwner() {
-        ITuffOwnerV6(address(this)).requireOnlyOwner();
+        ITuffOwnerV6(address(this)).requireOnlyOwner(msg.sender);
         _;
     }
 

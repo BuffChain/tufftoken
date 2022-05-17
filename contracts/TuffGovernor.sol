@@ -7,6 +7,7 @@ import "@openzeppelin/contracts/governance/extensions/GovernorVotes.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorVotesQuorumFraction.sol";
 import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 
 /**
  * Implementation of openzepplin governance https://docs.openzeppelin.com/contracts/4.x/governance#governor
@@ -17,7 +18,8 @@ contract TuffGovernor is
     GovernorCompatibilityBravo,
     GovernorVotes,
     GovernorVotesQuorumFraction,
-    GovernorTimelockControl
+    GovernorTimelockControl,
+    Ownable
 {
     uint256 _votingDelay;
     uint256 _votingPeriod;
@@ -40,7 +42,7 @@ contract TuffGovernor is
         return _votingDelay;
     }
 
-    function setVotingDelay(uint256 delay) public {
+    function setVotingDelay(uint256 delay) public onlyOwner {
         _votingDelay = delay;
     }
 
@@ -48,7 +50,7 @@ contract TuffGovernor is
         return _votingPeriod;
     }
 
-    function setVotingPeriod(uint256 period) public {
+    function setVotingPeriod(uint256 period) public onlyOwner {
         _votingPeriod = period;
     }
 
@@ -56,7 +58,7 @@ contract TuffGovernor is
         return _proposalThreshold;
     }
 
-    function setProposalThreshold(uint256 threshold) public {
+    function setProposalThreshold(uint256 threshold) public onlyOwner {
         _proposalThreshold = threshold;
     }
 

@@ -355,12 +355,11 @@ describe("TuffVBT", function () {
         devFee = await tuffVBTDiamond.getDevFee();
         expect(devFee).to.equal(2, "unexpected dev fee");
 
-        const nonOwnerAccount = accounts[3];
+        const nonOwnerAccountAddress = accounts[1].address;
+        await tuffVBTDiamond.transferTuffOwnership(nonOwnerAccountAddress);
 
-        await tuffVBTDiamond.connect(nonOwnerAccount).setDevFee(3)
-
-        // await expectRevert(await tuffVBTDiamond.connect(nonOwnerAccount).setDevFee(3),
-        //     "Ownable: caller is not the owner");
+        await expectRevert(tuffVBTDiamond.setDevFee(3),
+            "Ownable: caller is not the owner");
 
         devFee = await tuffVBTDiamond.getDevFee();
         expect(devFee).to.equal(2, "dev fee should be left unchanged");

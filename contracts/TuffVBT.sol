@@ -9,11 +9,12 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import {TuffVBTLib} from "./TuffVBTLib.sol";
 import "./TokenMaturity.sol";
 import "./TuffOwner.sol";
+import "hardhat/console.sol";
 
 contract TuffVBT is Context, IERC20 {
 
     modifier onlyOwner() {
-        TuffOwner(address(this)).requireOnlyOwner();
+        TuffOwner(address(this)).requireOnlyOwner(msg.sender);
         _;
     }
 

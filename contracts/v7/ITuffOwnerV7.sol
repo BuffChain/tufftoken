@@ -3,5 +3,5 @@ pragma solidity ^0.7.0;
 
 // solidity v7 interface for TuffOwner so it's callable from our v7 contracts
 interface ITuffOwnerV7 {
-    function requireOnlyOwner() external view;
+    function requireOnlyOwner(address sender) external view;
 }

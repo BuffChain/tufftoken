@@ -11,7 +11,7 @@ import {UniswapManagerLib} from "./UniswapManagerLib.sol";
 contract UniswapManager {
 
     modifier onlyOwner() {
-        TuffOwner(address(this)).requireOnlyOwner();
+        TuffOwner(address(this)).requireOnlyOwner(msg.sender);
         _;
     }
 
