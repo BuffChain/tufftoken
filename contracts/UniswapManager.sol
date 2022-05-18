@@ -8,6 +8,7 @@ import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
 import {UniswapManagerLib} from "./UniswapManagerLib.sol";
 
 contract UniswapManager {
+
     modifier uniswapManagerInitLock() {
         require(
             isUniswapManagerInit(),
@@ -108,8 +109,8 @@ contract UniswapManager {
     //    based on https://docs.uniswap.org/protocol/guides/swaps/single-swaps
     function swapExactInputSingle(
         address inputToken,
-        uint24 poolFee,
         address outputToken,
+        uint24 poolFee,
         uint256 amountIn
     ) external returns (uint256 amountOut) {
         UniswapManagerLib.StateStorage storage ss = UniswapManagerLib

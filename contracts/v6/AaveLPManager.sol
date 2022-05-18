@@ -12,7 +12,6 @@ import {IERC20} from "@openzeppelin/contracts-v6/token/ERC20/IERC20.sol";
 
 import {AaveLPManagerLib} from "./AaveLPManagerLib.sol";
 import {IUniswapManager} from "./IUniswapManager.sol";
-import {IUniswapPriceConsumer} from "./IUniswapPriceConsumer.sol";
 
 import "hardhat/console.sol";
 
@@ -355,15 +354,8 @@ contract AaveLPManager is Context {
         for (uint256 i = 0; i < bm.supportedTokens.length; i++) {
             uint256 aTokenBalance = getATokenBalance(bm.supportedTokens[i]);
 
-            // Get the value of each token in the same denomination, in this case WETH
-            uint32 period = 60; //TODO: Make 3600?
-            uint256 wethQuote = IUniswapPriceConsumer(address(this))
-                .getUniswapQuote(
-                    ss.wethAddr,
-                    bm.supportedTokens[i],
-                    bm.poolFee,
-                    period
-                );
+            //TODO: Use static WETH to token denomination
+            uint256 wethQuote = 1;
 
             //Track balances
             uint256 tokenValueInWeth = SafeMath.mul(aTokenBalance, wethQuote);
@@ -406,6 +398,9 @@ contract AaveLPManager is Context {
 
                 if (balanceIn > 0) {
                     IERC20(address(this)).approve(address(this), balanceIn);
+
+                    //TODO: Need to pass minAmount to swap for
+                    //uint256 amountLUSDMin = amountWethToSwap * minETHLUSDRate;
 
                     IUniswapManager(address(this)).swapExactInputMultihop(
                         address(this),

@@ -7,7 +7,6 @@ const Web3 = require('web3');
 const {mineBlock} = require("../../utils/back_test_utils");
 const utils = require("../../utils/test_utils");
 const {consts} = require("../../utils/consts");
-const web3 = new Web3('wss://mainnet.infura.io/ws/v3/'  +  process.env.INFURA_KEY);
 
 describe('TuffKeeper', function () {
 
@@ -80,7 +79,7 @@ describe('TuffKeeper', function () {
 
         expect(needed).to.equal(false, "should not need upkeep yet.");
 
-        const expectedBlockTimestamp = parseInt(web3.utils.toAscii(performData));
+        const expectedBlockTimestamp = parseInt(Web3.utils.toAscii(performData));
 
         let latestBlock = await hre.ethers.provider.getBlock("latest")
         const startingBlockTimestamp = latestBlock.timestamp;

@@ -10,7 +10,7 @@ type TuffVBTDiamond = TuffVBT & UniswapManager;
 
 import {consts, TOKEN_DECIMALS, UNISWAP_POOL_BASE_FEE} from '../../utils/consts';
 import {
-    getUniswapPriceQuote, printAcctBal,
+    getUniswapPriceQuote,
     swapEthForWeth,
     swapTokens, transferTuffDUU
 } from '../../utils/test_utils';
@@ -33,41 +33,40 @@ describe("UniswapManager", function () {
     beforeEach(async function () {
         const {tDUU} = await hre.deployments.fixture();
         tuffVBTDiamond = await hre.ethers.getContractAt(tDUU.abi, tDUU.address, owner) as TuffVBTDiamond;
+
+        //Increase the block time to prime the pool
+        await hre.ethers.provider.send("evm_increaseTime", [3600]);
+        await hre.ethers.provider.send("evm_mine", []);
     });
 
     it('should swap exact TUFF for WETH (input)', async () => {
         //Setup
-        const recipient = accounts[3];
-        const recipientAddr = await recipient.getAddress();
+        const sender = accounts[3];
+        const senderAddr = await sender.getAddress();
+        const recipientAddr = tuffVBTDiamond.address;
         const wethAmt = hre.ethers.utils.parseEther("20");
 
-        await transferTuffDUU(recipientAddr);
-        const {weth9Contract} = await swapEthForWeth(recipient, wethAmt);
-        const startingTuffBalance = await tuffVBTDiamond.balanceOf(recipientAddr);
+        await transferTuffDUU(senderAddr);
+        const {weth9Contract} = await swapEthForWeth(sender, wethAmt);
+        const startingTuffBalance = await tuffVBTDiamond.balanceOf(senderAddr);
         const startingWethBalance = await weth9Contract.balanceOf(recipientAddr);
         const tuffSwapAmt = startingTuffBalance.div(2);
 
-        const tuffWethQuote = await getUniswapPriceQuote(
-            tuffVBTDiamond.address,
-            consts("WETH9_ADDR"),
-            UNISWAP_POOL_BASE_FEE,
-            60
-        );
-
         //Execute the swap
-        await tuffVBTDiamond.connect(recipient).approve(tuffVBTDiamond.address, tuffSwapAmt);
-        await tuffVBTDiamond.connect(recipient).swapExactInputSingle(
+        await tuffVBTDiamond.connect(sender).approve(tuffVBTDiamond.address, tuffSwapAmt);
+        await tuffVBTDiamond.connect(sender).swapExactInputSingle(
             tuffVBTDiamond.address,
-            UNISWAP_POOL_BASE_FEE,
             consts("WETH9_ADDR"),
+            UNISWAP_POOL_BASE_FEE,
             tuffSwapAmt
         );
 
         //Assert balances after swap
-        const endingTuffBalance = await tuffVBTDiamond.balanceOf(recipientAddr);
-        const endingWethBalance = await weth9Contract.balanceOf(recipientAddr);
+        const endingTuffBalance = await tuffVBTDiamond.balanceOf(senderAddr);
         expect(endingTuffBalance).to.equal(startingTuffBalance.sub(tuffSwapAmt));
+
         //Since this is exact in, we do not know precisely the exact out will be
+        const endingWethBalance = await weth9Contract.balanceOf(recipientAddr);
         expect(endingWethBalance).to.be.gt(startingWethBalance);
     });
 
@@ -103,7 +102,6 @@ describe("UniswapManager", function () {
         const {weth9Contract} = await swapEthForWeth(recipient, startingWethAmt);
         const startingTuffBalance = await tuffVBTDiamond.balanceOf(recipientAddr);
         const startingWethBalance = await weth9Contract.balanceOf(recipientAddr);
-        await printAcctBal(tuffVBTDiamond, recipientAddr);
 
         await tuffVBTDiamond.connect(recipient).approve(consts("UNISWAP_V3_ROUTER_ADDR"), hre.ethers.constants.MaxUint256);
         await swapTokens(recipient, tuffVBTDiamond.address, weth9Contract.address, swapWethAmt);

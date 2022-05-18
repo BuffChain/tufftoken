@@ -18,7 +18,7 @@ module.exports = async () => {
         3600
     );
 
-    console.log(`Current ETH price: $${1 / daiWethQuote}`);
+    console.log(`Current ETH price: $${daiWethQuote}`);
 };
 
 module.exports.tags = ['v0000'];

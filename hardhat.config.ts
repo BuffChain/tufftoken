@@ -87,7 +87,7 @@ const config: HardhatUserConfig = {
                 url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMAPI_KEY}`,
 
                 //Feel free to update at any time. This is here to make local development and caching easier
-                blockNumber: 14623970
+                blockNumber: 14787817
             },
             accounts: {
                 mnemonic: process.env.ETH_HARDHAT_ACCOUNT_MNEMONIC

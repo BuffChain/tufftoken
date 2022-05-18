@@ -13,8 +13,8 @@ interface IUniswapManager {
 
     function swapExactInputSingle(
         address inputToken,
-        uint24 poolFee,
         address outputToken,
+        uint24 poolFee,
         uint256 amountIn
     ) external returns (uint256 amountOut);
 }

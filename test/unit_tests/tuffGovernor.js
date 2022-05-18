@@ -8,6 +8,7 @@ const {
 } = require('@openzeppelin/test-helpers');
 const utils = require("../../utils/test_utils");
 const {TOKEN_TOTAL_SUPPLY} = require("../../utils/consts");
+const {getERC20Contract} = require("../../utils/test_utils");
 
 describe("TuffGovernor", function () {
 
@@ -45,7 +46,7 @@ describe("TuffGovernor", function () {
 
     async function assertProposalCreated(description) {
         const tokenAddress = tuffToken.address
-        const token = await hre.ethers.getContractAt('ERC20', tokenAddress);
+        const token = await getERC20Contract(tokenAddress);
         const calldata = token.interface.encodeFunctionData('name', []);
 
         const targets = [tokenAddress];

@@ -4,7 +4,7 @@ const {expect} = require("chai");
 const hre = require("hardhat");
 
 const {BN, expectRevert} = require("@openzeppelin/test-helpers");
-const {BigNumber, FixedNumber} = require("ethers");
+const {BigNumber} = require("ethers");
 
 const utils = require("../../utils/test_utils");
 const {assertDepositToAave} = require("./aaveLPManager");
@@ -259,8 +259,9 @@ describe('TokenMaturity', function () {
             60
         );
 
-        const daiToWethConversion = daiBalanceAfterDeposit * daiWethQuote;
-        const aDaiToWethConversion = aDaiBalanceAfterDeposit * daiWethQuote;
+        //Note that we lose some precision here, but need this to be an int
+        const daiToWethConversion = BigInt(daiBalanceAfterDeposit / Math.floor(daiWethQuote));
+        const aDaiToWethConversion = BigInt(aDaiBalanceAfterDeposit / Math.floor(daiWethQuote));
 
         const ethBalanceAfterLiquidation = await hre.ethers.provider.getBalance(tuffVBTDiamond.address);
         const wethBalanceAfterLiquidation = await weth9Contract.balanceOf(tuffVBTDiamond.address);

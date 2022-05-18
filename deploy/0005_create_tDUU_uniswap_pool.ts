@@ -1,15 +1,19 @@
 // SPDX-License-Identifier: agpl-3.0
 
 import hre from 'hardhat';
-import {ethers, Contract, BigNumber} from "ethers";
+import {ethers, Contract} from "ethers";
 
-import {nearestUsableTick} from '@uniswap/v3-sdk';
+import {ADDRESS_ZERO, nearestUsableTick} from '@uniswap/v3-sdk';
 import {
     abi as NonfungiblePositionManagerABI
 } from '@uniswap/v3-periphery/artifacts/contracts/NonfungiblePositionManager.sol/NonfungiblePositionManager.json';
 import {NonfungiblePositionManager, IUniswapV3Pool, IUniswapV3Factory, TuffVBT} from '../src/types';
 import {Address} from "hardhat-deploy/dist/types";
-import {BUFFCHAIN_INIT_TUFF_LIQUIDITY_PERCENTAGE, BUFFCHAIN_INIT_WETH_LIQUIDITY_WETH, TOKEN_SYMBOL} from '../utils/consts';
+import {
+    BUFFCHAIN_INIT_TUFF_LIQUIDITY_PERCENTAGE,
+    BUFFCHAIN_INIT_WETH_LIQUIDITY_WETH,
+    TOKEN_SYMBOL
+} from '../utils/consts';
 
 const {consts, UNISWAP_POOL_BASE_FEE} = require("../utils/consts");
 const {logDeploymentTx} = require("../utils/deployment_helpers");

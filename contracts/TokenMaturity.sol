@@ -302,8 +302,8 @@ contract TokenMaturity {
 
         uniswapManager.swapExactInputSingle(
             token,
-            ss.basePoolFee,
             ss.WETHAddress,
+            ss.basePoolFee,
             amount
         );
 

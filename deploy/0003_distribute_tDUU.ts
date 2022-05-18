@@ -2,8 +2,8 @@
 
 import hre from "hardhat";
 import {BigNumber} from "ethers";
-import {TuffVBT, UniswapPriceConsumer} from '../src/types';
-type TuffVBTDiamond = TuffVBT & UniswapPriceConsumer;
+import {TuffVBT} from '../src/types';
+type TuffVBTDiamond = TuffVBT;
 
 import {
     consts,
@@ -24,14 +24,6 @@ module.exports = async () => {
     const tuffDUUDeployment = await deployments.get(TOKEN_SYMBOL);
     const tuffDUU = await hre.ethers.getContractAt(tuffDUUDeployment.abi, tuffDUUDeployment.address, contractOwnerAcct) as TuffVBTDiamond;
 
-    const usdcWethQuote = await tuffDUU.getUniswapQuote(
-        consts("USDC_ADDR"),
-        consts("WETH9_ADDR"),
-        UNISWAP_POOL_BASE_FEE,
-        3600
-    );
-    console.log(`Current ETH price: $${usdcWethQuote}`);
-
     //Transfer BuffChain's tDUU tokens
     const totalTokens = (BigNumber.from(10).pow(TOKEN_DECIMALS)).mul(TOKEN_TOTAL_SUPPLY);
     const buffChainTotalCut = totalTokens.mul(BUFFCHAIN_TOTAL_TUFF_PERCENTAGE).div(100);
@@ -40,6 +32,7 @@ module.exports = async () => {
 
     //TODO: Create a json map of holder addresses and amount to supply. Read them in and send the appropriate tokens
     // the contractOwnerAcct
+    //TODO: Groom: Clemens: web2 with user on-boarding through email and docusign (to claim tokens)?
 };
 
 module.exports.tags = ['v0003'];
