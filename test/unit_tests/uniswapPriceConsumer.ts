@@ -4,6 +4,10 @@ import hre from "hardhat";
 import {Signer} from "ethers";
 import {expect} from "chai";
 
+const {
+    expectRevert, // Assertions for transactions that should fail
+} = require('@openzeppelin/test-helpers');
+
 import {TuffVBT, UniswapPriceConsumer} from "../../src/types";
 
 type TuffVBTDiamond = TuffVBT & UniswapPriceConsumer;
@@ -85,6 +89,45 @@ describe("UniswapPriceConsumer", function () {
             UNISWAP_POOL_BASE_FEE,
             poolPeriod,
             false
+        );
+
+        //Compare quotes. Include a small integer buffer to allow for lost of precision when
+        // converting from Solidity BigNumbers to JavaScript numbers
+        const buffer = 1;
+        expect(actualTuffVBTWethQuote).to.be.approximately(expectedTuffVBTWethQuote, buffer);
+    });
+
+    it('should revert if decimal precision is not large enough', async () => {
+        const decimalPrecision = 1;
+
+        await expectRevert(tuffVBTDiamond.getUniswapQuote(
+            tuffVBTDiamond.address,
+            consts("WETH9_ADDR"),
+            UNISWAP_POOL_BASE_FEE,
+            poolPeriod,
+            decimalPrecision
+        ), "LDP");
+    });
+
+    it('should work with low decimal precision if decimals are not needed', async () => {
+        const decimalPrecision = 1;
+
+        //Get on-chain quote
+        const [tuffVBTWethQuote, totalDecimalPrecision] = await tuffVBTDiamond.getUniswapQuote(
+            consts("WETH9_ADDR"),
+            tuffVBTDiamond.address,
+            UNISWAP_POOL_BASE_FEE,
+            poolPeriod,
+            decimalPrecision
+        );
+        const expectedTuffVBTWethQuote = tuffVBTWethQuote.toNumber() / Math.pow(10, totalDecimalPrecision.toNumber());
+
+        //Get off-chain quote
+        const actualTuffVBTWethQuote = await getUniswapPriceQuote(
+            consts("WETH9_ADDR"),
+            tuffVBTDiamond.address,
+            UNISWAP_POOL_BASE_FEE,
+            poolPeriod
         );
 
         //Compare quotes. Include a small integer buffer to allow for lost of precision when

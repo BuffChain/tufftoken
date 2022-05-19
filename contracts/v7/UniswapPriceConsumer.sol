@@ -94,6 +94,8 @@ contract UniswapPriceConsumer {
                 _tokenA,
                 _tokenB
             );
+        //LDP: Low Decimal Precision
+        require(quoteAmt > 0, "LDP");
 
         uint8 _tokenADecimals = ERC20(_tokenA).decimals();
         uint8 _tokenBDecimals = ERC20(_tokenB).decimals();
