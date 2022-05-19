@@ -11,6 +11,8 @@ import "@openzeppelin/contracts-v6/math/SafeMath.sol";
 
 import {UniswapPriceConsumerLib} from "./UniswapPriceConsumerLib.sol";
 
+import "hardhat/console.sol";
+
 contract UniswapPriceConsumer {
 
     using SafeMath for uint256;
@@ -99,7 +101,21 @@ contract UniswapPriceConsumer {
 
         uint8 _tokenADecimals = ERC20(_tokenA).decimals();
         uint8 _tokenBDecimals = ERC20(_tokenB).decimals();
-        uint8 totalDecimalPrecision = _tokenADecimals - _tokenBDecimals + _decimalPrecision;
+        int8 baseFactor = int8(_tokenADecimals - _tokenBDecimals);
+        uint8 totalDecimalPrecision = 0;
+        if (baseFactor < 0) {
+            totalDecimalPrecision = uint8(-baseFactor) - _decimalPrecision;
+        } else {
+            totalDecimalPrecision = uint8(baseFactor) - _decimalPrecision;
+        }
+
+//        uint8 totalDecimalPrecision = _tokenADecimals - _tokenBDecimals - _decimalPrecision;
+
+        console.log(quoteAmt);
+        console.log(_decimalPrecision);
+        console.log(_tokenADecimals);
+        console.log(_tokenBDecimals);
+        console.log(totalDecimalPrecision);
 
         return (quoteAmt, totalDecimalPrecision);
     }

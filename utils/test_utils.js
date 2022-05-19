@@ -11,16 +11,21 @@ const IQuoterABI = require("@uniswap/v3-periphery/artifacts/contracts/interfaces
 const {consts, TOKEN_DECIMALS, TOKEN_SYMBOL} = require("./consts");
 const {BigNumber} = require("ethers");
 
-async function getDAIContract() {
-    return await hre.ethers.getContractAt(IERC20ABI, consts("DAI_ADDR"));
-}
 
 async function getWETH9Contract() {
     return await hre.ethers.getContractAt(WETH9ABI, consts("WETH9_ADDR"));
 }
 
+async function getDAIContract() {
+    return await hre.ethers.getContractAt(IERC20ABI, consts("DAI_ADDR"));
+}
+
 async function getUSDCContract() {
     return await hre.ethers.getContractAt(IERC20ABI, consts("USDC_ADDR"));
+}
+
+async function getUSDTContract() {
+    return await hre.ethers.getContractAt(IERC20ABI, consts("USDT_ADDR"));
 }
 
 async function getADAIContract() {
@@ -264,9 +269,10 @@ async function printAcctBal(tuffVBTDiamond, acctAddr) {
 }
 
 module.exports = {
-    getDAIContract,
     getWETH9Contract,
+    getDAIContract,
     getUSDCContract,
+    getUSDTContract,
     getADAIContract,
     getERC20Contract,
     transferETH,

@@ -7,6 +7,7 @@ interface IUniswapPriceConsumer {
         address _tokenA,
         address _tokenB,
         uint24 _fee,
-        uint32 _period
-    ) external view returns (uint256 quoteAmount);
+        uint32 _period,
+        uint8 _decimalPrecision
+    ) external view returns (uint256 quoteAmt, uint128 decimalPrecision);
 }

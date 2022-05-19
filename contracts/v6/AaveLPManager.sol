@@ -12,6 +12,7 @@ import {IERC20} from "@openzeppelin/contracts-v6/token/ERC20/IERC20.sol";
 
 import {AaveLPManagerLib} from "./AaveLPManagerLib.sol";
 import {IUniswapManager} from "./IUniswapManager.sol";
+import {IUniswapPriceConsumer} from "./IUniswapPriceConsumer.sol";
 
 import "hardhat/console.sol";
 
@@ -354,8 +355,19 @@ contract AaveLPManager is Context {
         for (uint256 i = 0; i < bm.supportedTokens.length; i++) {
             uint256 aTokenBalance = getATokenBalance(bm.supportedTokens[i]);
 
-            //TODO: Use static WETH to token denomination
-            uint256 wethQuote = 1;
+            // Get the value of each token in the same denomination, in this case WETH
+            //@dev: Order of tokanA and tokenB are important here
+            (uint256 wethQuote, uint256 decimalPrecision) = IUniswapPriceConsumer(address(this))
+                .getUniswapQuote(
+                    ss.wethAddr,
+                    bm.supportedTokens[i],
+                    bm.poolFee,
+                    3600,                   //period
+                    18                      //decimalPrecision
+                );
+            console.log("~~~~~~~~~~~~");
+            console.log(wethQuote);
+            console.log(decimalPrecision);
 
             //Track balances
             uint256 tokenValueInWeth = SafeMath.mul(aTokenBalance, wethQuote);
