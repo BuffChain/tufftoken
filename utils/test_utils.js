@@ -233,7 +233,7 @@ async function getUniswapPoolContract(tokenA, tokenB, poolFee) {
 }
 
 // https://docs.uniswap.org/protocol/concepts/V3-overview/oracle#tick-accumulator
-async function getUniswapPriceQuote(tokenA, tokenB, poolFee, period, tokenAtoB=true) {
+async function getUniswapPriceQuote(tokenA, tokenB, poolFee, period, inverse=true) {
     const poolContract = await getUniswapPoolContract(tokenA, tokenB, poolFee);
     const observations = await poolContract.observe([period, 0]);
     const tick1 = observations[0][0];
@@ -247,7 +247,7 @@ async function getUniswapPriceQuote(tokenA, tokenB, poolFee, period, tokenAtoB=t
     const decimalFactor = Math.pow(10, decimalDiff);
 
     //Return normalized quote
-    return tokenAtoB ? 1 / (quote * decimalFactor) : quote * decimalFactor;
+    return inverse ? 1 / (quote * decimalFactor) : quote * decimalFactor;
 }
 
 async function printAcctBal(tuffVBTDiamond, acctAddr) {

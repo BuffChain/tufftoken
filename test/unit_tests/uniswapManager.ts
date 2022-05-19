@@ -17,6 +17,7 @@ import {
 
 describe("UniswapManager", function () {
 
+    const poolPeriod = 3600;
     let owner: Signer;
     let accounts: Signer[];
 
@@ -35,7 +36,7 @@ describe("UniswapManager", function () {
         tuffVBTDiamond = await hre.ethers.getContractAt(tDUU.abi, tDUU.address, owner) as TuffVBTDiamond;
 
         //Increase the block time to prime the pool
-        await hre.ethers.provider.send("evm_increaseTime", [3600]);
+        await hre.ethers.provider.send("evm_increaseTime", [poolPeriod]);
         await hre.ethers.provider.send("evm_mine", []);
     });
 
@@ -65,7 +66,7 @@ describe("UniswapManager", function () {
         const endingTuffBalance = await tuffVBTDiamond.balanceOf(senderAddr);
         expect(endingTuffBalance).to.equal(startingTuffBalance.sub(tuffSwapAmt));
 
-        //Since this is exact in, we do not know precisely the exact out will be
+        //Since this is exact input, we do not know precisely the exact output will be
         const endingWethBalance = await weth9Contract.balanceOf(recipientAddr);
         expect(endingWethBalance).to.be.gt(startingWethBalance);
     });
