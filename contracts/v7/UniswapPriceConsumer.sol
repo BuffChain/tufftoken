@@ -5,8 +5,14 @@ import "@uniswap/v3-periphery/contracts/libraries/OracleLibrary.sol";
 import "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
 
 import {UniswapPriceConsumerLib} from "./UniswapPriceConsumerLib.sol";
+import "./ITuffOwnerV7.sol";
 
 contract UniswapPriceConsumer {
+    modifier onlyOwner() {
+        ITuffOwnerV7(address(this)).requireOnlyOwner(msg.sender);
+        _;
+    }
+
     modifier uniswapPriceConsumerInitLock() {
         require(
             isUniswapPriceConsumerInit(),
@@ -29,7 +35,7 @@ contract UniswapPriceConsumer {
 
     //Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
     // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
-    function initUniswapPriceConsumer(address _factoryAddr) public {
+    function initUniswapPriceConsumer(address _factoryAddr) public onlyOwner {
         require(
             !isUniswapPriceConsumerInit(),
             string(
@@ -53,7 +59,13 @@ contract UniswapPriceConsumer {
         address _tokenB,
         uint24 _fee,
         uint32 _period
-    ) external view uniswapPriceConsumerInitLock returns (uint256 quoteAmount) {
+    )
+        external
+        view
+        uniswapPriceConsumerInitLock
+        onlyOwner
+        returns (uint256 quoteAmount)
+    {
         UniswapPriceConsumerLib.StateStorage
             storage ss = UniswapPriceConsumerLib.getState();
 

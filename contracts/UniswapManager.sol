@@ -4,10 +4,16 @@ pragma abicoder v2;
 
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
+import "./TuffOwner.sol";
 
 import {UniswapManagerLib} from "./UniswapManagerLib.sol";
 
 contract UniswapManager {
+    modifier onlyOwner() {
+        TuffOwner(address(this)).requireOnlyOwner(msg.sender);
+        _;
+    }
+
     modifier uniswapManagerInitLock() {
         require(
             isUniswapManagerInit(),
@@ -34,7 +40,7 @@ contract UniswapManager {
         ISwapRouter _swapRouter,
         address WETHAddress,
         uint24 basePoolFee
-    ) public {
+    ) public onlyOwner {
         require(
             !isUniswapManagerInit(),
             string(
@@ -63,17 +69,17 @@ contract UniswapManager {
         uint256 poolBFee,
         address outputToken,
         uint256 amountIn
-    ) external returns (uint256 amountOut) {
+    ) external onlyOwner returns (uint256 amountOut) {
         UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
             .getState();
 
-//        //Transfer `amountIn` of `inputToken` to this contract
-//        TransferHelper.safeTransferFrom(
-//            inputToken,
-//            address(this),
-//            address(this),
-//            amountIn
-//        );
+        //        //Transfer `amountIn` of `inputToken` to this contract
+        //        TransferHelper.safeTransferFrom(
+        //            inputToken,
+        //            address(this),
+        //            address(this),
+        //            amountIn
+        //        );
 
         //Approve the router to spend `inputToken`
         TransferHelper.safeApprove(
@@ -112,7 +118,7 @@ contract UniswapManager {
         uint24 poolFee,
         address outputToken,
         uint256 amountIn
-    ) external returns (uint256 amountOut) {
+    ) external onlyOwner returns (uint256 amountOut) {
         UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
             .getState();
 
@@ -164,8 +170,7 @@ contract UniswapManager {
         uint24 poolFee,
         uint256 amountOut,
         uint256 amountInMaximum
-    )
-    external returns (uint256 amountIn) {
+    ) external onlyOwner returns (uint256 amountIn) {
         UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
             .getState();
 
@@ -178,15 +183,19 @@ contract UniswapManager {
         );
 
         //Approve the router to spend the specified `amountInMaximum` of `inputToken`
-        TransferHelper.safeApprove(inputToken, address(ss.swapRouter), amountInMaximum);
+        TransferHelper.safeApprove(
+            inputToken,
+            address(ss.swapRouter),
+            amountInMaximum
+        );
         TransferHelper.safeApprove(
             inputToken,
             address(ss.swapRouter),
             amountInMaximum
         );
 
-        ISwapRouter.ExactOutputSingleParams memory params =
-            ISwapRouter.ExactOutputSingleParams({
+        ISwapRouter.ExactOutputSingleParams memory params = ISwapRouter
+            .ExactOutputSingleParams({
                 tokenIn: inputToken,
                 tokenOut: outputToken,
                 fee: poolFee,
@@ -205,7 +214,11 @@ contract UniswapManager {
         // msg.sender and approve the swapRouter to spend 0.
         if (amountIn < amountInMaximum) {
             TransferHelper.safeApprove(inputToken, address(ss.swapRouter), 0);
-            TransferHelper.safeTransfer(inputToken, address(this), amountInMaximum - amountIn);
+            TransferHelper.safeTransfer(
+                inputToken,
+                address(this),
+                amountInMaximum - amountIn
+            );
         }
     }
 }
