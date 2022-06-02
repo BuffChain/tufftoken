@@ -27,7 +27,7 @@ module.exports = async () => {
             "TuffKeeper",
             "TokenMaturity",
             "UniswapManager",
-            "UniswapPriceConsumer"
+            "ChainLinkPriceConsumer"
         ],
         log: true
     });
@@ -55,13 +55,16 @@ module.exports = async () => {
         );
         logDeploymentTx("Initialized AaveLPManager:", tx);
 
-        tx = await tuffDUU.addAaveSupportedToken(consts("DAI_ADDR"), 5000);
+        tx = await tuffDUU.addAaveSupportedToken(
+            consts("DAI_ADDR"), consts("CHAINLINK_ETH_DAI_AGGR_ADDR"), 5000);
         logDeploymentTx("Added DAI support to AaveLPManager:", tx);
 
-        tx = await tuffDUU.addAaveSupportedToken(consts("USDC_ADDR"), 2500);
+        tx = await tuffDUU.addAaveSupportedToken(
+            consts("USDC_ADDR"), consts("CHAINLINK_ETH_USDC_AGGR_ADDR"), 2500);
         logDeploymentTx("Added USDC support to AaveLPManager:", tx);
 
-        tx = await tuffDUU.addAaveSupportedToken(consts("USDT_ADDR"), 2500);
+        tx = await tuffDUU.addAaveSupportedToken(
+            consts("USDT_ADDR"), consts("CHAINLINK_ETH_USDT_AGGR_ADDR"), 2500);
         logDeploymentTx("Added USDT support to AaveLPManager:", tx);
     }
 
@@ -82,11 +85,6 @@ module.exports = async () => {
             UNISWAP_POOL_BASE_FEE
         );
         logDeploymentTx("Initialized UniswapManager:", initTx);
-    }
-
-    if (!await tuffDUU.isUniswapPriceConsumerInit()) {
-        let initTx = await tuffDUU.initUniswapPriceConsumer(consts("UNISWAP_V3_FACTORY_ADDR"));
-        logDeploymentTx("Initialized UniswapPriceConsumer:", initTx);
     }
 };
 

@@ -31,6 +31,11 @@ let constsMap = {
         UNISWAP_WETH_DAI_POOL_ADDR: "0x89007E48d47484245805679Ab37114DB117AfAB2",
         UNISWAP_WETH_USDC_POOL_ADDR: "0xf43261E862FF94B45600d62444dEF3AB94f2a745",
 
+        //ChainLink (https://docs.chain.link/docs/ethereum-addresses/)
+        CHAINLINK_ETH_DAI_AGGR_ADDR: "0x22B58f1EbEDfCA50feF632bD73368b2FdA96D541",
+        CHAINLINK_ETH_USDC_AGGR_ADDR: "0x64EaC61A2DFda2c3Fa04eED49AA33D021AeC8838",
+        CHAINLINK_ETH_USDT_AGGR_ADDR: "0x0bF499444525a23E7Bb61997539725cA2e928138",
+
         //Current: price should be $.01, 1 DAI = 0.0003139 ETH, .01 DAI = 0.00000313875 ETH
         // todo: LP pool may impact whether this needs to be a constant or function
         TUFF_STARTING_PRICE: hre.ethers.utils.formatEther("3138750000000")
@@ -60,6 +65,11 @@ let constsMap = {
         UNISWAP_V3_NONFUNGIBLEPOSITIONMANAGER_ADDR: "0xc36442b4a4522e871399cd717abdd847ab11fe88",
         UNISWAP_WETH_DAI_POOL_ADDR: "0x60594a405d53811d3BC4766596EFD80fd545A270",
         UNISWAP_WETH_USDC_POOL_ADDR: "0x88e6A0c2dDD26FEEb64F039a2c41296FcB3f5640",
+
+        //ChainLink (https://docs.chain.link/docs/ethereum-addresses/)
+        CHAINLINK_ETH_DAI_AGGR_ADDR: "0x773616E4d11A78F511299002da57A0a94577F1f4",
+        CHAINLINK_ETH_USDC_AGGR_ADDR: "0x986b5E1e1755e3C2440e960477f25201B0a8bbD4",
+        CHAINLINK_ETH_USDT_AGGR_ADDR: "0xEe9F2375b4bdF6387aa8265dD4FB8F16512A1d46",
 
         //Current: price should be $.01, 1 DAI = 0.0004930897926165828 ETH, .01 DAI = 0.000004930897926165828 ETH
         // todo: LP pool may impact whether this needs to be a constant or function

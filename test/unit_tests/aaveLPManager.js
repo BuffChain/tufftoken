@@ -116,6 +116,7 @@ describe('AaveLPManager', function () {
 
     it('should add a token and update total token weight', async () => {
         const tokenAddr = consts("WETH9_ADDR");
+        const chainlinkEthTokenAggrAddr = consts("CHAINLINK_ETH_DAI_AGGR_ADDR");
         const tokenWeight = 2500;
 
         let actualTotalTargetWeight = await tuffVBTDiamond.getAaveTotalTargetWeight();
@@ -125,7 +126,7 @@ describe('AaveLPManager', function () {
         expect(supportedTokens.length).to.equal(3);
         expect(supportedTokens).to.not.contain(tokenAddr);
 
-        await tuffVBTDiamond.addAaveSupportedToken(tokenAddr, tokenWeight);
+        await tuffVBTDiamond.addAaveSupportedToken(tokenAddr, chainlinkEthTokenAggrAddr, tokenWeight);
 
         supportedTokens = await tuffVBTDiamond.getAllAaveSupportedTokens();
         expect(supportedTokens.length).to.equal(4);
@@ -172,8 +173,9 @@ describe('AaveLPManager', function () {
         expect(actualTotalTargetWeight).to.equal(expectedTotalTargetWeight);
     });
 
-    it('reverts if adding a unsupported aave token', async () => {
-        await expectRevert(tuffVBTDiamond.addAaveSupportedToken(consts("UNISWAP_V3_ROUTER_ADDR"), 2500),
+    it('reverts if adding an unsupported aave token', async () => {
+        await expectRevert(tuffVBTDiamond.addAaveSupportedToken(
+            consts("UNISWAP_V3_ROUTER_ADDR"), consts("UNISWAP_V3_ROUTER_ADDR"), 2500),
             "The tokenAddress provided is not supported by Aave");
     });
 

@@ -12,7 +12,7 @@ import {IERC20} from "@openzeppelin/contracts-v6/token/ERC20/IERC20.sol";
 
 import {AaveLPManagerLib} from "./AaveLPManagerLib.sol";
 import {IUniswapManager} from "./IUniswapManager.sol";
-import {IUniswapPriceConsumer} from "./IUniswapPriceConsumer.sol";
+import {IChainLinkPriceConsumer} from "./IChainLinkPriceConsumer.sol";
 
 import "hardhat/console.sol";
 
@@ -128,7 +128,7 @@ contract AaveLPManager is Context {
         return (_isSupportedToken, _tokenIndex);
     }
 
-    function addAaveSupportedToken(address tokenAddr, uint256 targetPercentage)
+    function addAaveSupportedToken(address tokenAddr, address chainlinkEthTokenAggrAddr, uint256 targetPercentage)
         public
         aaveInitLock
     {
@@ -145,6 +145,7 @@ contract AaveLPManager is Context {
             ss.totalTargetWeight,
             targetPercentage
         );
+        ss.tokenMetadata[tokenAddr].chainlinkEthTokenAggrAddr = chainlinkEthTokenAggrAddr;
         ss.tokenMetadata[tokenAddr].targetPercent = targetPercentage;
         //TODO: Remove this to save gas? This cost gas to save, while reading it is a view function, so gas free
         ss.tokenMetadata[tokenAddr].aToken = aTokenAddr;
@@ -322,7 +323,6 @@ contract AaveLPManager is Context {
         uint256[] tokensTargetWeight;
         uint256 totalBalanceInWeth;
         uint24 poolFee;
-        uint24 decimalPrecision;
         uint256 treasuryBalance;
     }
 
@@ -345,7 +345,6 @@ contract AaveLPManager is Context {
 
         bm.totalBalanceInWeth = 0;
         bm.poolFee = 3000;
-        bm.decimalPrecision = 10**5;
 
         bm.treasuryBalance = IERC20(address(this)).balanceOf(
             address(this)
@@ -357,17 +356,12 @@ contract AaveLPManager is Context {
 
             // Get the value of each token in the same denomination, in this case WETH
             //@dev: Order of tokanA and tokenB are important here
-            (uint256 wethQuote, uint256 decimalPrecision) = IUniswapPriceConsumer(address(this))
-                .getUniswapQuote(
-                    ss.wethAddr,
-                    bm.supportedTokens[i],
-                    bm.poolFee,
-                    3600,                   //period
-                    18                      //decimalPrecision
+            uint256 wethQuote = IChainLinkPriceConsumer(address(this))
+                .getChainLinkPrice(
+                    ss.tokenMetadata[bm.supportedTokens[i]].chainlinkEthTokenAggrAddr
                 );
             console.log("~~~~~~~~~~~~");
             console.log(wethQuote);
-            console.log(decimalPrecision);
 
             //Track balances
             uint256 tokenValueInWeth = SafeMath.mul(aTokenBalance, wethQuote);
@@ -383,16 +377,10 @@ contract AaveLPManager is Context {
         for (uint256 i = 0; i < bm.supportedTokens.length; i++) {
             //Calculate target percentage
             uint256 tokenTargetWeight = getAaveTokenTargetedPercentage(bm.supportedTokens[i]);
-            uint256 tokenTargetPercentage = SafeMath.div(
-                SafeMath.mul(tokenTargetWeight, bm.decimalPrecision),
-                ss.totalTargetWeight
-            );
+            uint256 tokenTargetPercentage = SafeMath.div(tokenTargetWeight, ss.totalTargetWeight);
 
             //Calculate actual percentage
-            uint256 tokenActualPercentage = SafeMath.div(
-                SafeMath.mul(bm.tokensValueInWeth[i], bm.decimalPrecision),
-                bm.totalBalanceInWeth
-            );
+            uint256 tokenActualPercentage = SafeMath.div(bm.tokensValueInWeth[i], bm.totalBalanceInWeth);
 
             require(tokenTargetPercentage < uint(-1), "Cannot cast tokenTargetPercentage - out of range of int max");
             require(tokenActualPercentage < uint(-1), "Cannot cast tokenActualPercentage - out of range of int max");

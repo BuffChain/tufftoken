@@ -17,6 +17,7 @@ library AaveLPManagerLib {
     }
 
     struct TokenMetadata {
+        address chainlinkEthTokenAggrAddr;
         uint256 targetPercent;
         uint256 actualPercent;
         address aToken;
