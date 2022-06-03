@@ -10,6 +10,8 @@ const IUniswapV3PoolABI = require("@uniswap/v3-core/artifacts/contracts/interfac
 
 const {consts, TOKEN_DECIMALS, TOKEN_SYMBOL} = require("./consts");
 const {BigNumber} = require("ethers");
+const {expect} = require("chai");
+const {BN} = require("@openzeppelin/test-helpers");
 
 
 async function getWETH9Contract() {
@@ -275,6 +277,39 @@ async function printAcctBal(tuffVBTDiamond, acctAddr) {
     return {ethBal, wethBal, tuffBal};
 }
 
+async function assertDepositERC20ToAave(tuffVBTDiamond, erc20TokenAddr, tokenQtyToDeposit="2000", isEtherFormat=false) {
+    let erc20Qty;
+    if (isEtherFormat) {
+        erc20Qty = tokenQtyToDeposit;
+    } else {
+        erc20Qty = hre.ethers.utils.parseEther(tokenQtyToDeposit);
+    }
+
+    //Check that the account has enough ERC20
+    const erc20Contract = await getERC20Contract(erc20TokenAddr);
+    const startERC20Qty = await erc20Contract.balanceOf(tuffVBTDiamond.address);
+    expect(new BN(startERC20Qty.toString())).to.be.bignumber.greaterThan(new BN(erc20Qty.toString()));
+
+    //Check that the account has no aToken
+    const aTokenContract = await getATokenContract(erc20TokenAddr);
+    const startATokenQty = await aTokenContract.balanceOf(tuffVBTDiamond.address);
+    expect(new BN(0)).to.be.bignumber.equal(new BN(startATokenQty.toString()));
+
+    //Make the call to deposit Aave
+    await tuffVBTDiamond.depositToAave(erc20TokenAddr, erc20Qty);
+
+    //Check that the account has deposited the erc20Token
+    const tokenQtyAfterDeposit = await erc20Contract.balanceOf(tuffVBTDiamond.address);
+    expect(new BN(tokenQtyAfterDeposit.toString())).to.be.bignumber.equal(new BN(startERC20Qty.sub(erc20Qty).toString()),
+        "unexpected token balance after deposit");
+
+    //Check that the account now has aToken equal to the erc20Token we deposited
+    const aTokenQtyAfterDeposit = await aTokenContract.balanceOf(tuffVBTDiamond.address);
+    expect(new BN(erc20Qty.toString())).to.be.bignumber.equal(new BN(aTokenQtyAfterDeposit.toString()),
+        "unexpected aToken balance after deposit of token");
+    return {startERC20Qty};
+}
+
 module.exports = {
     getWETH9Contract,
     getDAIContract,
@@ -292,5 +327,6 @@ module.exports = {
     getSqrtPriceX96,
     getUniswapPoolContract,
     getUniswapPriceQuote,
-    printAcctBal
+    printAcctBal,
+    assertDepositERC20ToAave
 }

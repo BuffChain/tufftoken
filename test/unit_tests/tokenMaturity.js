@@ -7,7 +7,6 @@ const {BN, expectRevert} = require("@openzeppelin/test-helpers");
 const {BigNumber} = require("ethers");
 
 const utils = require("../../utils/test_utils");
-const {assertDepositToAave} = require("./aaveLPManager");
 const {consts, UNISWAP_POOL_BASE_FEE, TOKEN_DAYS_UNTIL_MATURITY, TOKEN_DECIMALS, TOKEN_TOTAL_SUPPLY} = require("../../utils/consts");
 
 describe('TokenMaturity', function () {
@@ -241,7 +240,7 @@ describe('TokenMaturity', function () {
         await utils.sendTokensToAddr(accounts.at(-1), tuffVBTDiamond.address);
 
         // deposits DAI to Aave
-        await assertDepositToAave(tuffVBTDiamond);
+        await utils.assertDepositERC20ToAave(tuffVBTDiamond);
 
         const ethBalanceAfterDeposit = await hre.ethers.provider.getBalance(tuffVBTDiamond.address);
         const wethBalanceAfterDeposit = await weth9Contract.balanceOf(tuffVBTDiamond.address);
