@@ -13,37 +13,37 @@ const utils = require("../../utils/test_utils");
 const {consts} = require("../../utils/consts");
 const {BigNumber} = require("ethers");
 
-async function assertDepositToAave(tuffVBTDiamond, daiToDeposit="2000", isEtherBased=false) {
-    let qtyInDAI;
-    if (isEtherBased) {
-        qtyInDAI = daiToDeposit;
+async function assertDepositERC20ToAave(tuffVBTDiamond, erc20TokenAddr, tokenQtyToDeposit="2000", isEtherFormat=false) {
+    let erc20Qty;
+    if (isEtherFormat) {
+        erc20Qty = tokenQtyToDeposit;
     } else {
-        qtyInDAI = hre.ethers.utils.parseEther(daiToDeposit);
+        erc20Qty = hre.ethers.utils.parseEther(tokenQtyToDeposit);
     }
 
-    //Check that the account has enough DAI
-    const daiContract = await utils.getDAIContract();
-    const startDaiQty = await daiContract.balanceOf(tuffVBTDiamond.address);
-    expect(new BN(startDaiQty.toString())).to.be.bignumber.greaterThan(new BN(qtyInDAI.toString()));
+    //Check that the account has enough ERC20
+    const erc20Contract = await utils.getERC20Contract(erc20TokenAddr);
+    const startERC20Qty = await erc20Contract.balanceOf(tuffVBTDiamond.address);
+    expect(new BN(startERC20Qty.toString())).to.be.bignumber.greaterThan(new BN(erc20Qty.toString()));
 
-    //Check that the account has no aDAI
-    const adaiContract = await utils.getADAIContract();
-    const startAdaiQty = await adaiContract.balanceOf(tuffVBTDiamond.address);
-    expect(new BN(0)).to.be.bignumber.equal(new BN(startAdaiQty.toString()));
+    //Check that the account has no aToken
+    const aTokenContract = await utils.getATokenContract(erc20TokenAddr);
+    const startATokenQty = await aTokenContract.balanceOf(tuffVBTDiamond.address);
+    expect(new BN(0)).to.be.bignumber.equal(new BN(startATokenQty.toString()));
 
     //Make the call to deposit Aave
-    await tuffVBTDiamond.depositToAave(consts("DAI_ADDR"), qtyInDAI);
+    await tuffVBTDiamond.depositToAave(erc20TokenAddr, erc20Qty);
 
-    //Check that the account has deposited the DAI
-    const daiQtyAfterDeposit = await daiContract.balanceOf(tuffVBTDiamond.address);
-    expect(new BN(daiQtyAfterDeposit.toString())).to.be.bignumber.equal(new BN(startDaiQty.sub(qtyInDAI).toString()),
-        "unexpected DAI balance after deposit of DAI");
+    //Check that the account has deposited the erc20Token
+    const tokenQtyAfterDeposit = await erc20Contract.balanceOf(tuffVBTDiamond.address);
+    expect(new BN(tokenQtyAfterDeposit.toString())).to.be.bignumber.equal(new BN(startERC20Qty.sub(erc20Qty).toString()),
+        "unexpected token balance after deposit");
 
-    //Check that the account now has aDAI equal to the DAI we deposited
-    const aDaiQtyAfterDeposit = await adaiContract.balanceOf(tuffVBTDiamond.address);
-    expect(new BN(qtyInDAI.toString())).to.be.bignumber.equal(new BN(aDaiQtyAfterDeposit.toString()),
-        "unexpected ADAI balance after deposit of DAI");
-    return {startDaiQty};
+    //Check that the account now has aToken equal to the erc20Token we deposited
+    const aTokenQtyAfterDeposit = await aTokenContract.balanceOf(tuffVBTDiamond.address);
+    expect(new BN(erc20Qty.toString())).to.be.bignumber.equal(new BN(aTokenQtyAfterDeposit.toString()),
+        "unexpected aToken balance after deposit of token");
+    return {startERC20Qty};
 }
 
 describe('AaveLPManager', function () {
@@ -205,7 +205,7 @@ describe('AaveLPManager', function () {
         const adaiContract = await utils.getADAIContract();
 
         //First, deposit
-        const {startDaiQty} = await assertDepositToAave(tuffVBTDiamond);
+        const {startDaiQty} = await assertDepositERC20ToAave(tuffVBTDiamond, daiContract.address);
 
         //Then, withdraw
         await tuffVBTDiamond.withdrawAllFromAave(consts("DAI_ADDR"));
@@ -226,7 +226,7 @@ describe('AaveLPManager', function () {
     });
 
     it("should liquidate Aave treasury", async () => {
-        await assertDepositToAave(tuffVBTDiamond);
+        await assertDepositERC20ToAave(tuffVBTDiamond, consts("DAI_ADDR"));
 
         await tuffVBTDiamond.liquidateAaveTreasury();
 
@@ -243,8 +243,8 @@ describe('AaveLPManager', function () {
         //Setup
         const tokenAddr = consts("DAI_ADDR");
         const qtyInDAI = hre.ethers.utils.parseEther("2000");
-        await assertDepositToAave(tuffVBTDiamond, qtyInDAI, true);
-        // Simulate the TuffToken treasury capturing fees by directly transferring TUFF to TuffToken's address
+        await assertDepositERC20ToAave(tuffVBTDiamond, tokenAddr, qtyInDAI, true);
+        // Simulate the TuffVBT treasury capturing fees by directly transferring tVBT to TuffVBT's address
         await utils.transferTuffDUU(tuffVBTDiamond.address, "400000");
 
         //First, get how much token we have before balancing
@@ -276,12 +276,21 @@ describe('AaveLPManager', function () {
 
     it("should not balance tokens when all are within buffer range", async () => {
         //Setup
-        const tokenAddr = consts("DAI_ADDR");
-        const qtyInDAI = hre.ethers.utils.parseEther("2000");
-        await assertDepositToAave(tuffVBTDiamond, qtyInDAI, true);
+        // Percentages are configured as followed: DAI = 1/2, USDC = 1/4, and USDT = 1/4
+        const totalDepositAmt = 8000;
+        await assertDepositERC20ToAave(tuffVBTDiamond, consts("DAI_ADDR"),
+            hre.ethers.utils.parseEther((totalDepositAmt / 2).toString()), true);
+        await assertDepositERC20ToAave(tuffVBTDiamond, consts("USDC_ADDR"),
+            hre.ethers.utils.parseUnits((totalDepositAmt / 4).toString(), 6), true);
+        await assertDepositERC20ToAave(tuffVBTDiamond, consts("USDT_ADDR"),
+            hre.ethers.utils.parseUnits((totalDepositAmt / 4).toString(), 6), true);
+        // Simulate the TuffVBT treasury capturing fees by directly transferring tVBT to TuffVBT's address
+        await utils.transferTuffDUU(tuffVBTDiamond.address, "400000");
 
         //First, get how much token we have before balancing
-        const startingATokenBal = await tuffVBTDiamond.getATokenBalance(tokenAddr);
+        const startingADAIBal = await tuffVBTDiamond.getATokenBalance(consts("DAI_ADDR"));
+        const startingAUSDCBal = await tuffVBTDiamond.getATokenBalance(consts("USDC_ADDR"));
+        const startingAUSDTBal = await tuffVBTDiamond.getATokenBalance(consts("USDT_ADDR"));
 
         //Run the balancing
         await tuffVBTDiamond.balanceAaveLendingPool();
@@ -289,10 +298,18 @@ describe('AaveLPManager', function () {
         //Since everything is already balanced, confirm that tokens haven't changed amount. (other than a buffer for
         // interest made during this time)
         const interestBuffer = hre.ethers.utils.parseEther('0.00001');
-        const endingATokenBal = await tuffVBTDiamond.getATokenBalance(tokenAddr);
-        const tokenBalanceDiff = BigNumber.from(endingATokenBal).sub(startingATokenBal);
-        expect(tokenBalanceDiff).to.be.lte(interestBuffer);
+        const endingADAIBal = await tuffVBTDiamond.getATokenBalance(consts("DAI_ADDR"));
+        const tokenDAIBalanceDiff = BigNumber.from(endingADAIBal).sub(startingADAIBal);
+        expect(tokenDAIBalanceDiff).to.be.lte(interestBuffer);
+
+        const endingAUSDCBal = await tuffVBTDiamond.getATokenBalance(consts("USDC_ADDR"));
+        const tokenUSDCBalanceDiff = BigNumber.from(endingAUSDCBal).sub(startingAUSDCBal);
+        expect(tokenUSDCBalanceDiff).to.be.lte(interestBuffer);
+
+        const endingAUSDTBal = await tuffVBTDiamond.getATokenBalance(consts("USDT_ADDR"));
+        const tokenUSDTBalanceDiff = BigNumber.from(endingAUSDTBal).sub(startingAUSDTBal);
+        expect(tokenUSDTBalanceDiff).to.be.lte(interestBuffer);
     });
 });
 
-exports.assertDepositToAave = assertDepositToAave;
+exports.assertDepositERC20ToAave = assertDepositERC20ToAave;

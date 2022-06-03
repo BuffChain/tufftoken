@@ -9,6 +9,8 @@ import {AaveProtocolDataProvider} from "@aave/protocol-v2/contracts/misc/AavePro
 import {IUniswapV3Factory} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
 import {IUniswapV3Pool} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import {IERC20} from "@openzeppelin/contracts-v6/token/ERC20/IERC20.sol";
+import {ERC20} from "@openzeppelin/contracts-v6/token/ERC20/ERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts-v6/token/ERC20/SafeERC20.sol";
 
 import {AaveLPManagerLib} from "./AaveLPManagerLib.sol";
 import {IUniswapManager} from "./IUniswapManager.sol";
@@ -98,7 +100,7 @@ contract AaveLPManager is Context {
             )
         );
 
-        IERC20(erc20TokenAddr).approve(getAaveLPAddr(), amount);
+        SafeERC20.safeApprove(IERC20(erc20TokenAddr), getAaveLPAddr(), amount);
         LendingPool(getAaveLPAddr()).deposit(
             erc20TokenAddr,
             amount,
@@ -323,6 +325,7 @@ contract AaveLPManager is Context {
         uint256[] tokensTargetWeight;
         uint256 totalBalanceInWeth;
         uint24 poolFee;
+        uint24 balanceBuffer;
         uint256 treasuryBalance;
     }
 
@@ -344,7 +347,8 @@ contract AaveLPManager is Context {
         );
 
         bm.totalBalanceInWeth = 0;
-        bm.poolFee = 3000;
+        bm.poolFee = 3000; //0.3%
+        bm.balanceBuffer = 30000; //3%
 
         bm.treasuryBalance = IERC20(address(this)).balanceOf(
             address(this)
@@ -352,7 +356,10 @@ contract AaveLPManager is Context {
 
         // First loop through all tokens to aggregate their collective value and weights
         for (uint256 i = 0; i < bm.supportedTokens.length; i++) {
-            uint256 aTokenBalance = getATokenBalance(bm.supportedTokens[i]);
+            //Get and normalize aTokenBalance
+            uint256 aTokenBalance = SafeMath.mul(
+                getATokenBalance(bm.supportedTokens[i]),
+                10 ** uint256(18 - ERC20(bm.supportedTokens[i]).decimals()));
 
             // Get the value of each token in the same denomination, in this case WETH
             //@dev: Order of tokanA and tokenB are important here
@@ -360,11 +367,13 @@ contract AaveLPManager is Context {
                 .getChainLinkPrice(
                     ss.tokenMetadata[bm.supportedTokens[i]].chainlinkEthTokenAggrAddr
                 );
-            console.log("~~~~~~~~~~~~");
-            console.log(wethQuote);
 
             //Track balances
             uint256 tokenValueInWeth = SafeMath.mul(aTokenBalance, wethQuote);
+            console.log("Balances:");
+            console.log(wethQuote);
+            console.log(aTokenBalance);
+            console.log(tokenValueInWeth);
             bm.tokensValueInWeth[i] = tokenValueInWeth;
 
             bm.totalBalanceInWeth = SafeMath.add(
@@ -376,19 +385,25 @@ contract AaveLPManager is Context {
         //Then, loop through again to balance tokens
         for (uint256 i = 0; i < bm.supportedTokens.length; i++) {
             //Calculate target percentage
-            uint256 tokenTargetWeight = getAaveTokenTargetedPercentage(bm.supportedTokens[i]);
+            uint256 tokenTargetWeight = getAaveTokenTargetedPercentage(bm.supportedTokens[i]) * 10000;
             uint256 tokenTargetPercentage = SafeMath.div(tokenTargetWeight, ss.totalTargetWeight);
 
             //Calculate actual percentage
-            uint256 tokenActualPercentage = SafeMath.div(bm.tokensValueInWeth[i], bm.totalBalanceInWeth);
+            uint256 tokenActualPercentage = SafeMath.div(bm.tokensValueInWeth[i] * 10000, bm.totalBalanceInWeth);
 
             require(tokenTargetPercentage < uint(-1), "Cannot cast tokenTargetPercentage - out of range of int max");
             require(tokenActualPercentage < uint(-1), "Cannot cast tokenActualPercentage - out of range of int max");
 
             //Only balance if token is under-allocated more than our buffer amount
             int256 iPercentageDiff = int(tokenTargetPercentage) - int(tokenActualPercentage);
-            if (iPercentageDiff > 0) {
-                console.log("++++++++++++");
+            console.log("Percentages:");
+            console.log(bm.tokensValueInWeth[i]);
+            console.log(bm.totalBalanceInWeth);
+            console.log(tokenTargetPercentage);
+            console.log(tokenActualPercentage);
+            console.log(uint256(iPercentageDiff));
+            if (iPercentageDiff > bm.balanceBuffer) {
+                console.log("Positive diff data:");
                 console.log(bm.treasuryBalance);
                 console.log(bm.supportedTokens.length);
 
@@ -397,7 +412,7 @@ contract AaveLPManager is Context {
                 console.log(balanceIn);
 
                 if (balanceIn > 0) {
-                    IERC20(address(this)).approve(address(this), balanceIn);
+                    SafeERC20.safeApprove(IERC20(address(this)), address(this), balanceIn);
 
                     //TODO: Need to pass minAmount to swap for
                     //uint256 amountLUSDMin = amountWethToSwap * minETHLUSDRate;
