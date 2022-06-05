@@ -14,18 +14,24 @@ const {consts} = require("../../utils/consts");
 const {BigNumber} = require("ethers");
 
 /**
- * Deposit all supported tokens to aave per the percentages configured
- * @param tuffVBTDiamond
+ * Deposit all supported tokens to Aave per the percentages configured
+ * @param tuffVBTDiamond: tuffVBTDiamond contract
+ * @param totalDepositAmt: total amount of tokens that will be deposited
  * @returns {Promise<void>}
  */
-async function depositTokensToAaveEvenly(tuffVBTDiamond) {
-    const totalDepositAmt = 8000;
-    await utils.assertDepositERC20ToAave(tuffVBTDiamond, consts("DAI_ADDR"),
-        hre.ethers.utils.parseEther((totalDepositAmt / 2).toString()), true);
-    await utils.assertDepositERC20ToAave(tuffVBTDiamond, consts("USDC_ADDR"),
-        hre.ethers.utils.parseUnits((totalDepositAmt / 4).toString(), 6), true);
-    await utils.assertDepositERC20ToAave(tuffVBTDiamond, consts("USDT_ADDR"),
-        hre.ethers.utils.parseUnits((totalDepositAmt / 4).toString(), 6), true);
+async function depositTokensToAaveEvenly(tuffVBTDiamond, totalDepositAmt=8000) {
+    const daiDepositAmt = (totalDepositAmt / 2).toString();     //50%
+    const usdcDepositAmt = (totalDepositAmt / 4).toString();    //25%
+    const usdtDepositAmt = (totalDepositAmt / 4).toString();    //25%
+
+    const {startERC20Qty: startDAIQty} = await utils.assertDepositERC20ToAave(tuffVBTDiamond, consts("DAI_ADDR"),
+        hre.ethers.utils.parseEther(daiDepositAmt), true);
+    const {startERC20Qty: startUSDCQty} = await utils.assertDepositERC20ToAave(tuffVBTDiamond, consts("USDC_ADDR"),
+        hre.ethers.utils.parseUnits(usdcDepositAmt, 6), true);
+    const {startERC20Qty: startUSDTQty} = await utils.assertDepositERC20ToAave(tuffVBTDiamond, consts("USDT_ADDR"),
+        hre.ethers.utils.parseUnits(usdtDepositAmt, 6), true);
+
+    return {startDAIQty, startUSDCQty, startUSDTQty}
 }
 
 describe('AaveLPManager', function () {
@@ -221,27 +227,26 @@ describe('AaveLPManager', function () {
         })
     });
 
-    it("should balance a single underbalanced token", async () => {
+    it("should balance a single under-balanced token", async () => {
         //Setup
         const tokenAddr = consts("DAI_ADDR");
-        const qtyInDAI = hre.ethers.utils.parseEther("2000");
-        await utils.assertDepositERC20ToAave(tuffVBTDiamond, tokenAddr, qtyInDAI, true);
+        const depositAmt = "2000";
+        // DAI starts with the same amount as the other tokens, even though DAI's percentage calls for twice as much.
+        // Thus making DAI under-balanced
+        const {startERC20Qty: startDAIQty} = await utils.assertDepositERC20ToAave(tuffVBTDiamond, consts("DAI_ADDR"),
+            hre.ethers.utils.parseEther(depositAmt), true);
+        const {startERC20Qty: startUSDCQty} = await utils.assertDepositERC20ToAave(tuffVBTDiamond, consts("USDC_ADDR"),
+            hre.ethers.utils.parseUnits(depositAmt, 6), true);
+        const {startERC20Qty: startUSDTQty} = await utils.assertDepositERC20ToAave(tuffVBTDiamond, consts("USDT_ADDR"),
+            hre.ethers.utils.parseUnits(depositAmt, 6), true);
         // Simulate the TuffVBT treasury capturing fees by directly transferring tVBT to TuffVBT's address
-        await utils.transferTuffDUU(tuffVBTDiamond.address, "400000");
-
-        //First, get how much token we have before balancing
-        const startingATokenBal = await tuffVBTDiamond.getATokenBalance(tokenAddr);
-
-        //Next, set a token to a higher target percentage s.t. it is now underbalanced
-        let actualTokenTargetPercent = await tuffVBTDiamond.getAaveTokenTargetedPercentage(tokenAddr);
-        const newTargetPercentage = actualTokenTargetPercent * 2;
-        await tuffVBTDiamond.setAaveTokenTargetedPercentage(tokenAddr, newTargetPercentage);
+        const startingTreasuryAmount = await utils.transferTuffDUU(tuffVBTDiamond.address, "400000");
 
         //Run the balancing
         const balancingTxResponse = await tuffVBTDiamond.balanceAaveLendingPool();
         const balancingTxReceipt = await balancingTxResponse.wait();
 
-        //Finally, confirm that we added to the under-balanced token (other than a buffer for interest made during
+        //Then, confirm that we added to the under-balanced token (other than a buffer for interest made during
         // this time)
         const balanceSwapEvent = balancingTxReceipt.events.filter(event => event.event === 'AaveLPManagerBalanceSwap');
         expect(balanceSwapEvent.length).to.equal(1);
@@ -252,7 +257,7 @@ describe('AaveLPManager', function () {
         const interestBuffer = hre.ethers.utils.parseEther('0.00001');
         // const interestBuffer = hre.ethers.utils.formatEther('10000000000000');
         const endingATokenBal = await tuffVBTDiamond.getATokenBalance(tokenAddr);
-        const tokenBalanceDiff = BigNumber.from(endingATokenBal).sub(startingATokenBal);
+        const tokenBalanceDiff = BigNumber.from(endingATokenBal).sub(startDAIQty);
         expect(tokenBalanceDiff).to.be.gt(interestBuffer);
     });
 

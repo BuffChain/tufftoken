@@ -59,6 +59,7 @@ contract AaveLPManager is Context {
         ss.protocolDataProviderAddr = _protocolDataProviderAddr;
         ss.wethAddr = _wethAddr;
         ss.totalTargetWeight = 0;
+        ss.decimalPrecision = 1e4;
 
         ss.isInit = true;
     }
@@ -347,8 +348,11 @@ contract AaveLPManager is Context {
         );
 
         bm.totalBalanceInWeth = 0;
-        bm.poolFee = 3000; //0.3%
-        bm.balanceBuffer = 30000; //3%
+        bm.poolFee = 3000;                              //0.3%
+        bm.balanceBuffer = 3 * ss.decimalPrecision;     //3%
+        console.log("bm.balanceBuffer");
+        console.log(ss.decimalPrecision);
+        console.log(bm.balanceBuffer);
 
         bm.treasuryBalance = IERC20(address(this)).balanceOf(
             address(this)
@@ -384,12 +388,13 @@ contract AaveLPManager is Context {
 
         //Then, loop through again to balance tokens
         for (uint256 i = 0; i < bm.supportedTokens.length; i++) {
-            //Calculate target percentage
-            uint256 tokenTargetWeight = getAaveTokenTargetedPercentage(bm.supportedTokens[i]) * 10000;
-            uint256 tokenTargetPercentage = SafeMath.div(tokenTargetWeight, ss.totalTargetWeight);
-
-            //Calculate actual percentage
-            uint256 tokenActualPercentage = SafeMath.div(bm.tokensValueInWeth[i] * 10000, bm.totalBalanceInWeth);
+            //Calculate target and actual percentage. Include decimal precision in numerator and multiple by 100 to
+            // convert from decimal to percent
+            uint256 tokenTargetWeight = getAaveTokenTargetedPercentage(bm.supportedTokens[i]);
+            uint256 tokenTargetPercentage = SafeMath.div(
+                SafeMath.mul(tokenTargetWeight, 100 * ss.decimalPrecision), ss.totalTargetWeight);
+            uint256 tokenActualPercentage = SafeMath.div(
+                SafeMath.mul(bm.tokensValueInWeth[i], 100 * ss.decimalPrecision), bm.totalBalanceInWeth);
 
             require(tokenTargetPercentage < uint(-1), "Cannot cast tokenTargetPercentage - out of range of int max");
             require(tokenActualPercentage < uint(-1), "Cannot cast tokenActualPercentage - out of range of int max");
@@ -399,6 +404,7 @@ contract AaveLPManager is Context {
             console.log("Percentages:");
             console.log(bm.tokensValueInWeth[i]);
             console.log(bm.totalBalanceInWeth);
+            console.log(tokenTargetWeight);
             console.log(tokenTargetPercentage);
             console.log(tokenActualPercentage);
             console.log(uint256(iPercentageDiff));
