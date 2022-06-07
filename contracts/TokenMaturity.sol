@@ -304,7 +304,8 @@ contract TokenMaturity {
             token,
             ss.WETHAddress,
             ss.basePoolFee,
-            amount
+            amount,
+            0 //TODO: fix, should be based on an orcale
         );
 
         return IERC20(token).balanceOf(address(this));

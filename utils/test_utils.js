@@ -77,10 +77,10 @@ async function transferETH(fromAccount, toAddr, amount = "100") {
  * Upon deployment of TuffVBT, the `contractOwner` account is supplied with all TUFF tokens. Thus, we use this
  * account to transfer tokens to the desired address
  * @param toAddr: The address to receive TUFF tokens
- * @param amount: Amount of TUFF tokens to transfer. Defaults to 10000
+ * @param amount: Amount of TUFF tokens to transfer. Defaults to 1000000
  * @returns {Promise<void>}
  */
-async function transferTuffDUU(toAddr, amount = "10000") {
+async function transferTuffDUU(toAddr, amount = "1000000") {
     const {deployments, getNamedAccounts} = hre;
 
     const {contractOwner} = await getNamedAccounts();
@@ -272,7 +272,7 @@ async function printAcctBal(tuffVBTDiamond, acctAddr) {
     console.log(`[${acctAddr}] has [${hre.ethers.utils.formatEther(wethBal)}] WETH`);
 
     const tuffBal = BigNumber.from(await tuffVBTDiamond.balanceOf(acctAddr));
-    console.log(`[${acctAddr}] has [${tuffBal.toString()}] ${TOKEN_SYMBOL}`);
+    console.log(`[${acctAddr}] has [${hre.ethers.utils.formatUnits(tuffBal, TOKEN_DECIMALS)}] ${TOKEN_SYMBOL}`);
 
     return {ethBal, wethBal, tuffBal};
 }

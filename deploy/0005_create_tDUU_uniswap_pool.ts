@@ -3,7 +3,7 @@
 import hre from 'hardhat';
 import {ethers, Contract} from "ethers";
 
-import {ADDRESS_ZERO, nearestUsableTick} from '@uniswap/v3-sdk';
+import {nearestUsableTick} from '@uniswap/v3-sdk';
 import {
     abi as NonfungiblePositionManagerABI
 } from '@uniswap/v3-periphery/artifacts/contracts/NonfungiblePositionManager.sol/NonfungiblePositionManager.json';
@@ -11,7 +11,7 @@ import {NonfungiblePositionManager, IUniswapV3Pool, IUniswapV3Factory, TuffVBT} 
 import {Address} from "hardhat-deploy/dist/types";
 import {
     BUFFCHAIN_INIT_TUFF_LIQUIDITY_PERCENTAGE,
-    BUFFCHAIN_INIT_WETH_LIQUIDITY_WETH,
+    BUFFCHAIN_INIT_WETH_LIQUIDITY_WETH, TOKEN_DECIMALS,
     TOKEN_SYMBOL
 } from '../utils/consts';
 
@@ -85,10 +85,10 @@ async function createPool(uniswapV3Factory: IUniswapV3Factory, tuffDUU: TuffVBT)
     const price = consts("TUFF_STARTING_PRICE");
     const tuffDUUSqrtPriceX96 = getSqrtPriceX96(price);
 
-    console.log(`Initializing TuffVBT pool. Price: ${price} ETH. sqrtPriceX96: ${tuffDUUSqrtPriceX96}`);
+    console.log(`Initializing ${TOKEN_SYMBOL} pool. Target price: ${price} ETH`);
     await tuffDUUUniswapPool.initialize(tuffDUUSqrtPriceX96);
 
-    console.log(`Excluding TuffVBT Uniswap pool from fees`);
+    console.log(`Excluding ${TOKEN_SYMBOL} Uniswap pool from fees`);
     await tuffDUU.excludeFromFee(tuffDUUUniswapPool.address);
 
     return tuffDUUUniswapPool;
@@ -119,7 +119,7 @@ async function addLiquidityToPool(poolContract: IUniswapV3Pool, tuffDUU: TuffVBT
     const deadline = block.timestamp + 60 * 20; //20 minutes from the latest block;
 
     console.log(`Minting WETH9/TUFF liquidity position for [${buffChain}]`);
-    await nonfungiblePositionManager.connect(buffChainAcct).mint(
+    const mintTx = await nonfungiblePositionManager.connect(buffChainAcct).mint(
         {
             token0: immutables.token0,
             token1: immutables.token1,
@@ -128,14 +128,25 @@ async function addLiquidityToPool(poolContract: IUniswapV3Pool, tuffDUU: TuffVBT
             tickUpper: nearestUsableTick(state.tick, immutables.tickSpacing) + immutables.tickSpacing * 2,
             amount0Desired: buffChainsTuffLiquidity,
             amount1Desired: buffChainsWethLiquidity,
-            amount0Min: 0,
-            amount1Min: 0,
+            amount0Min: 1,
+            amount1Min: buffChainsWethLiquidity.sub(buffChainsWethLiquidity.div(10)), //Allow 10% slippage
             recipient: buffChain,
             deadline: deadline
         }
     );
 
-    const tokenId = await nonfungiblePositionManager.tokenOfOwnerByIndex(buffChain, 0);
+    const mintReceipt = await mintTx.wait();
+    if (mintReceipt?.events) {
+        const increaseLiquidityEvent = mintReceipt.events.find(event => event.event === 'IncreaseLiquidity');
+        const amount0 = increaseLiquidityEvent?.args?.amount0.toString();
+        const amount1 = increaseLiquidityEvent?.args?.amount1.toString();
+        console.log(`Provided ${hre.ethers.utils.formatUnits(amount0, TOKEN_DECIMALS)} ${TOKEN_SYMBOL}`);
+        console.log(`Provided ${hre.ethers.utils.formatEther(amount1)} WETH`);
+
+        // const tokenId = await nonfungiblePositionManager.tokenOfOwnerByIndex(buffChain, 0);
+    } else {
+        throw new Error(`Did not provide any liquidity for ${TOKEN_SYMBOL}/WETH. Exiting...`);
+    }
 
     console.log("-----ENDING BALANCES-----");
     await printAcctBal(tuffDUU, buffChain);

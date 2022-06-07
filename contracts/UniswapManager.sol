@@ -107,11 +107,19 @@ contract UniswapManager {
     }
 
     //    based on https://docs.uniswap.org/protocol/guides/swaps/single-swaps
+    /// @notice swapExactOutputSingle swaps a minimum possible amount of DAI for a fixed amount of WETH.
+    /// @dev The calling address must approve this contract to spend its DAI for this function to succeed. As the amount of input DAI is variable,
+    ///  the calling address will need to approve for a slightly higher amount, anticipating some variance.
+    /// @param amountIn The exact amount of `outputToken` to receive from the swap.
+    /// @param amountOutMinimum: The lowest amount of `outputToken` we are willing to receive from spending the `amountIn` of `inputToken`
+    ///     Ideally, use an oracle or other data source to choose a safer value for amountOutMinimum.
+    /// @return amountOut The amount of DAI actually spent in the swap.
     function swapExactInputSingle(
         address inputToken,
         address outputToken,
         uint24 poolFee,
-        uint256 amountIn
+        uint256 amountIn,
+        uint256 amountOutMinimum
     ) external returns (uint256 amountOut) {
         UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
             .getState();
@@ -131,9 +139,7 @@ contract UniswapManager {
             amountIn
         );
 
-        //TODO: Need to fix amountOutMinimum set to 0!
-        // Naively set amountOutMinimum to 0. In production, use an oracle or other data source to choose a safer value for amountOutMinimum.
-        // We also set the sqrtPriceLimitx96 to be 0 to ensure we swap our exact input amount.
+        //Set the sqrtPriceLimitx96 to be 0 to ensure we swap our exact input amount.
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
             .ExactInputSingleParams({
                 tokenIn: inputToken,
@@ -142,7 +148,7 @@ contract UniswapManager {
                 recipient: address(this),
                 deadline: block.timestamp,
                 amountIn: amountIn,
-                amountOutMinimum: 0,
+                amountOutMinimum: amountOutMinimum,
                 sqrtPriceLimitX96: 0
             });
 
@@ -170,7 +176,7 @@ contract UniswapManager {
         //Transfer the specified amount of `inputToken` to this contract
         TransferHelper.safeTransferFrom(
             inputToken,
-            address(this),
+            msg.sender,
             address(this),
             amountInMaximum
         );
@@ -190,7 +196,7 @@ contract UniswapManager {
                 recipient: address(this),
                 deadline: block.timestamp,
                 amountOut: amountOut,
-                amountInMaximum: 0,
+                amountInMaximum: amountInMaximum,
                 sqrtPriceLimitX96: 0
             });
 
