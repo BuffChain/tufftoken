@@ -76,11 +76,9 @@ describe("UniswapPool Deployment", function () {
             UNISWAP_POOL_BASE_FEE,
             poolPeriod
         );
-        const expectedTuffVBTWethQuote = 0.0002028230099857847; //Price dependent on WETH value
 
         //Assert price is correct in both directions
-        expect(actualTuffVBTWethQuote).to.equal(expectedTuffVBTWethQuote);
-        expect(actualWethTuffVBTQuote).to.equal(expectedTuffVBTWethQuote);
+        expect(actualTuffVBTWethQuote).to.equal(actualWethTuffVBTQuote);
 
         //Get DAI <-> WETH quote to calculate TuffVBT dollar ($) price. This is done via TuffVBT -> WETH -> DAI
         let daiWethQuote = await getUniswapPriceQuote(

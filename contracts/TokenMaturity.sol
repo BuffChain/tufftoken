@@ -3,10 +3,12 @@
 pragma solidity ^0.8.0;
 import {TuffVBT} from "./TuffVBT.sol";
 import {TokenMaturityLib} from "./TokenMaturityLib.sol";
-import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import {UniswapManager} from "./UniswapManager.sol";
 import {UniswapManagerLib} from "./UniswapManagerLib.sol";
-import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeMath} from "@openzeppelin/contracts/utils/math/SafeMath.sol";
+import {IERC20} from "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+
 import {IWETH9} from "./IWETH9.sol";
 import {IAaveLPManager} from "./IAaveLPManager.sol";
 
@@ -297,8 +299,10 @@ contract TokenMaturity {
     {
         UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
             .getState();
-
         UniswapManager uniswapManager = UniswapManager(address(this));
+
+        IERC20 erc20Token = IERC20(token);
+        SafeERC20.safeApprove(erc20Token, address(this), amount);
 
         uniswapManager.swapExactInputSingle(
             token,
@@ -308,7 +312,7 @@ contract TokenMaturity {
             0 //TODO: fix, should be based on an orcale
         );
 
-        return IERC20(token).balanceOf(address(this));
+        return erc20Token.balanceOf(address(this));
     }
 
     //    unwraps WETH and returns remaining WETH balance

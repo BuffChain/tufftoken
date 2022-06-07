@@ -74,23 +74,19 @@ describe('TokenMaturity', function () {
 
 
     it('should get token supply', async () => {
-
-        let totalSupply = parseFloat(await tuffVBTDiamond.totalSupply());
-
-        const expectedStartingSupply = 1000000000 * 10 ** 9;
+        let totalSupply = await tuffVBTDiamond.totalSupply();
+        const expectedStartingSupply = (BigNumber.from(10).pow(TOKEN_DECIMALS)).mul(TOKEN_TOTAL_SUPPLY);
 
         expect(totalSupply).to.equal(expectedStartingSupply, "incorrect totalSupply");
 
-        let totalSupplyForRedemption = parseFloat(await tuffVBTDiamond.totalSupplyForRedemption());
-
+        let totalSupplyForRedemption = await tuffVBTDiamond.totalSupplyForRedemption();
         expect(totalSupplyForRedemption).to.equal(totalSupply, "incorrect totalSupply");
 
-        await tuffVBTDiamond.setTotalSupplyForRedemption("" + (expectedStartingSupply - 1))
+        const expectedTotalSupplyForRedemption = expectedStartingSupply.sub(1);
+        await tuffVBTDiamond.setTotalSupplyForRedemption(expectedTotalSupplyForRedemption);
 
-        totalSupplyForRedemption = parseFloat(await tuffVBTDiamond.totalSupplyForRedemption());
-
-        expect(totalSupplyForRedemption).to.equal(expectedStartingSupply - 1, "incorrect totalSupply");
-
+        totalSupplyForRedemption = await tuffVBTDiamond.totalSupplyForRedemption();
+        expect(totalSupplyForRedemption).to.equal(expectedTotalSupplyForRedemption, "incorrect totalSupply");
     });
 
     it('should get token eth balance', async () => {
@@ -124,10 +120,10 @@ describe('TokenMaturity', function () {
         const sender = owner.address;
         const holder = accounts[0].address;
 
-        const amount = (startingTuffVBTTotalSupply - desiredTuffVBTAmountLeftOver).toString();
+        const amount = startingTuffVBTTotalSupply.sub(desiredTuffVBTAmountLeftOver);
         await tuffVBTDiamond.transfer(holder, amount, {from: sender});
 
-        const senderTuffVBTBalanceAfterTransfer = parseFloat(await tuffVBTDiamond.balanceOf(sender));
+        const senderTuffVBTBalanceAfterTransfer = await tuffVBTDiamond.balanceOf(sender);
         expect(senderTuffVBTBalanceAfterTransfer).to.equal(desiredTuffVBTAmountLeftOver,
             "Amount wasn't correctly sent to the receiver");
         return {sender, holder, senderTuffVBTBalanceAfterTransfer};
@@ -141,8 +137,8 @@ describe('TokenMaturity', function () {
         holder,
         senderTuffVBTBalanceAfterTransfer
     ) {
-        const holderTuffVBTBalanceToTotalSupplyRatio = desiredTuffVBTAmountLeftOver / startingTuffVBTTotalSupply;
-        const expectedETHRedemptionAmount = contractStartingEthBalance * holderTuffVBTBalanceToTotalSupplyRatio;
+        const holderTuffVBTBalanceToTotalSupplyRatio = desiredTuffVBTAmountLeftOver.div(startingTuffVBTTotalSupply);
+        const expectedETHRedemptionAmount = contractStartingEthBalance.mul(holderTuffVBTBalanceToTotalSupplyRatio);
 
         let senderStartingEthBalance = await hre.ethers.provider.getBalance(sender);
 
@@ -156,7 +152,7 @@ describe('TokenMaturity', function () {
         // however, that is currently not the case
         expect(senderEndingEthBalance).to.be.lt(senderStartingEthBalance, "Sender did not successfully receive ETH");
 
-        const senderTuffVBTBalanceAfterRedemption = parseFloat(await tuffVBTDiamond.balanceOf(sender));
+        const senderTuffVBTBalanceAfterRedemption = await tuffVBTDiamond.balanceOf(sender);
         expect(senderTuffVBTBalanceAfterRedemption).to.equal(0,
             "Holder's balance was not reset");
 
@@ -205,7 +201,7 @@ describe('TokenMaturity', function () {
         isLiquidated = await tuffVBTDiamond.getIsTreasuryLiquidated();
         expect(isLiquidated).to.equal(true, "should have been liquidated");
 
-        const desiredTuffVBTAmountLeftOver = 100000 * 10 ** TOKEN_DECIMALS;
+        const desiredTuffVBTAmountLeftOver = (BigNumber.from(10).pow(TOKEN_DECIMALS)).mul(BigNumber.from(100000));
         const {sender, holder, senderTuffVBTBalanceAfterTransfer} = await assertSenderTransferSuccess(
             startingOwnerTuffBal,
             desiredTuffVBTAmountLeftOver
@@ -240,7 +236,7 @@ describe('TokenMaturity', function () {
         await utils.sendTokensToAddr(accounts.at(-1), tuffVBTDiamond.address);
 
         // deposits DAI to Aave
-        await utils.assertDepositERC20ToAave(tuffVBTDiamond);
+        await utils.assertDepositERC20ToAave(tuffVBTDiamond, daiContract.address);
 
         const ethBalanceAfterDeposit = await hre.ethers.provider.getBalance(tuffVBTDiamond.address);
         const wethBalanceAfterDeposit = await weth9Contract.balanceOf(tuffVBTDiamond.address);
