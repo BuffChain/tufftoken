@@ -442,6 +442,7 @@ contract AaveLPManager is Context {
                         balanceIn,
                         0 //TODO: fix, should be based on an orcale
                     );
+                    SafeERC20.safeApprove(IERC20(address(this)), address(this), 0);
 
                     depositToAave(bm.supportedTokens[i], amountOut);
 

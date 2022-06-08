@@ -11,8 +11,6 @@ const IUniswapV3PoolABI = require("@uniswap/v3-core/artifacts/contracts/interfac
 const {consts, TOKEN_DECIMALS, TOKEN_SYMBOL} = require("./consts");
 const {BigNumber} = require("ethers");
 const {expect} = require("chai");
-const {BN} = require("@openzeppelin/test-helpers");
-
 
 async function getWETH9Contract() {
     return await hre.ethers.getContractAt(WETH9ABI, consts("WETH9_ADDR"));
@@ -294,6 +292,9 @@ async function getAcctBal(tuffVBTDiamond, acctAddr, print=false) {
 }
 
 async function assertDepositERC20ToAave(tuffVBTDiamond, erc20TokenAddr, tokenQtyToDeposit="2000", isEtherFormat=false) {
+    //Between depositing the ERC20 token and asserting its balance, a very small amount of interest may be made
+    const interestBuffer = BigNumber.from(10);
+
     let erc20Qty;
     if (isEtherFormat) {
         erc20Qty = tokenQtyToDeposit;
@@ -304,25 +305,25 @@ async function assertDepositERC20ToAave(tuffVBTDiamond, erc20TokenAddr, tokenQty
     //Check that the account has enough ERC20
     const erc20Contract = await getERC20Contract(erc20TokenAddr);
     const startERC20Qty = await erc20Contract.balanceOf(tuffVBTDiamond.address);
-    expect(new BN(startERC20Qty.toString())).to.be.bignumber.greaterThan(new BN(erc20Qty.toString()));
+    expect(startERC20Qty).to.be.gt(erc20Qty);
 
     //Check that the account has no aToken
     const aTokenContract = await getATokenContract(erc20TokenAddr);
     const startATokenQty = await aTokenContract.balanceOf(tuffVBTDiamond.address);
-    expect(new BN(0)).to.be.bignumber.equal(new BN(startATokenQty.toString()));
+    expect(BigNumber.from(0)).to.equal(startATokenQty);
 
     //Make the call to deposit Aave
     await tuffVBTDiamond.depositToAave(erc20TokenAddr, erc20Qty);
 
     //Check that the account has deposited the erc20Token
     const tokenQtyAfterDeposit = await erc20Contract.balanceOf(tuffVBTDiamond.address);
-    expect(new BN(tokenQtyAfterDeposit.toString())).to.be.bignumber.equal(new BN(startERC20Qty.sub(erc20Qty).toString()),
-        "unexpected token balance after deposit");
+    expect(tokenQtyAfterDeposit).to.equal(startERC20Qty.sub(erc20Qty));
 
     //Check that the account now has aToken equal to the erc20Token we deposited
     const aTokenQtyAfterDeposit = await aTokenContract.balanceOf(tuffVBTDiamond.address);
-    expect(new BN(erc20Qty.toString())).to.be.bignumber.equal(new BN(aTokenQtyAfterDeposit.toString()),
-        "unexpected aToken balance after deposit of token");
+    expect(aTokenQtyAfterDeposit).to.be.gte(erc20Qty);
+    expect(aTokenQtyAfterDeposit).to.be.lte(erc20Qty.add(interestBuffer));
+
     return {startERC20Qty};
 }
 
