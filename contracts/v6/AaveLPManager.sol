@@ -9,15 +9,10 @@ import {AaveProtocolDataProvider} from "@aave/protocol-v2/contracts/misc/AavePro
 import {IUniswapV3Factory} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Factory.sol";
 import {IUniswapV3Pool} from "@uniswap/v3-core/contracts/interfaces/IUniswapV3Pool.sol";
 import {IERC20} from "@openzeppelin/contracts-v6/token/ERC20/IERC20.sol";
-import {ERC20} from "@openzeppelin/contracts-v6/token/ERC20/ERC20.sol";
-import {SafeERC20} from "@openzeppelin/contracts-v6/token/ERC20/SafeERC20.sol";
 
 import {AaveLPManagerLib} from "./AaveLPManagerLib.sol";
 import {IUniswapManager} from "./IUniswapManager.sol";
-import {IChainLinkPriceConsumer} from "./IChainLinkPriceConsumer.sol";
 import "./ITuffOwnerV6.sol";
-
-import "hardhat/console.sol";
 
 contract AaveLPManager is Context {
     modifier onlyOwner() {
@@ -65,7 +60,6 @@ contract AaveLPManager is Context {
         ss.protocolDataProviderAddr = _protocolDataProviderAddr;
         ss.wethAddr = _wethAddr;
         ss.totalTargetWeight = 0;
-        ss.decimalPrecision = 1e4;
 
         ss.isInit = true;
     }
@@ -108,7 +102,7 @@ contract AaveLPManager is Context {
             )
         );
 
-        SafeERC20.safeApprove(IERC20(erc20TokenAddr), getAaveLPAddr(), amount);
+        IERC20(erc20TokenAddr).approve(getAaveLPAddr(), amount);
         LendingPool(getAaveLPAddr()).deposit(
             erc20TokenAddr,
             amount,
@@ -138,7 +132,7 @@ contract AaveLPManager is Context {
         return (_isSupportedToken, _tokenIndex);
     }
 
-    function addAaveSupportedToken(address tokenAddr, address chainlinkEthTokenAggrAddr, uint256 targetPercentage)
+    function addAaveSupportedToken(address tokenAddr, uint256 targetPercentage)
         public
         aaveInitLock
         onlyOwner
@@ -156,7 +150,6 @@ contract AaveLPManager is Context {
             ss.totalTargetWeight,
             targetPercentage
         );
-        ss.tokenMetadata[tokenAddr].chainlinkEthTokenAggrAddr = chainlinkEthTokenAggrAddr;
         ss.tokenMetadata[tokenAddr].targetPercent = targetPercentage;
         //TODO: Remove this to save gas? This cost gas to save, while reading it is a view function, so gas free
         ss.tokenMetadata[tokenAddr].aToken = aTokenAddr;
@@ -332,22 +325,6 @@ contract AaveLPManager is Context {
         return aTokenAddress;
     }
 
-    /**
-     * @dev Emitted when a swap occurs to balance an under-balanced token
-     */
-    event AaveLPManagerBalanceSwap(address tokenSwappedFor, uint256 amount);
-
-    //Using the struct to avoid Stack too deep error
-    struct BalanceMetadata {
-        address[] supportedTokens;
-        uint256[] tokensValueInWeth;
-        uint256[] tokensTargetWeight;
-        uint256 totalBalanceInWeth;
-        uint24 poolFee;
-        uint24 balanceBuffer;
-        uint256 treasuryBalance;
-    }
-
     //This will be called from a keeper when actualPercentage deviates too far from targetPercentage. We will first
     // need to calculate current/actual percentages, then determine which tokens are over/under-invested, and finally
     // swap and deposit to balance the tokens based on their targetedPercentages
@@ -355,100 +332,88 @@ contract AaveLPManager is Context {
     // we do not have to sort, which helps saves on gas
     function balanceAaveLendingPool() public aaveInitLock onlyOwner {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
-        BalanceMetadata memory bm;
 
-        bm.supportedTokens = getAllAaveSupportedTokens();
-        bm.tokensValueInWeth = new uint256[](
-            bm.supportedTokens.length
+        address[] memory supportedTokens = getAllAaveSupportedTokens();
+        uint256[] memory tokensValueInWeth = new uint256[](
+            supportedTokens.length
         );
-        bm.tokensTargetWeight = new uint256[](
-            bm.supportedTokens.length
+        uint256[] memory tokensTargetWeight = new uint256[](
+            supportedTokens.length
         );
 
-        bm.totalBalanceInWeth = 0;
-        bm.poolFee = 3000;                              //0.3%
-        bm.balanceBuffer = 3 * ss.decimalPrecision;     //3%
-        console.log("bm.balanceBuffer");
-        console.log(ss.decimalPrecision);
-        console.log(bm.balanceBuffer);
-
-        bm.treasuryBalance = IERC20(address(this)).balanceOf(
-            address(this)
-        );
+        uint256 totalBalanceInWeth = 0;
+        uint24 poolFee = 3000;
 
         // First loop through all tokens to aggregate their collective value and weights
-        for (uint256 i = 0; i < bm.supportedTokens.length; i++) {
-            //Get and normalize aTokenBalance
-            uint256 aTokenBalance = SafeMath.mul(
-                getATokenBalance(bm.supportedTokens[i]),
-                10 ** uint256(18 - ERC20(bm.supportedTokens[i]).decimals()));
+        for (uint256 i = 0; i < supportedTokens.length; i++) {
+            uint256 aTokenBalance = getATokenBalance(supportedTokens[i]);
 
             // Get the value of each token in the same denomination, in this case WETH
-            //@dev: Order of tokanA and tokenB are important here
-            uint256 wethQuote = IChainLinkPriceConsumer(address(this))
-                .getChainLinkPrice(
-                    ss.tokenMetadata[bm.supportedTokens[i]].chainlinkEthTokenAggrAddr
-                );
+            //TODO: fix in TUFF-149
+            uint32 period = 60; //TODO: Make 3600?
+            uint256 wethQuote = 10000;
+//                .getUniswapQuote(
+//                    ss.wethAddr,
+//                    supportedTokens[i],
+//                    poolFee,
+//                    period
+//                );
 
             //Track balances
             uint256 tokenValueInWeth = SafeMath.mul(aTokenBalance, wethQuote);
-            console.log("Balances:");
-            console.log(wethQuote);
-            console.log(aTokenBalance);
-            console.log(tokenValueInWeth);
-            bm.tokensValueInWeth[i] = tokenValueInWeth;
+            tokensValueInWeth[i] = tokenValueInWeth;
 
-            bm.totalBalanceInWeth = SafeMath.add(
-                bm.totalBalanceInWeth,
+            totalBalanceInWeth = SafeMath.add(
+                totalBalanceInWeth,
                 tokenValueInWeth
             );
         }
 
         //Then, loop through again to balance tokens
-        for (uint256 i = 0; i < bm.supportedTokens.length; i++) {
-            //Calculate target and actual percentage. Include decimal precision in numerator and multiple by 100 to
-            // convert from decimal to percent
-            uint256 tokenTargetWeight = getAaveTokenTargetedPercentage(bm.supportedTokens[i]);
+        for (uint256 i = 0; i < supportedTokens.length; i++) {
+            //Calculate target percentage
+            uint256 tokenTargetWeight = getAaveTokenTargetedPercentage(
+                supportedTokens[i]
+            );
             uint256 tokenTargetPercentage = SafeMath.div(
-                SafeMath.mul(tokenTargetWeight, 100 * ss.decimalPrecision), ss.totalTargetWeight);
-            uint256 tokenActualPercentage = SafeMath.div(
-                SafeMath.mul(bm.tokensValueInWeth[i], 100 * ss.decimalPrecision), bm.totalBalanceInWeth);
+                tokenTargetWeight,
+                ss.totalTargetWeight
+            );
 
-            require(tokenTargetPercentage < uint(-1), "Cannot cast tokenTargetPercentage - out of range of int max");
-            require(tokenActualPercentage < uint(-1), "Cannot cast tokenActualPercentage - out of range of int max");
+            //Calculate actual percentage
+            uint256 tokenActualPercentage = SafeMath.div(
+                tokensValueInWeth[i],
+                totalBalanceInWeth
+            );
+
+            require(
+                tokenTargetPercentage < uint256(-1),
+                "Cannot cast tokenTargetPercentage - out of range of int max"
+            );
+            require(
+                tokenActualPercentage < uint256(-1),
+                "Cannot cast tokenActualPercentage - out of range of int max"
+            );
 
             //Only balance if token is under-allocated more than our buffer amount
-            int256 iPercentageDiff = int(tokenTargetPercentage) - int(tokenActualPercentage);
-            console.log("Percentages:");
-            console.log(bm.tokensValueInWeth[i]);
-            console.log(bm.totalBalanceInWeth);
-            console.log(tokenTargetWeight);
-            console.log(tokenTargetPercentage);
-            console.log(tokenActualPercentage);
-            console.log(uint256(iPercentageDiff));
-            if (iPercentageDiff > bm.balanceBuffer) {
-                console.log("Positive diff data:");
-                console.log(bm.treasuryBalance);
-                console.log(bm.supportedTokens.length);
+            int256 iPercentageDiff = int256(tokenTargetPercentage) -
+                int256(tokenActualPercentage);
+            if (iPercentageDiff > 0) {
+                //Convert percentage to WETH value
+                uint256 balanceOutAmountInWeth = SafeMath.mul(
+                    totalBalanceInWeth,
+                    uint256(iPercentageDiff)
+                );
 
-                //Get proportional balance for the token
-                uint256 balanceIn = SafeMath.div(bm.treasuryBalance, bm.supportedTokens.length);
-                console.log(balanceIn);
+                IUniswapManager(address(this)).swapExactInputSingle(
+                    supportedTokens[i],
+                    ss.wethAddr,
+                    poolFee,
+                    balanceOutAmountInWeth,
+                    0
+                );
 
-                if (balanceIn > 0) {
-                    SafeERC20.safeApprove(IERC20(address(this)), address(this), balanceIn);
-
-                    IUniswapManager(address(this)).swapExactInputMultihop(
-                        address(this),
-                        bm.supportedTokens[i],
-                        bm.poolFee,
-                        bm.poolFee,
-                        balanceIn,
-                        0 //TODO: fix, should be based on an orcale
-                    );
-
-                    emit AaveLPManagerBalanceSwap(bm.supportedTokens[i], balanceIn);
-                }
+                //TODO: Add event when balance swap occurs
             }
         }
     }
