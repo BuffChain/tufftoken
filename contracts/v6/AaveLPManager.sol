@@ -90,7 +90,6 @@ contract AaveLPManager is Context {
         return ss.protocolDataProviderAddr;
     }
 
-    //TODO: Need to make sure this is locked down to only owner and approved callers (eg chainlink)
     function depositToAave(address erc20TokenAddr, uint256 amount)
         public
         aaveInitLock
@@ -184,8 +183,6 @@ contract AaveLPManager is Context {
             ];
             ss.supportedTokens.pop();
         }
-
-        //TODO: Remove tokenMetadata as well?
     }
 
     function getAllAaveSupportedTokens()
@@ -335,7 +332,7 @@ contract AaveLPManager is Context {
     /**
      * @dev Emitted when a swap occurs to balance an under-balanced token
      */
-    event AaveLPManagerBalanceSwap(address tokenSwappedFor, uint256 amount);
+    event AaveLPManagerBalanceSwap(address tokenSwappedFor, uint256 amountIn, uint256 amountOut);
 
     //Using the struct to avoid Stack too deep error
     struct BalanceMetadata {
@@ -437,8 +434,7 @@ contract AaveLPManager is Context {
 
                 if (balanceIn > 0) {
                     SafeERC20.safeApprove(IERC20(address(this)), address(this), balanceIn);
-
-                    IUniswapManager(address(this)).swapExactInputMultihop(
+                    uint256 amountOut = IUniswapManager(address(this)).swapExactInputMultihop(
                         address(this),
                         bm.supportedTokens[i],
                         bm.poolFee,
@@ -447,7 +443,9 @@ contract AaveLPManager is Context {
                         0 //TODO: fix, should be based on an orcale
                     );
 
-                    emit AaveLPManagerBalanceSwap(bm.supportedTokens[i], balanceIn);
+                    depositToAave(bm.supportedTokens[i], amountOut);
+
+                    emit AaveLPManagerBalanceSwap(bm.supportedTokens[i], balanceIn, amountOut);
                 }
             }
         }

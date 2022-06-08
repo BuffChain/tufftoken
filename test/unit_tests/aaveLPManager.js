@@ -231,34 +231,45 @@ describe('AaveLPManager', function () {
         //Setup
         const tokenAddr = consts("DAI_ADDR");
         const depositAmt = "2000";
-        // DAI starts with the same amount as the other tokens, even though DAI's percentage calls for twice as much.
+        // DAI starts with the same amount as the other tokens, even though DAI's targetWeight calls for twice as much.
         // Thus making DAI under-balanced
-        const {startERC20Qty: startDAIQty} = await utils.assertDepositERC20ToAave(tuffVBTDiamond, consts("DAI_ADDR"),
+        await utils.assertDepositERC20ToAave(tuffVBTDiamond, consts("DAI_ADDR"),
             hre.ethers.utils.parseEther(depositAmt), true);
-        const {startERC20Qty: startUSDCQty} = await utils.assertDepositERC20ToAave(tuffVBTDiamond, consts("USDC_ADDR"),
+        await utils.assertDepositERC20ToAave(tuffVBTDiamond, consts("USDC_ADDR"),
             hre.ethers.utils.parseUnits(depositAmt, 6), true);
-        const {startERC20Qty: startUSDTQty} = await utils.assertDepositERC20ToAave(tuffVBTDiamond, consts("USDT_ADDR"),
+        await utils.assertDepositERC20ToAave(tuffVBTDiamond, consts("USDT_ADDR"),
             hre.ethers.utils.parseUnits(depositAmt, 6), true);
+
         // Simulate the TuffVBT treasury capturing fees by directly transferring tVBT to TuffVBT's address
         const startingTreasuryAmount = await utils.transferTuffDUU(tuffVBTDiamond.address, "400000");
+
+        const startingATokenBal = await tuffVBTDiamond.getATokenBalance(tokenAddr);
+        const startingAUSDCBal = await tuffVBTDiamond.getATokenBalance(consts("USDC_ADDR"));
+        const startingAUSDTBal = await tuffVBTDiamond.getATokenBalance(consts("USDT_ADDR"));
+        const supportedTokens = await tuffVBTDiamond.getAllAaveSupportedTokens();
 
         //Run the balancing
         const balancingTxResponse = await tuffVBTDiamond.balanceAaveLendingPool();
         const balancingTxReceipt = await balancingTxResponse.wait();
 
-        //Then, confirm that we added to the under-balanced token (other than a buffer for interest made during
-        // this time)
+        //Then, confirm that we added to the under-balanced token
         const balanceSwapEvent = balancingTxReceipt.events.filter(event => event.event === 'AaveLPManagerBalanceSwap');
         expect(balanceSwapEvent.length).to.equal(1);
-        const {tokenSwappedFor, amount} = balanceSwapEvent[0].args;
+        const {tokenSwappedFor, amountIn, amountOut} = balanceSwapEvent[0].args;
         expect(tokenSwappedFor).to.equal(tokenAddr);
-        expect(amount).to.equal(startingTreasuryAmount);
+        expect(amountIn).to.equal(startingTreasuryAmount.div(supportedTokens.length));
 
-        const interestBuffer = hre.ethers.utils.parseEther('0.00001');
-        // const interestBuffer = hre.ethers.utils.formatEther('10000000000000');
+        const interestBuffer = hre.ethers.utils.parseUnits('1', 13);
         const endingATokenBal = await tuffVBTDiamond.getATokenBalance(tokenAddr);
-        const tokenBalanceDiff = BigNumber.from(endingATokenBal).sub(startDAIQty);
-        expect(tokenBalanceDiff).to.be.gt(interestBuffer);
+        // Assert that balancing actually occurred and the ending balance didn't just increase due to interest
+        expect(endingATokenBal).to.be.gte(startingATokenBal.add(amountOut));
+        expect(endingATokenBal).to.be.lte(startingATokenBal.add(amountOut).add(interestBuffer));
+
+        //Finally, confirm that we didn't balance the other two tokens
+        const endingAUSDCBal = await tuffVBTDiamond.getATokenBalance(consts("USDC_ADDR"));
+        expect(endingAUSDCBal).to.be.lte(startingAUSDCBal.add(interestBuffer));
+        const endingAUSDTBal = await tuffVBTDiamond.getATokenBalance(consts("USDT_ADDR"));
+        expect(endingAUSDTBal).to.be.lte(startingAUSDTBal.add(interestBuffer));
     });
 
     it("should not balance tokens when all are within buffer range", async () => {
