@@ -7,8 +7,8 @@ const {
     expectRevert, // Assertions for transactions that should fail
 } = require('@openzeppelin/test-helpers');
 const utils = require("../../utils/test_utils");
-const {TOKEN_TOTAL_SUPPLY} = require("../../utils/consts");
 const {getERC20Contract} = require("../../utils/test_utils");
+const {TOKEN_TOTAL_SUPPLY, TOKEN_DEV_FEE} = require("../../utils/consts");
 
 describe("TuffGovernor", function () {
 
@@ -168,5 +168,19 @@ describe("TuffGovernor", function () {
         return state;
     }
 
+    it('should fail due to only owner check', async () => {
 
+        await tuffGovernor.setVotingPeriod(1);
+        let votingPeriod = await tuffGovernor.votingPeriod();
+        expect(votingPeriod).to.equal(1, "unexpected voting period");
+
+        const nonOwnerAccountAddress = accounts[1].address;
+        await tuffGovernor.transferOwnership(nonOwnerAccountAddress);
+
+        await expectRevert(tuffGovernor.setVotingPeriod(2),
+            "Ownable: caller is not the owner");
+
+        votingPeriod = await tuffGovernor.votingPeriod();
+        expect(votingPeriod).to.equal(1, "voting period should be left unchanged");
+    });
 });

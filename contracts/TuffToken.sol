@@ -6,7 +6,6 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
 
-
 /**
  * Implementation of openzepplin governance https://docs.openzeppelin.com/contracts/4.x/governance
  * In order to have voting power, an account must hold TuffToken.
@@ -15,7 +14,6 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
  */
 
 contract TuffToken is Context, ERC20, ERC20Permit, ERC20Votes {
-
     string _name;
     string _symbol;
     uint8 _decimals;
@@ -66,5 +64,4 @@ contract TuffToken is Context, ERC20, ERC20Permit, ERC20Votes {
     {
         super._burn(account, amount);
     }
-
 }

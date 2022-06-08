@@ -4,10 +4,15 @@ pragma abicoder v2;
 
 import "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 import "@uniswap/v3-periphery/contracts/libraries/TransferHelper.sol";
+import "./TuffOwner.sol";
 
 import {UniswapManagerLib} from "./UniswapManagerLib.sol";
 
 contract UniswapManager {
+    modifier onlyOwner() {
+        TuffOwner(address(this)).requireOnlyOwner(msg.sender);
+        _;
+    }
 
     modifier uniswapManagerInitLock() {
         require(
@@ -35,7 +40,7 @@ contract UniswapManager {
         ISwapRouter _swapRouter,
         address WETHAddress,
         uint24 basePoolFee
-    ) public {
+    ) public onlyOwner {
         require(
             !isUniswapManagerInit(),
             string(
@@ -70,7 +75,7 @@ contract UniswapManager {
         uint24 poolFee,
         uint256 amountIn,
         uint256 amountOutMinimum
-    ) external returns (uint256 amountOut) {
+    ) external onlyOwner returns (uint256 amountOut) {
         UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
             .getState();
 
@@ -117,8 +122,7 @@ contract UniswapManager {
         uint24 poolFee,
         uint256 amountOut,
         uint256 amountInMaximum
-    )
-    external returns (uint256 amountIn) {
+    ) external onlyOwner returns (uint256 amountIn) {
         UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
             .getState();
 
@@ -158,7 +162,11 @@ contract UniswapManager {
         // msg.sender and approve the swapRouter to spend 0.
         if (amountIn < amountInMaximum) {
             TransferHelper.safeApprove(inputToken, address(ss.swapRouter), 0);
-            TransferHelper.safeTransfer(inputToken, address(this), amountInMaximum - amountIn);
+            TransferHelper.safeTransfer(
+                inputToken,
+                address(this),
+                amountInMaximum - amountIn
+            );
         }
     }
 
@@ -170,7 +178,7 @@ contract UniswapManager {
         uint24 poolBFee,
         uint256 amountIn,
         uint256 amountOutMinimum
-    ) external returns (uint256) {
+    ) external onlyOwner returns (uint256) {
         UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
         .getState();
 

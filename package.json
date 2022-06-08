@@ -14,7 +14,8 @@
     "deploy_rinkeby": "TODO: https://github.com/wighawag/hardhat-deploy/tree/master#how-to-deploy-contracts",
     "deploy_mainnet": "TODO: https://github.com/wighawag/hardhat-deploy/tree/master#how-to-deploy-contracts",
     "solhint": "./node_modules/.bin/solhint -f table contracts/*.sol && ./node_modules/.bin/solhint -f table contracts/**/*.sol",
-    "prettier:solidity": "./node_modules/.bin/prettier --write contracts/*"
+    "prettier:solidity": "./node_modules/.bin/prettier --write contracts/*",
+    "docgen": "hardhat docgen"
   },
   "repository": {
     "type": "git",
@@ -74,6 +75,7 @@
     "prettier-plugin-solidity": "^1.0.0-dev.21",
     "solhint": "^3.3.7",
     "solhint-plugin-prettier": "^0.0.5",
+    "solidity-docgen": "^0.6.0-beta.16",
     "ts-mocha": "^9.0.2",
     "ts-node": "^10.7.0",
     "typechain": "^8.0.0",

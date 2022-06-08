@@ -7,8 +7,14 @@ import {KeeperCompatibleInterface} from "@chainlink/contracts/src/v0.8/interface
 import {Strings} from "@openzeppelin/contracts/utils/Strings.sol";
 import {TokenMaturity} from "./TokenMaturity.sol";
 import {IAaveLPManager} from "./IAaveLPManager.sol";
+import "./TuffOwner.sol";
 
 contract TuffKeeper is KeeperCompatibleInterface {
+    modifier onlyOwner() {
+        TuffOwner(address(this)).requireOnlyOwner(msg.sender);
+        _;
+    }
+
     modifier initTuffKeeperLock() {
         require(
             isTuffKeeperInit(),
@@ -26,7 +32,7 @@ contract TuffKeeper is KeeperCompatibleInterface {
 
     //Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
     // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
-    function initTuffKeeper() public {
+    function initTuffKeeper() public onlyOwner {
         require(
             !isTuffKeeperInit(),
             string(
@@ -51,6 +57,7 @@ contract TuffKeeper is KeeperCompatibleInterface {
     function setTokenMaturityInterval(uint256 _tokenMaturityInterval)
         public
         initTuffKeeperLock
+        onlyOwner
     {
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
         ss.tokenMaturityInterval = _tokenMaturityInterval;
@@ -64,6 +71,7 @@ contract TuffKeeper is KeeperCompatibleInterface {
     function setBalanceAssetsInterval(uint256 _balanceAssetsInterval)
         public
         initTuffKeeperLock
+        onlyOwner
     {
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
         ss.balanceAssetsInterval = _balanceAssetsInterval;
@@ -77,6 +85,7 @@ contract TuffKeeper is KeeperCompatibleInterface {
     function setLastTokenMaturityTimestamp(uint256 _lastTimestamp)
         public
         initTuffKeeperLock
+        onlyOwner
     {
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
         ss.lastTokenMaturityTimestamp = _lastTimestamp;
@@ -90,6 +99,7 @@ contract TuffKeeper is KeeperCompatibleInterface {
     function setLastBalanceAssetsTimestamp(uint256 _lastTimestamp)
         public
         initTuffKeeperLock
+        onlyOwner
     {
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
         ss.lastBalanceAssetsTimestamp = _lastTimestamp;

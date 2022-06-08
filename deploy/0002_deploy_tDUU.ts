@@ -22,6 +22,7 @@ module.exports = async () => {
         from: deployer,
         owner: contractOwner,
         facets: [
+            "TuffOwner",
             "TuffVBT",
             "AaveLPManager",
             "TuffKeeper",
@@ -33,6 +34,13 @@ module.exports = async () => {
     });
     let tuffDUU = await hre.ethers.getContractAt(tuffDUUDeployment.abi, tuffDUUDeployment.address, contractOwnerAcct);
     console.log(`${TOKEN_SYMBOL} address [${await tuffDUU.address}]`);
+
+    if (!await tuffDUU.isTuffOwnerInit()) {
+        let initTx = await tuffDUU.initTuffOwner(
+            contractOwner
+        );
+        logDeploymentTx("Initialized TuffOwner:", initTx);
+    }
 
     if (!await tuffDUU.isTuffVBTInit()) {
         let initTx = await tuffDUU.initTuffVBT(

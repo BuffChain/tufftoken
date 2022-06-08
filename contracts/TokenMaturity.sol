@@ -11,8 +11,14 @@ import {SafeERC20} from "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol
 
 import {IWETH9} from "./IWETH9.sol";
 import {IAaveLPManager} from "./IAaveLPManager.sol";
+import "./TuffOwner.sol";
 
 contract TokenMaturity {
+    modifier onlyOwner() {
+        TuffOwner(address(this)).requireOnlyOwner(msg.sender);
+        _;
+    }
+
     modifier tokenMaturityInitLock() {
         require(
             isTokenMaturityInit(),
@@ -29,7 +35,7 @@ contract TokenMaturity {
 
     using SafeMath for uint256;
 
-    function initTokenMaturity(uint256 daysUntilMaturity) public {
+    function initTokenMaturity(uint256 daysUntilMaturity) public onlyOwner {
         require(
             !isTokenMaturityInit(),
             string(
@@ -85,6 +91,7 @@ contract TokenMaturity {
     function setContractMaturityTimestamp(uint256 timestamp)
         public
         tokenMaturityInitLock
+        onlyOwner
     {
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
         ss.contractMaturityTimestamp = timestamp;
@@ -113,6 +120,7 @@ contract TokenMaturity {
     function setTotalSupplyForRedemption(uint256 _totalSupplyForRedemption)
         public
         tokenMaturityInitLock
+        onlyOwner
     {
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
         ss.totalSupplyForRedemption = _totalSupplyForRedemption;
@@ -131,6 +139,7 @@ contract TokenMaturity {
     function setContractStartingEthBalance(uint256 startingEthBalance)
         public
         tokenMaturityInitLock
+        onlyOwner
     {
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
         ss.startingEthBalance = startingEthBalance;
@@ -164,6 +173,7 @@ contract TokenMaturity {
     function setIsTreasuryLiquidated(bool _isTreasuryLiquidated)
         public
         tokenMaturityInitLock
+        onlyOwner
     {
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
         ss.isTreasuryLiquidated = _isTreasuryLiquidated;
@@ -236,7 +246,7 @@ contract TokenMaturity {
     }
 
     //    call via perform upkeep once current timestamp >= contract maturity timestamp
-    function onTokenMaturity() public tokenMaturityInitLock {
+    function onTokenMaturity() public tokenMaturityInitLock onlyOwner {
         require(
             isTokenMatured(block.timestamp),
             "TUFF: Token must have reached maturity."
@@ -258,7 +268,7 @@ contract TokenMaturity {
         emit TokenMatured(ethBalance, redeemableTotalSupply);
     }
 
-    function liquidateTreasury() public tokenMaturityInitLock {
+    function liquidateTreasury() public tokenMaturityInitLock onlyOwner {
         bool allAssetsLiquidated = true;
 
         if (!IAaveLPManager(address(this)).liquidateAaveTreasury()) {
@@ -295,6 +305,7 @@ contract TokenMaturity {
     function swapForWETH(address token, uint256 amount)
         public
         tokenMaturityInitLock
+        onlyOwner
         returns (uint256)
     {
         UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
@@ -316,7 +327,12 @@ contract TokenMaturity {
     }
 
     //    unwraps WETH and returns remaining WETH balance
-    function unwrapWETH() public tokenMaturityInitLock returns (uint256) {
+    function unwrapWETH()
+        public
+        tokenMaturityInitLock
+        onlyOwner
+        returns (uint256)
+    {
         UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
             .getState();
 

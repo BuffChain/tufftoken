@@ -18,6 +18,7 @@ import {
     RunSuperFunction,
     TaskArguments
 } from "hardhat/types";
+import 'solidity-docgen';
 
 interface BackTestConfig {
     startBlockNumber: number
@@ -35,6 +36,9 @@ declare module 'hardhat/types/config' {
 }
 
 const config: HardhatUserConfig = {
+    docgen: {
+        pages: "files"
+    },
     paths: {
         tests: "./test/unit_tests"
     },

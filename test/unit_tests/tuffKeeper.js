@@ -1,12 +1,13 @@
 // SPDX-License-Identifier: agpl-3.0
 
 const {expect} = require("chai");
+const {expectRevert} = require("@openzeppelin/test-helpers");
 const hre = require("hardhat");
 const {randomBytes} = require('crypto');
 const Web3 = require('web3');
 const {mineBlock} = require("../../utils/back_test_utils");
 const utils = require("../../utils/test_utils");
-const {consts} = require("../../utils/consts");
+const {consts, TOKEN_DEV_FEE} = require("../../utils/consts");
 
 describe('TuffKeeper', function () {
 
@@ -114,4 +115,19 @@ describe('TuffKeeper', function () {
             "last timestamp that performed upkeep should be the latest block.");
     }
 
+    it('should fail due to only owner check', async () => {
+
+        await tuffVBTDiamond.setTokenMaturityInterval(1);
+        let interval = await tuffVBTDiamond.getTokenMaturityInterval();
+        expect(interval).to.equal(1, "unexpected interval");
+
+        const nonOwnerAccountAddress = accounts[1].address;
+        await tuffVBTDiamond.transferTuffOwnership(nonOwnerAccountAddress);
+
+        await expectRevert(tuffVBTDiamond.setTokenMaturityInterval(2),
+            "Ownable: caller is not the owner");
+
+        interval = await tuffVBTDiamond.getDevFee();
+        expect(interval).to.equal(1, "interval should be left unchanged");
+    });
 });

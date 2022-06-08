@@ -15,10 +15,16 @@ import {SafeERC20} from "@openzeppelin/contracts-v6/token/ERC20/SafeERC20.sol";
 import {AaveLPManagerLib} from "./AaveLPManagerLib.sol";
 import {IUniswapManager} from "./IUniswapManager.sol";
 import {IChainLinkPriceConsumer} from "./IChainLinkPriceConsumer.sol";
+import "./ITuffOwnerV6.sol";
 
 import "hardhat/console.sol";
 
 contract AaveLPManager is Context {
+    modifier onlyOwner() {
+        ITuffOwnerV6(address(this)).requireOnlyOwner(msg.sender);
+        _;
+    }
+
     modifier aaveInitLock() {
         require(
             isAaveInit(),
@@ -41,7 +47,7 @@ contract AaveLPManager is Context {
         address _lendingPoolProviderAddr,
         address _protocolDataProviderAddr,
         address _wethAddr
-    ) public {
+    ) public onlyOwner {
         require(
             !isAaveInit(),
             string(
@@ -88,6 +94,7 @@ contract AaveLPManager is Context {
     function depositToAave(address erc20TokenAddr, uint256 amount)
         public
         aaveInitLock
+        onlyOwner
     {
         (bool _isSupportedToken, ) = isAaveSupportedToken(erc20TokenAddr);
         require(
@@ -134,6 +141,7 @@ contract AaveLPManager is Context {
     function addAaveSupportedToken(address tokenAddr, address chainlinkEthTokenAggrAddr, uint256 targetPercentage)
         public
         aaveInitLock
+        onlyOwner
     {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
 
@@ -154,7 +162,11 @@ contract AaveLPManager is Context {
         ss.tokenMetadata[tokenAddr].aToken = aTokenAddr;
     }
 
-    function removeAaveSupportedToken(address tokenAddr) public aaveInitLock {
+    function removeAaveSupportedToken(address tokenAddr)
+        public
+        aaveInitLock
+        onlyOwner
+    {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
 
         (bool _isSupportedToken, uint256 _tokenIndex) = isAaveSupportedToken(
@@ -189,7 +201,7 @@ contract AaveLPManager is Context {
     function setAaveTokenTargetedPercentage(
         address tokenAddr,
         uint256 targetPercentage
-    ) public aaveInitLock {
+    ) public aaveInitLock onlyOwner {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
 
         ss.totalTargetWeight = SafeMath.sub(
@@ -234,7 +246,12 @@ contract AaveLPManager is Context {
             LendingPool(getAaveLPAddr()).getReserveNormalizedIncome(tokenAddr);
     }
 
-    function liquidateAaveTreasury() public aaveInitLock returns (bool) {
+    function liquidateAaveTreasury()
+        public
+        aaveInitLock
+        onlyOwner
+        returns (bool)
+    {
         address[] memory supportedTokens = getAllAaveSupportedTokens();
         bool allTokensWithdrawn = true;
         for (uint256 i = 0; i < supportedTokens.length; i++) {
@@ -250,6 +267,7 @@ contract AaveLPManager is Context {
     function withdrawFromAave(address erc20TokenAddr, uint256 amount)
         public
         aaveInitLock
+        onlyOwner
         returns (uint256)
     {
         (bool _isSupportedToken, ) = isAaveSupportedToken(erc20TokenAddr);
@@ -276,7 +294,7 @@ contract AaveLPManager is Context {
             );
     }
 
-    function withdrawAllFromAave(address asset) public aaveInitLock {
+    function withdrawAllFromAave(address asset) public aaveInitLock onlyOwner {
         withdrawFromAave(asset, type(uint256).max);
     }
 
@@ -335,7 +353,7 @@ contract AaveLPManager is Context {
     // swap and deposit to balance the tokens based on their targetedPercentages
     //Note: Only buy tokens to balance instead of trying to balance by selling first then buying. This means
     // we do not have to sort, which helps saves on gas
-    function balanceAaveLendingPool() public aaveInitLock {
+    function balanceAaveLendingPool() public aaveInitLock onlyOwner {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
         BalanceMetadata memory bm;
 
