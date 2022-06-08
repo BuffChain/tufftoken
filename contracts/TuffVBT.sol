@@ -67,9 +67,6 @@ contract TuffVBT is Context, IERC20 {
         ss.balances[initialOwner] = ss.totalSupply;
         ss.isExcludedFromFee[initialOwner] = true;
 
-        //Is this needed?
-        ss.isExcludedFromFee[address(this)] = true;
-
         ss.isInit = true;
     }
 
