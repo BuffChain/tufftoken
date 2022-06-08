@@ -264,17 +264,33 @@ async function getUniswapPriceQuote(tokenA, tokenB, poolFee, period, inverse=tru
     return inverse ? 1 / (quote * decimalFactor) : quote * decimalFactor;
 }
 
-async function printAcctBal(tuffVBTDiamond, acctAddr) {
+async function getAcctBal(tuffVBTDiamond, acctAddr, print=false) {
     const ethBal = BigNumber.from(await hre.ethers.provider.getBalance(acctAddr));
-    console.log(`[${acctAddr}] has [${hre.ethers.utils.formatEther(ethBal)}] ETH`);
 
-    const wethBal = BigNumber.from(await (await getWETH9Contract()).balanceOf(acctAddr));
-    console.log(`[${acctAddr}] has [${hre.ethers.utils.formatEther(wethBal)}] WETH`);
+    const weth9Contract = await getWETH9Contract();
+    const wethBal = BigNumber.from(await weth9Contract.balanceOf(acctAddr));
+
+    const daiContract = await getDAIContract();
+    const daiBal = BigNumber.from(await daiContract.balanceOf(acctAddr));
+
+    const usdcContract = await getUSDCContract();
+    const usdcBal = BigNumber.from(await usdcContract.balanceOf(acctAddr));
+
+    const usdtContract = await getUSDTContract();
+    const usdtBal = BigNumber.from(await usdtContract.balanceOf(acctAddr));
 
     const tuffBal = BigNumber.from(await tuffVBTDiamond.balanceOf(acctAddr));
-    console.log(`[${acctAddr}] has [${hre.ethers.utils.formatUnits(tuffBal, TOKEN_DECIMALS)}] ${TOKEN_SYMBOL}`);
+    
+    if (print) {
+        console.log(`[${acctAddr}] has [${hre.ethers.utils.formatEther(ethBal)}] ETH`);
+        console.log(`[${acctAddr}] has [${hre.ethers.utils.formatEther(wethBal)}] WETH`);
+        console.log(`[${acctAddr}] has [${hre.ethers.utils.formatUnits(daiBal, await daiContract.decimals())}] DAI`);
+        console.log(`[${acctAddr}] has [${hre.ethers.utils.formatUnits(usdcBal, await usdcContract.decimals())}] USDC`);
+        console.log(`[${acctAddr}] has [${hre.ethers.utils.formatUnits(usdtBal, await usdtContract.decimals())}] USDT`);
+        console.log(`[${acctAddr}] has [${hre.ethers.utils.formatUnits(tuffBal, TOKEN_DECIMALS)}] ${TOKEN_SYMBOL}`);
+    }
 
-    return {ethBal, wethBal, tuffBal};
+    return {ethBal, wethBal, daiBal, usdcBal, usdtBal, tuffBal};
 }
 
 async function assertDepositERC20ToAave(tuffVBTDiamond, erc20TokenAddr, tokenQtyToDeposit="2000", isEtherFormat=false) {
@@ -327,6 +343,6 @@ module.exports = {
     getSqrtPriceX96,
     getUniswapPoolContract,
     getUniswapPriceQuote,
-    printAcctBal,
+    getAcctBal,
     assertDepositERC20ToAave
 }

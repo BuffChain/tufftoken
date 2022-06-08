@@ -19,7 +19,7 @@ const {consts, UNISWAP_POOL_BASE_FEE} = require("../utils/consts");
 const {logDeploymentTx} = require("../utils/deployment_helpers");
 
 //TODO: No test utils in deployments
-const {getSqrtPriceX96, getWETH9Contract, printAcctBal} = require("../utils/test_utils");
+const {getSqrtPriceX96, getWETH9Contract, getAcctBal} = require("../utils/test_utils");
 
 interface Immutables {
     factory: string;
@@ -108,7 +108,7 @@ async function addLiquidityToPool(poolContract: IUniswapV3Pool, tuffDUU: TuffVBT
     //Use a portion of BuffChain's TUFF tokens as liquidity
     //TODO: do we also want to use TuffDAO treasury? That would _likely_ be another deployment script
     console.log("-----STARTING BALANCES-----");
-    const {tuffBal} = await printAcctBal(tuffDUU, buffChain);
+    const {tuffBal} = await getAcctBal(tuffDUU, buffChain, true);
     const buffChainsTuffLiquidity = tuffBal.mul(BUFFCHAIN_INIT_TUFF_LIQUIDITY_PERCENTAGE).div(100);
     const buffChainsWethLiquidity = BUFFCHAIN_INIT_WETH_LIQUIDITY_WETH;
 
@@ -149,7 +149,7 @@ async function addLiquidityToPool(poolContract: IUniswapV3Pool, tuffDUU: TuffVBT
     }
 
     console.log("-----ENDING BALANCES-----");
-    await printAcctBal(tuffDUU, buffChain);
+    await getAcctBal(tuffDUU, buffChain, true);
 }
 
 module.exports = async () => {

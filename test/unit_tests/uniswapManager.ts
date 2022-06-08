@@ -10,9 +10,9 @@ type TuffVBTDiamond = TuffVBT & UniswapManager;
 
 import {consts, TOKEN_DECIMALS, UNISWAP_POOL_BASE_FEE} from '../../utils/consts';
 import {
-    getDAIContract,
     getUniswapPriceQuote,
-    swapEthForWeth,
+    getAcctBal,
+    sendTokensToAddr,
     transferTuffDUU
 } from '../../utils/test_utils';
 
@@ -39,21 +39,17 @@ describe("UniswapManager", function () {
         //Increase the block time to prime the pool
         await hre.ethers.provider.send("evm_increaseTime", [poolPeriod]);
         await hre.ethers.provider.send("evm_mine", []);
+
+        //Prime tVBT contract with tokens
+        await sendTokensToAddr(accounts.at(-1), tuffVBTDiamond.address);
+        await transferTuffDUU(tuffVBTDiamond.address);
     });
 
     it('should swap tVBT for WETH (exact input single)', async () => {
         //Setup
-        const sender = accounts[3];
-        const senderAddr = await sender.getAddress();
-        const recipientAddr = tuffVBTDiamond.address;
-        const wethAmt = hre.ethers.utils.parseEther("20");
+        const {wethBal: startingWethBalance, tuffBal: startingTuffVBTBalance} =
+            await getAcctBal(tuffVBTDiamond, tuffVBTDiamond.address);
 
-        await transferTuffDUU(senderAddr);
-        const {weth9Contract} = await swapEthForWeth(sender, wethAmt);
-        const startingTuffVBTBalance = await tuffVBTDiamond.balanceOf(senderAddr);
-        const startingWethBalance = await weth9Contract.balanceOf(recipientAddr);
-
-        //Set swap amt to exactly `x` tVBT for about 1 WETH
         //Swap exactly `x` tVBT for a minimum of 1 WETH. `x` = 110% market rate of tVBT/WETH, meaning we are willing to
         // spend over market to ensure we get a min WETH amount
         const tVBTWETHQuote = await getUniswapPriceQuote(
@@ -68,8 +64,7 @@ describe("UniswapManager", function () {
         const tVBTAmtIn = hre.ethers.utils.parseUnits((tVBTWETHQuote * 1.1).toFixed().toString(), TOKEN_DECIMALS);
 
         //Execute the swap
-        await tuffVBTDiamond.connect(sender).approve(tuffVBTDiamond.address, tVBTAmtIn);
-        await tuffVBTDiamond.connect(sender).swapExactInputSingle(
+        await tuffVBTDiamond.swapExactInputSingle(
             tuffVBTDiamond.address,
             consts("WETH9_ADDR"),
             UNISWAP_POOL_BASE_FEE,
@@ -78,27 +73,21 @@ describe("UniswapManager", function () {
         );
 
         //Assert balances after swap
-        const endingTuffVBTBalance = await tuffVBTDiamond.balanceOf(senderAddr);
-        expect(endingTuffVBTBalance).to.equal(startingTuffVBTBalance.sub(tVBTAmtIn));
+        const {wethBal: endingWethBalance, tuffBal: endingTuffVBTBalance} =
+            await getAcctBal(tuffVBTDiamond, tuffVBTDiamond.address);
 
-        //Since this is exact input, we do not know precisely the exact output will be
-        const endingWethBalance = await weth9Contract.balanceOf(recipientAddr);
+        expect(endingTuffVBTBalance).to.equal(startingTuffVBTBalance.sub(tVBTAmtIn));
+        // Since this is exact input, we do not know precisely the exact output will be
         expect(endingWethBalance).to.be.gte(startingWethBalance.add(wethAmtOutMin));
     });
 
     it('should swap tVBT for WETH (exact output single)', async () => {
         //Setup
-        const sender = accounts[3];
-        const senderAddr = await sender.getAddress();
-        const recipientAddr = tuffVBTDiamond.address;
-        const wethAmt = hre.ethers.utils.parseEther("20");
+        const {wethBal: startingWethBalance, tuffBal: startingTuffVBTBalance} =
+            await getAcctBal(tuffVBTDiamond, tuffVBTDiamond.address);
 
-        await transferTuffDUU(senderAddr);
-        const {weth9Contract} = await swapEthForWeth(sender, wethAmt);
-        const startingTuffVBTBalance = await tuffVBTDiamond.balanceOf(senderAddr);
-        const startingWethBalance = await weth9Contract.balanceOf(recipientAddr);
-
-        //Swap `x` tVBT for exactly 1 WETH. `x` <= 110% market rate of tVBT/WETH
+        //Swap at most `x` tVBT for exactly 1 WETH. `x` = 110% market rate of tVBT/WETH, meaning we are willing to
+        // spend over market to ensure we get the exact WETH amount
         const tVBTWETHQuote = await getUniswapPriceQuote(
             tuffVBTDiamond.address,
             consts("WETH9_ADDR"),
@@ -111,8 +100,7 @@ describe("UniswapManager", function () {
         const tVBTAmtInMax = hre.ethers.utils.parseUnits((tVBTWETHQuote * 1.1).toFixed().toString(), TOKEN_DECIMALS);
 
         //Execute the swap
-        await tuffVBTDiamond.connect(sender).approve(tuffVBTDiamond.address, startingTuffVBTBalance);
-        await tuffVBTDiamond.connect(sender).swapExactOutputSingle(
+        await tuffVBTDiamond.swapExactOutputSingle(
             tuffVBTDiamond.address,
             consts("WETH9_ADDR"),
             UNISWAP_POOL_BASE_FEE,
@@ -121,40 +109,31 @@ describe("UniswapManager", function () {
         );
 
         //Assert balances after swap
-        // Since this is exact output, we do not know precisely the exact input will be
-        const endingTuffVBTBalance = await tuffVBTDiamond.balanceOf(senderAddr);
-        expect(endingTuffVBTBalance).to.be.gte(startingTuffVBTBalance.sub(tVBTAmtInMax));
+        const {wethBal: endingWethBalance, tuffBal: endingTuffVBTBalance} =
+            await getAcctBal(tuffVBTDiamond, tuffVBTDiamond.address);
 
-        const endingWethBalance = await weth9Contract.balanceOf(recipientAddr);
+        // Since this is exact output, we do not know precisely the exact input will be
+        expect(endingTuffVBTBalance).to.be.gte(startingTuffVBTBalance.sub(tVBTAmtInMax));
         expect(endingWethBalance).to.equal(startingWethBalance.add(wethAmtOut));
     });
 
     it('should swap tVBT for WETH for DAI (exact input multihop)', async () => {
         //Setup
-        const sender = accounts[3];
-        const senderAddr = await sender.getAddress();
-        const recipientAddr = tuffVBTDiamond.address;
-        const wethAmt = hre.ethers.utils.parseEther("20");
-
-        await transferTuffDUU(senderAddr);
-        const {weth9Contract} = await swapEthForWeth(sender, wethAmt);
-        const daiContract = await getDAIContract();
-        const startingTuffVBTBalance = await tuffVBTDiamond.balanceOf(senderAddr);
-        const startingWethBalance = await weth9Contract.balanceOf(recipientAddr);
-        const startingDaiBalance = await daiContract.balanceOf(recipientAddr);
+        const {wethBal: startingWethBalance, daiBal: startingDaiBalance, tuffBal: startingTuffVBTBalance} =
+            await getAcctBal(tuffVBTDiamond, tuffVBTDiamond.address);
 
         //Swap exactly `x` tVBT for a minimum of 1 DAI. `x` = 110% market rate of tVBT/DAI, meaning we are willing to
         // spend over market to ensure we get a min DAI amount
         const tVBTWETHQuote = await getUniswapPriceQuote(
             tuffVBTDiamond.address,
-            weth9Contract.address,
+            consts("WETH9_ADDR"),
             UNISWAP_POOL_BASE_FEE,
             3600,
             true
         );
         const wethDAIQuote = await getUniswapPriceQuote(
-            weth9Contract.address,
-            daiContract.address,
+            consts("WETH9_ADDR"),
+            consts("DAI_ADDR"),
             UNISWAP_POOL_BASE_FEE,
             3600,
             false
@@ -165,10 +144,9 @@ describe("UniswapManager", function () {
         const daiAmtOutMin = hre.ethers.utils.parseEther("1");
 
         //Execute the swap (TuffVBT -> WETH -> DAI)
-        await tuffVBTDiamond.connect(sender).approve(tuffVBTDiamond.address, tVBTAmtIn);
-        await tuffVBTDiamond.connect(sender).swapExactInputMultihop(
+        await tuffVBTDiamond.swapExactInputMultihop(
             tuffVBTDiamond.address,
-            daiContract.address,
+            consts("DAI_ADDR"),
             UNISWAP_POOL_BASE_FEE,
             UNISWAP_POOL_BASE_FEE,
             tVBTAmtIn,
@@ -176,14 +154,12 @@ describe("UniswapManager", function () {
         );
 
         //Assert balances after swap
-        const endingTuffVBTBalance = await tuffVBTDiamond.balanceOf(senderAddr);
+        const {wethBal: endingWethBalance, daiBal: endingDaiBalance, tuffBal: endingTuffVBTBalance} =
+            await getAcctBal(tuffVBTDiamond, tuffVBTDiamond.address);
+
         expect(endingTuffVBTBalance).to.equal(startingTuffVBTBalance.sub(tVBTAmtIn));
-
-        const endingWethBalance = await weth9Contract.balanceOf(recipientAddr);
         expect(endingWethBalance).to.equal(startingWethBalance);
-
         // Since this is exact input, we do not know precisely the exact output will be
-        const endingDaiBalance = await daiContract.balanceOf(recipientAddr);
         expect(endingDaiBalance).to.be.gte(startingDaiBalance.add(daiAmtOutMin));
     });
 

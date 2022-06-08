@@ -79,14 +79,6 @@ contract UniswapManager {
         UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
             .getState();
 
-        //Transfer the specified amount of `inputToken` to this contract
-        TransferHelper.safeTransferFrom(
-            inputToken,
-            msg.sender,
-            address(this),
-            amountIn
-        );
-
         //Approve the router to spend `inputToken`
         TransferHelper.safeApprove(
             inputToken,
@@ -125,15 +117,6 @@ contract UniswapManager {
     ) external onlyOwner returns (uint256 amountIn) {
         UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
             .getState();
-
-        //TODO: Is this redundant?
-        //Transfer the specified amount of `inputToken` to this contract
-        TransferHelper.safeTransferFrom(
-            inputToken,
-            msg.sender,
-            address(this),
-            amountInMaximum
-        );
 
         //Approve the router to spend the specified `amountInMaximum` of `inputToken`
         TransferHelper.safeApprove(
@@ -181,14 +164,6 @@ contract UniswapManager {
     ) external onlyOwner returns (uint256) {
         UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
         .getState();
-
-        //Transfer `amountIn` of `inputToken` to this contract
-        TransferHelper.safeTransferFrom(
-            inputToken,
-            msg.sender,
-            address(this),
-            amountIn
-        );
 
         //Approve the router to spend `inputToken`
         TransferHelper.safeApprove(
