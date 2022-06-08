@@ -37,6 +37,7 @@ declare module 'hardhat/types/config' {
 
 const config: HardhatUserConfig = {
     docgen: {
+        pages: "files"
     },
     paths: {
         tests: "./test/unit_tests"
