@@ -420,15 +420,13 @@ contract AaveLPManager is Context {
                 if (balanceIn > 0) {
                     SafeERC20.safeApprove(IERC20(address(this)), address(this), balanceIn);
 
-                    //TODO: Need to pass minAmount to swap for
-                    //uint256 amountLUSDMin = amountWethToSwap * minETHLUSDRate;
-
                     IUniswapManager(address(this)).swapExactInputMultihop(
                         address(this),
-                        bm.poolFee,
-                        bm.poolFee,
                         bm.supportedTokens[i],
-                        balanceIn
+                        bm.poolFee,
+                        bm.poolFee,
+                        balanceIn,
+                        0 //TODO: fix, should be based on an orcale
                     );
 
                     emit AaveLPManagerBalanceSwap(bm.supportedTokens[i], balanceIn);

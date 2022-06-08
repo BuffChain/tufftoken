@@ -5,16 +5,18 @@ pragma solidity ^0.6.0;
 interface IUniswapManager {
     function swapExactInputMultihop(
         address inputToken,
-        uint256 poolAFee,
-        uint256 poolBFee,
         address outputToken,
-        uint256 amountIn
-    ) external returns (uint256 amountOut);
+        uint24 poolAFee,
+        uint24 poolBFee,
+        uint256 amountIn,
+        uint256 amountOutMinimum
+    ) external returns (uint256);
 
     function swapExactInputSingle(
         address inputToken,
         address outputToken,
         uint24 poolFee,
-        uint256 amountIn
+        uint256 amountIn,
+        uint256 amountOutMinimum
     ) external returns (uint256 amountOut);
 }
