@@ -166,7 +166,7 @@ async function swapTokens(toAcct, tokenIn, tokenOut, qtyOut) {
 }
 
 /**
- * General method to procure ETH, WETH, and DAI to a specific address
+ * General method to procure ETH, WETH, and various stable coins to a specific address
  * @param fromAcct:
  * @param toAddr
  * @returns {Promise<void>}
@@ -280,7 +280,7 @@ async function getAcctBal(tuffVBTDiamond, acctAddr, print=false) {
     const usdtBal = BigNumber.from(await usdtContract.balanceOf(acctAddr));
 
     const tuffBal = BigNumber.from(await tuffVBTDiamond.balanceOf(acctAddr));
-    
+
     if (print) {
         console.log(`[${acctAddr}] has [${hre.ethers.utils.formatEther(ethBal)}] ETH`);
         console.log(`[${acctAddr}] has [${hre.ethers.utils.formatEther(wethBal)}] WETH`);

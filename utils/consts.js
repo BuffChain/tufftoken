@@ -65,9 +65,9 @@ let constsMap = {
         CHAINLINK_ETH_USDC_AGGR_ADDR: "0x986b5E1e1755e3C2440e960477f25201B0a8bbD4",
         CHAINLINK_ETH_USDT_AGGR_ADDR: "0xEe9F2375b4bdF6387aa8265dD4FB8F16512A1d46",
 
-        //Current: price should be $.01, 1 DAI = 0.0004930897926165828 ETH, .01 DAI = 0.000004930897926165828 ETH
-        // todo: LP pool may impact whether this needs to be a constant or function
-        TUFF_STARTING_PRICE: 0.00000493089792616582
+        //Dependent on market price of ETH/USD at the time of this block
+        // price should be $.01, 1 DAI = 0.0005502003937688528 ETH, .01 DAI = 0.000005502003937688528 ETH
+        TUFF_STARTING_PRICE: 0.000005502003937688528
     }
 }
 
