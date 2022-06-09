@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: agpl-3.0
 pragma solidity ^0.6.0;
+pragma experimental ABIEncoderV2; //solc >=v0.8.0 support this, v0.6 does not
 
 import "@openzeppelin/contracts-v6/math/SafeMath.sol";
 import {Context} from "@openzeppelin/contracts-v6/utils/Context.sol";
@@ -38,6 +39,18 @@ contract AaveLPManager is Context {
     }
 
     using SafeMath for uint256;
+
+    struct BalanceMetadata {
+        address[] supportedTokens;
+        uint256[] tokensValueInWeth;
+        uint256[] tokensTargetWeight;
+        uint256 totalTargetWeight;
+        uint256 totalBalanceInWeth;
+        uint24 poolFee;
+        uint24 balanceBuffer;
+        uint256 treasuryBalance;
+        uint24 decimalPrecision;
+    }
 
     //Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
     // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
@@ -221,6 +234,81 @@ contract AaveLPManager is Context {
         return ss.tokenMetadata[tokenAddr].targetPercent;
     }
 
+    function getAaveTokenCurrentPercentage(address tokenAddr)
+        public
+        view
+        aaveInitLock
+        returns (uint256)
+    {
+        BalanceMetadata memory bm = getCurrentPercentages();
+
+        for (uint256 i = 0; i < bm.supportedTokens.length; i++) {
+            if (bm.supportedTokens[i] == tokenAddr) {
+                uint256 tokenActualPercentage = SafeMath.div(
+                    SafeMath.mul(bm.tokensValueInWeth[i], 100 * bm.decimalPrecision),
+                    bm.totalBalanceInWeth);
+                return tokenActualPercentage;
+            }
+        }
+
+        //TODO: should be a revert
+        return 0;
+    }
+
+    function getCurrentPercentages()
+        private
+        view
+        aaveInitLock
+        returns (BalanceMetadata memory)
+    {
+        AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
+        BalanceMetadata memory bm;
+
+        bm.supportedTokens = getAllAaveSupportedTokens();
+        bm.tokensValueInWeth = new uint256[](
+            bm.supportedTokens.length
+        );
+        bm.tokensTargetWeight = new uint256[](
+            bm.supportedTokens.length
+        );
+        bm.totalTargetWeight = ss.totalTargetWeight;
+
+        bm.totalBalanceInWeth = 0;
+        bm.poolFee = 3000;                              //0.3%
+        bm.balanceBuffer = 5 * ss.decimalPrecision;     //3%
+        bm.decimalPrecision = ss.decimalPrecision;
+
+        bm.treasuryBalance = IERC20(address(this)).balanceOf(
+            address(this)
+        );
+
+        // First loop through all tokens to aggregate their collective value and weights
+        for (uint256 i = 0; i < bm.supportedTokens.length; i++) {
+            //Get and normalize aTokenBalance
+            uint256 aTokenBalance = SafeMath.mul(
+                getATokenBalance(bm.supportedTokens[i]),
+                10 ** uint256(18 - ERC20(bm.supportedTokens[i]).decimals()));
+
+            // Get the value of each token in the same denomination, in this case WETH
+            //@dev: Order of tokanA and tokenB are important here
+            uint256 wethQuote = IChainLinkPriceConsumer(address(this))
+            .getChainLinkPrice(
+                ss.tokenMetadata[bm.supportedTokens[i]].chainlinkEthTokenAggrAddr
+            );
+
+            //Track balances
+            uint256 tokenValueInWeth = SafeMath.mul(aTokenBalance, wethQuote);
+            bm.tokensValueInWeth[i] = tokenValueInWeth;
+
+            bm.totalBalanceInWeth = SafeMath.add(
+                bm.totalBalanceInWeth,
+                tokenValueInWeth
+            );
+        }
+
+        return bm;
+    }
+
     function getAaveTotalTargetWeight()
         public
         view
@@ -332,65 +420,13 @@ contract AaveLPManager is Context {
      */
     event AaveLPManagerBalanceSwap(address tokenSwappedFor, uint256 amountIn, uint256 amountOut);
 
-    //Using the struct to avoid Stack too deep error
-    struct BalanceMetadata {
-        address[] supportedTokens;
-        uint256[] tokensValueInWeth;
-        uint256[] tokensTargetWeight;
-        uint256 totalBalanceInWeth;
-        uint24 poolFee;
-        uint24 balanceBuffer;
-        uint256 treasuryBalance;
-    }
-
     //This will be called from a keeper when actualPercentage deviates too far from targetPercentage. We will first
     // need to calculate current/actual percentages, then determine which tokens are over/under-invested, and finally
     // swap and deposit to balance the tokens based on their targetedPercentages
     //Note: Only buy tokens to balance instead of trying to balance by selling first then buying. This means
     // we do not have to sort, which helps saves on gas
     function balanceAaveLendingPool() public aaveInitLock onlyOwner {
-        AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
-        BalanceMetadata memory bm;
-
-        bm.supportedTokens = getAllAaveSupportedTokens();
-        bm.tokensValueInWeth = new uint256[](
-            bm.supportedTokens.length
-        );
-        bm.tokensTargetWeight = new uint256[](
-            bm.supportedTokens.length
-        );
-
-        bm.totalBalanceInWeth = 0;
-        bm.poolFee = 3000;                              //0.3%
-        bm.balanceBuffer = 5 * ss.decimalPrecision;     //3%
-
-        bm.treasuryBalance = IERC20(address(this)).balanceOf(
-            address(this)
-        );
-
-        // First loop through all tokens to aggregate their collective value and weights
-        for (uint256 i = 0; i < bm.supportedTokens.length; i++) {
-            //Get and normalize aTokenBalance
-            uint256 aTokenBalance = SafeMath.mul(
-                getATokenBalance(bm.supportedTokens[i]),
-                10 ** uint256(18 - ERC20(bm.supportedTokens[i]).decimals()));
-
-            // Get the value of each token in the same denomination, in this case WETH
-            //@dev: Order of tokanA and tokenB are important here
-            uint256 wethQuote = IChainLinkPriceConsumer(address(this))
-                .getChainLinkPrice(
-                    ss.tokenMetadata[bm.supportedTokens[i]].chainlinkEthTokenAggrAddr
-                );
-
-            //Track balances
-            uint256 tokenValueInWeth = SafeMath.mul(aTokenBalance, wethQuote);
-            bm.tokensValueInWeth[i] = tokenValueInWeth;
-
-            bm.totalBalanceInWeth = SafeMath.add(
-                bm.totalBalanceInWeth,
-                tokenValueInWeth
-            );
-        }
+        BalanceMetadata memory bm = getCurrentPercentages();
 
         //Then, loop through again to balance tokens
         for (uint256 i = 0; i < bm.supportedTokens.length; i++) {
@@ -398,9 +434,9 @@ contract AaveLPManager is Context {
             // convert from decimal to percent
             uint256 tokenTargetWeight = getAaveTokenTargetedPercentage(bm.supportedTokens[i]);
             uint256 tokenTargetPercentage = SafeMath.div(
-                SafeMath.mul(tokenTargetWeight, 100 * ss.decimalPrecision), ss.totalTargetWeight);
+                SafeMath.mul(tokenTargetWeight, 100 * bm.decimalPrecision), bm.totalTargetWeight);
             uint256 tokenActualPercentage = SafeMath.div(
-                SafeMath.mul(bm.tokensValueInWeth[i], 100 * ss.decimalPrecision), bm.totalBalanceInWeth);
+                SafeMath.mul(bm.tokensValueInWeth[i], 100 * bm.decimalPrecision), bm.totalBalanceInWeth);
 
             require(tokenTargetPercentage < uint(-1), "Cannot cast tokenTargetPercentage - out of range of int max");
             require(tokenActualPercentage < uint(-1), "Cannot cast tokenActualPercentage - out of range of int max");
