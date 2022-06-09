@@ -169,23 +169,10 @@ describe('AaveLPManager', function () {
 
     it("should get correct aToken balance", async () => {
         const tokenAddr = consts("DAI_ADDR");
-        const adaiContract = await utils.getADAIContract();
-
-        //First, confirm we have no aToken
-        let startingATokenBal = await tuffVBTDiamond.getATokenBalance(tokenAddr);
-        expect(new BN(startingATokenBal.toString())).to.be.bignumber.equal(new BN("0"));
-        startingATokenBal = await adaiContract.balanceOf(tuffVBTDiamond.address);
-        expect(new BN(startingATokenBal.toString())).to.be.bignumber.equal(new BN("0"));
-
-        //Then, deposit DAI into Aave, which gives us aDAI
         const qtyInDAI = hre.ethers.utils.parseEther("2000");
-        await utils.assertDepositERC20ToAave(tuffVBTDiamond, tokenAddr, qtyInDAI, true);
 
-        //Lastly, assert that aToken was properly given
-        let endingATokenBal = await tuffVBTDiamond.getATokenBalance(tokenAddr);
-        expect(new BN(endingATokenBal.toString())).to.be.bignumber.equal(new BN(qtyInDAI.toString()));
-        endingATokenBal = await adaiContract.balanceOf(tuffVBTDiamond.address);
-        expect(new BN(endingATokenBal.toString())).to.be.bignumber.equal(new BN(qtyInDAI.toString()));
+        //Deposit and assert token and aToken balances
+        await utils.assertDepositERC20ToAave(tuffVBTDiamond, tokenAddr, qtyInDAI, true);
     });
 
     it("should deposit and withdraw dai to/from aave and TuffVBT's wallet", async () => {
@@ -200,12 +187,12 @@ describe('AaveLPManager', function () {
 
         //Check that the account now has no aDAI after withdraw
         const aDaiQtyAfterWithdraw = await aDAIContract.balanceOf(tuffVBTDiamond.address);
-        expect(new BN(aDaiQtyAfterWithdraw.toString())).to.be.bignumber.equal(new BN("0"),
+        expect(aDaiQtyAfterWithdraw).to.equal(BigNumber.from(0),
             "unexpected ADAI balance after withdraw of DAI");
 
         //Check that the account now has the same or more(if interest was gained) DAI than we started with
         const daiQtyAfterWithdraw = await daiContract.balanceOf(tuffVBTDiamond.address);
-        expect(new BN(daiQtyAfterWithdraw.toString())).to.be.bignumber.greaterThan(new BN(startDaiQty.toString()));
+        expect(daiQtyAfterWithdraw).to.gt(startDaiQty);
     });
 
     it("revert if token deposited is not supported", async () => {

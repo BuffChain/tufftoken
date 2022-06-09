@@ -292,8 +292,8 @@ async function getAcctBal(tuffVBTDiamond, acctAddr, print=false) {
 }
 
 async function assertDepositERC20ToAave(tuffVBTDiamond, erc20TokenAddr, tokenQtyToDeposit="2000", isEtherFormat=false) {
-    //Between depositing the ERC20 token and asserting its balance, a very small amount of interest may be made
-    const interestBuffer = BigNumber.from(10);
+    //Between depositing the ERC20 token and asserting its balance, a small amount of interest may be made
+    const interestBuffer = hre.ethers.utils.parseEther("0.000005");
 
     let erc20Qty;
     if (isEtherFormat) {
@@ -314,6 +314,9 @@ async function assertDepositERC20ToAave(tuffVBTDiamond, erc20TokenAddr, tokenQty
 
     //Make the call to deposit Aave
     await tuffVBTDiamond.depositToAave(erc20TokenAddr, erc20Qty);
+    // Give Aave time (1s) to complete 1:1 swap
+    await hre.ethers.provider.send("evm_increaseTime", [1]);
+    await hre.ethers.provider.send("evm_mine", []);
 
     //Check that the account has deposited the erc20Token
     const tokenQtyAfterDeposit = await erc20Contract.balanceOf(tuffVBTDiamond.address);
