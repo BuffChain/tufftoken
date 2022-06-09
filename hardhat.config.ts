@@ -88,7 +88,7 @@ const config: HardhatUserConfig = {
         hardhat: {
             live: false,
             forking: {
-                url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMAPI_KEY}`,
+                url: `https://eth-mainnet.alchemyapi.io/v2/${process.env.ALCHEMY_API_KEY}`,
 
                 //Feel free to update at any time. This is here to make local development and caching easier
                 blockNumber: 14927590

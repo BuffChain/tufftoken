@@ -22,7 +22,7 @@ jobs:
           npm run compile
       - name: Run tests
         run: |
-          ALCHEMAPI_KEY="${{ secrets.ALCHEMAPI_KEY }}" \
+          ALCHEMY_API_KEY="${{ secrets.ALCHEMY_API_KEY }}" \
           INFURA_URL="${{ secrets.INFURA_URL }}" \
           ETH_HARDHAT_ACCOUNT_MNEMONIC="${{ secrets.ETH_HARDHAT_ACCOUNT_MNEMONIC }}" \
           npm run test
