@@ -17,8 +17,6 @@ import {IUniswapManager} from "./IUniswapManager.sol";
 import {IChainLinkPriceConsumer} from "./IChainLinkPriceConsumer.sol";
 import "./ITuffOwnerV6.sol";
 
-import "hardhat/console.sol";
-
 contract AaveLPManager is Context {
     modifier onlyOwner() {
         ITuffOwnerV6(address(this)).requireOnlyOwner(msg.sender);
@@ -364,10 +362,7 @@ contract AaveLPManager is Context {
 
         bm.totalBalanceInWeth = 0;
         bm.poolFee = 3000;                              //0.3%
-        bm.balanceBuffer = 3 * ss.decimalPrecision;     //3%
-        console.log("bm.balanceBuffer");
-        console.log(ss.decimalPrecision);
-        console.log(bm.balanceBuffer);
+        bm.balanceBuffer = 5 * ss.decimalPrecision;     //3%
 
         bm.treasuryBalance = IERC20(address(this)).balanceOf(
             address(this)
@@ -389,10 +384,6 @@ contract AaveLPManager is Context {
 
             //Track balances
             uint256 tokenValueInWeth = SafeMath.mul(aTokenBalance, wethQuote);
-            console.log("Balances:");
-            console.log(wethQuote);
-            console.log(aTokenBalance);
-            console.log(tokenValueInWeth);
             bm.tokensValueInWeth[i] = tokenValueInWeth;
 
             bm.totalBalanceInWeth = SafeMath.add(
@@ -416,21 +407,10 @@ contract AaveLPManager is Context {
 
             //Only balance if token is under-allocated more than our buffer amount
             int256 iPercentageDiff = int(tokenTargetPercentage) - int(tokenActualPercentage);
-            console.log("Percentages:");
-            console.log(bm.tokensValueInWeth[i]);
-            console.log(bm.totalBalanceInWeth);
-            console.log(tokenTargetWeight);
-            console.log(tokenTargetPercentage);
-            console.log(tokenActualPercentage);
-            console.log(uint256(iPercentageDiff));
             if (iPercentageDiff > bm.balanceBuffer) {
-                console.log("Positive diff data:");
-                console.log(bm.treasuryBalance);
-                console.log(bm.supportedTokens.length);
 
                 //Get proportional balance for the token
                 uint256 balanceIn = SafeMath.div(bm.treasuryBalance, bm.supportedTokens.length);
-                console.log(balanceIn);
 
                 if (balanceIn > 0) {
                     SafeERC20.safeApprove(IERC20(address(this)), address(this), balanceIn);
