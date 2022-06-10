@@ -18,8 +18,8 @@ import {IUniswapManager} from "./IUniswapManager.sol";
 import {IChainLinkPriceConsumer} from "./IChainLinkPriceConsumer.sol";
 import "./ITuffOwnerV6.sol";
 
-import "hardhat/console.sol";
-
+//Within this contract is a purposeful difference between percentage and weight. Percentage is a token value out of
+// 100% of the total, weight decides how much influence a token should have on the total
 contract AaveLPManager is Context {
     modifier onlyOwner() {
         ITuffOwnerV6(address(this)).requireOnlyOwner(msg.sender);
@@ -133,7 +133,7 @@ contract AaveLPManager is Context {
         return ss.supportedTokens;
     }
 
-    function setAaveTokenTargetedPercentage(
+    function setAaveTokenTargetWeight(
         address tokenAddr,
         uint24 targetWeight
     ) public aaveInitLock onlyOwner {
@@ -141,24 +141,24 @@ contract AaveLPManager is Context {
 
         ss.totalTargetWeight = SafeMath.sub(
             ss.totalTargetWeight,
-            ss.tokenMetadata[tokenAddr].targetPercent
+            ss.tokenMetadata[tokenAddr].targetWeight
         );
         ss.totalTargetWeight = SafeMath.add(
             ss.totalTargetWeight,
             targetWeight
         );
 
-        ss.tokenMetadata[tokenAddr].targetPercent = targetWeight;
+        ss.tokenMetadata[tokenAddr].targetWeight = targetWeight;
     }
 
-    function getAaveTokenTargetedPercentage(address tokenAddr)
+    function getAaveTokenTargetWeight(address tokenAddr)
     public
     view
     aaveInitLock
     returns (uint256)
     {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
-        return ss.tokenMetadata[tokenAddr].targetPercent;
+        return ss.tokenMetadata[tokenAddr].targetWeight;
     }
 
     function getAaveTokenCurrentPercentage(address tokenAddr)
@@ -167,7 +167,7 @@ contract AaveLPManager is Context {
     aaveInitLock
     returns (uint256)
     {
-        BalanceMetadata memory bm = getCurrentPercentages();
+        BalanceMetadata memory bm = getBalanceMetadata();
 
         for (uint256 i = 0; i < bm.supportedTokens.length; i++) {
             if (bm.supportedTokens[i] == tokenAddr) {
@@ -182,7 +182,7 @@ contract AaveLPManager is Context {
         return 0;
     }
 
-    function getCurrentPercentages()
+    function getBalanceMetadata()
     private
     view
     aaveInitLock
@@ -216,8 +216,7 @@ contract AaveLPManager is Context {
                 getATokenBalance(bm.supportedTokens[i]),
                 10 ** uint256(18 - ERC20(bm.supportedTokens[i]).decimals()));
 
-            // Get the value of each token in the same denomination, in this case WETH
-            //@dev: Order of tokanA and tokenB are important here
+            //Get the value of each token in the same denomination, in this case WETH
             uint256 wethQuote = IChainLinkPriceConsumer(address(this))
             .getChainLinkPrice(
                 ss.tokenMetadata[bm.supportedTokens[i]].chainlinkEthTokenAggrAddr
@@ -337,7 +336,7 @@ contract AaveLPManager is Context {
         return (_isSupportedToken, _tokenIndex);
     }
 
-    function addAaveSupportedToken(address tokenAddr, address chainlinkEthTokenAggrAddr, uint24 targetPercentage)
+    function addAaveSupportedToken(address tokenAddr, address chainlinkEthTokenAggrAddr, uint24 targetWeight)
         public
         aaveInitLock
         onlyOwner
@@ -352,7 +351,7 @@ contract AaveLPManager is Context {
 
         ss.supportedTokens.push(tokenAddr);
         ss.tokenMetadata[tokenAddr].chainlinkEthTokenAggrAddr = chainlinkEthTokenAggrAddr;
-        setAaveTokenTargetedPercentage(tokenAddr, targetPercentage);
+        setAaveTokenTargetWeight(tokenAddr, targetWeight);
         //TODO: Remove this to save gas? This cost gas to save, while reading it is a view function, so gas free
         ss.tokenMetadata[tokenAddr].aToken = aTokenAddr;
     }
@@ -370,7 +369,7 @@ contract AaveLPManager is Context {
         if (_isSupportedToken) {
             ss.totalTargetWeight = SafeMath.sub(
                 ss.totalTargetWeight,
-                ss.tokenMetadata[tokenAddr].targetPercent
+                ss.tokenMetadata[tokenAddr].targetWeight
             );
 
             //Remove the token without preserving order
@@ -438,19 +437,18 @@ contract AaveLPManager is Context {
      */
     event AaveLPManagerBalanceSwap(address tokenSwappedFor, uint256 amountIn, uint256 amountOut);
 
-    //This will be called from a keeper when actualPercentage deviates too far from targetPercentage. We will first
-    // need to calculate current/actual percentages, then determine which tokens are over/under-invested, and finally
-    // swap and deposit to balance the tokens based on their targetedPercentages
+    //We will first need to calculate current/actual percentages, then determine which tokens are under-invested, and
+    // finally swap and deposit to balance the tokens based on their targetedPercentages
     //Note: Only buy tokens to balance instead of trying to balance by selling first then buying. This means
-    // we do not have to sort, which helps saves on gas
+    // we do not have to sort, which helps saves on gas.
     function balanceAaveLendingPool() public aaveInitLock onlyOwner {
-        BalanceMetadata memory bm = getCurrentPercentages();
+        BalanceMetadata memory bm = getBalanceMetadata();
 
         //Then, loop through again to balance tokens
         for (uint256 i = 0; i < bm.supportedTokens.length; i++) {
             //Calculate target and actual percentage. Include decimal precision in numerator and multiple by 100 to
             // convert from decimal to percent
-            uint256 tokenTargetWeight = getAaveTokenTargetedPercentage(bm.supportedTokens[i]);
+            uint256 tokenTargetWeight = getAaveTokenTargetWeight(bm.supportedTokens[i]);
             uint256 tokenTargetPercentage = SafeMath.div(
                 SafeMath.mul(tokenTargetWeight, 100 * bm.decimalPrecision), bm.totalTargetWeight);
             uint256 tokenActualPercentage = SafeMath.div(
