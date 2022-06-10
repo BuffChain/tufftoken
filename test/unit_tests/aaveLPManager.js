@@ -91,21 +91,21 @@ describe('AaveLPManager', function () {
 
         expect(supportedTokens).to.contain(consts("DAI_ADDR"));
         let actualTokenTargetPercent = await tuffVBTDiamond.getAaveTokenTargetedPercentage(consts("DAI_ADDR"));
-        expect(actualTokenTargetPercent).to.equal(5000);
+        expect(actualTokenTargetPercent).to.equal(500000);
 
         expect(supportedTokens).to.contain(consts("USDC_ADDR"));
         actualTokenTargetPercent = await tuffVBTDiamond.getAaveTokenTargetedPercentage(consts("USDC_ADDR"));
-        expect(actualTokenTargetPercent).to.equal(2500);
+        expect(actualTokenTargetPercent).to.equal(250000);
 
         expect(supportedTokens).to.contain(consts("USDT_ADDR"));
         actualTokenTargetPercent = await tuffVBTDiamond.getAaveTokenTargetedPercentage(consts("USDT_ADDR"));
-        expect(actualTokenTargetPercent).to.equal(2500);
+        expect(actualTokenTargetPercent).to.equal(250000);
     });
 
     it('should add a token and update total token weight', async () => {
         const tokenAddr = consts("WETH9_ADDR");
         const chainlinkEthTokenAggrAddr = consts("CHAINLINK_ETH_DAI_AGGR_ADDR");
-        const tokenWeight = 2500;
+        const tokenWeight = 250000;
 
         let actualTotalTargetWeight = await tuffVBTDiamond.getAaveTotalTargetWeight();
         const expectedTotalTargetWeight = actualTotalTargetWeight.add(tokenWeight);
@@ -145,11 +145,12 @@ describe('AaveLPManager', function () {
     });
 
     it('should update a tokens target weight and total token weight', async () => {
-        const tokenAddr = consts("DAI_ADDR");
+        const tokenAddr = consts("USDT_ADDR");
         let actualTotalTargetWeight = await tuffVBTDiamond.getAaveTotalTargetWeight();
         let actualTokenTargetPercent = await tuffVBTDiamond.getAaveTokenTargetedPercentage(tokenAddr);
-        expect(actualTokenTargetPercent).to.equal(5000);
+        expect(actualTokenTargetPercent).to.equal(250000);
 
+        //Double the target percentage
         const expectedTotalTargetWeight = actualTotalTargetWeight.add(actualTokenTargetPercent);
         const expectedTargetPercentage = actualTokenTargetPercent.add(actualTokenTargetPercent);
         await tuffVBTDiamond.setAaveTokenTargetedPercentage(tokenAddr, expectedTargetPercentage);
@@ -245,7 +246,7 @@ describe('AaveLPManager', function () {
         expect(balanceSwapEvent.length).to.equal(1);
         const {tokenSwappedFor, amountIn, amountOut} = balanceSwapEvent[0].args;
         expect(tokenSwappedFor).to.equal(underBalanceTokenAddr);
-        expect(amountIn).to.equal(startingTreasuryAmount.div(supportedTokens.length));
+        expect(amountIn).to.equal(startingTreasuryAmount.div(supportedTokens.length - 1));
 
         const interestBuffer = hre.ethers.utils.parseUnits('1', 13);
         const endUnderBalanceAToken = await tuffVBTDiamond.getATokenBalance(underBalanceTokenAddr);
@@ -293,11 +294,11 @@ describe('AaveLPManager', function () {
         // under-balance token 1
         const {tokenSwappedFor: tokenSwappedFor1, amountIn: amountIn1, amountOut: amountOut1} = balanceSwapEvent[0].args;
         expect(tokenSwappedFor1).to.equal(underBalanceTokenAddr1);
-        expect(amountIn1).to.equal(startingTreasuryAmount.div(supportedTokens.length));
+        expect(amountIn1).to.equal(startingTreasuryAmount.div(supportedTokens.length - 1));
         // under-balance token 2
         const {tokenSwappedFor: tokenSwappedFor2, amountIn: amountIn2, amountOut: amountOut2} = balanceSwapEvent[1].args;
         expect(tokenSwappedFor2).to.equal(underBalanceTokenAddr2);
-        expect(amountIn2).to.equal(startingTreasuryAmount.div(supportedTokens.length));
+        expect(amountIn2).to.equal(startingTreasuryAmount.div(supportedTokens.length - 1));
 
         // Assert that balancing actually occurred and the ending balance didn't just increase due to interest
         const interestBuffer = hre.ethers.utils.parseUnits('1', 13);
@@ -315,7 +316,68 @@ describe('AaveLPManager', function () {
         expect(endingAUSDTBal).to.be.lte(startingAUSDTBal.add(interestBuffer));
     });
 
-    //TODO: test to run multiple balancing
+    it("should balance tokens until all are with the target weight buffer", async () => {
+        //Setup. Total amount is 10000
+        // DAI is under-balanced at 25% (target is 50%)
+        await utils.assertDepositERC20ToAave(tuffVBTDiamond, consts("DAI_ADDR"),
+            hre.ethers.utils.parseEther("2500"), true);
+        const targetDAIPercent = await tuffVBTDiamond.getAaveTokenTargetedPercentage(consts("DAI_ADDR"));
+
+        // USDC is under-balanced at 15% (target is 25%)
+        await utils.assertDepositERC20ToAave(tuffVBTDiamond, consts("USDC_ADDR"),
+            hre.ethers.utils.parseUnits("1500", 6), true);
+        const targetUSDCPercent = await tuffVBTDiamond.getAaveTokenTargetedPercentage(consts("USDC_ADDR"));
+
+        // USDT is over-balanced at 60% (target is 25%)
+        await utils.assertDepositERC20ToAave(tuffVBTDiamond, consts("USDT_ADDR"),
+            hre.ethers.utils.parseUnits("6000", 6), true);
+        const targetUSDTPercent = await tuffVBTDiamond.getAaveTokenTargetedPercentage(consts("USDT_ADDR"));
+
+        //Get starting percentages
+        const balanceBufferPercentage = await tuffVBTDiamond.getBalanceBufferPercent();
+        const startDAIPercent = await tuffVBTDiamond.getAaveTokenCurrentPercentage(consts("DAI_ADDR"));
+        const startUSDCPercent = await tuffVBTDiamond.getAaveTokenCurrentPercentage(consts("USDC_ADDR"));
+        const startUSDTPercent = await tuffVBTDiamond.getAaveTokenCurrentPercentage(consts("USDT_ADDR"));
+
+        //1st Run
+        // Simulate the TuffVBT treasury capturing fees by directly transferring tVBT to TuffVBT's address
+        await utils.transferTuffDUU(tuffVBTDiamond.address, "1000000");
+        // Then balance
+        await tuffVBTDiamond.balanceAaveLendingPool();
+
+        //Assert progress. DAI will be under-balanced, USDC and USDT will over-balanced
+        const middleDAIPercent = await tuffVBTDiamond.getAaveTokenCurrentPercentage(consts("DAI_ADDR"));
+        expect(middleDAIPercent).to.be.lt(targetDAIPercent); //under-balance
+        expect(middleDAIPercent).to.be.gt(startDAIPercent); //improved
+
+        const middleUSDCPercent = await tuffVBTDiamond.getAaveTokenCurrentPercentage(consts("USDC_ADDR"));
+        expect(middleUSDCPercent).to.be.gt(targetUSDCPercent); //over-balance
+        expect(middleUSDCPercent).to.be.gt(startUSDCPercent); //improved
+
+        const middleUSDTPercent = await tuffVBTDiamond.getAaveTokenCurrentPercentage(consts("USDT_ADDR"));
+        expect(middleUSDTPercent).to.be.gt(targetUSDTPercent); //over-balance
+        expect(middleUSDTPercent).to.be.lt(startUSDTPercent); //improved
+
+        //2nd Run
+        await utils.transferTuffDUU(tuffVBTDiamond.address, "1000000");
+        await tuffVBTDiamond.balanceAaveLendingPool();
+
+        //Assert progress. All tokens should be fully balanced
+        const endDAIPercent = await tuffVBTDiamond.getAaveTokenCurrentPercentage(consts("DAI_ADDR"));
+        expect(endDAIPercent).to.be.closeTo(targetDAIPercent, balanceBufferPercentage);
+
+        const endUSDCPercent = await tuffVBTDiamond.getAaveTokenCurrentPercentage(consts("USDC_ADDR"));
+        expect(endUSDCPercent).to.be.closeTo(targetUSDCPercent, balanceBufferPercentage);
+
+        const endUSDTPercent = await tuffVBTDiamond.getAaveTokenCurrentPercentage(consts("USDT_ADDR"));
+        expect(endUSDTPercent).to.be.closeTo(targetUSDTPercent, balanceBufferPercentage);
+
+        //Final run to ensure balancing is no longer needed and will not occur
+        const balancingTxResponse = await tuffVBTDiamond.balanceAaveLendingPool();
+        const balancingTxReceipt = await balancingTxResponse.wait();
+        const balanceSwapEvent = balancingTxReceipt.events.filter(event => event.event === 'AaveLPManagerBalanceSwap');
+        expect(balanceSwapEvent).to.be.empty;
+    });
 
     it("should not balance tokens when all are within buffer range", async () => {
         //Setup

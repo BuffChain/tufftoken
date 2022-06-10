@@ -13,6 +13,7 @@ library AaveLPManagerLib {
         address lpProviderAddr;
         address protocolDataProviderAddr;
         address wethAddr;
+        uint24 balanceBufferPercent;
         uint256 totalTargetWeight;
         uint24 decimalPrecision;
     }
