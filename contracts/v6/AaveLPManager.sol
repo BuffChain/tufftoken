@@ -15,6 +15,7 @@ import {SafeERC20} from "@openzeppelin/contracts-v6/token/ERC20/SafeERC20.sol";
 
 import {AaveLPManagerLib} from "./AaveLPManagerLib.sol";
 import {IUniswapManager} from "./IUniswapManager.sol";
+import {IUniswapPriceConsumer} from "./IUniswapPriceConsumer.sol";
 import {IChainLinkPriceConsumer} from "./IChainLinkPriceConsumer.sol";
 import "./ITuffOwnerV6.sol";
 
@@ -48,7 +49,6 @@ contract AaveLPManager is Context {
         uint256[] tokensTargetWeight;
         uint256 totalTargetWeight;
         uint256 totalBalanceInWeth;
-        uint24 poolFee;
         uint24 balanceBufferPercent;
         uint256 treasuryBalance;
         uint24 decimalPrecision;
@@ -201,7 +201,6 @@ contract AaveLPManager is Context {
         bm.totalTargetWeight = ss.totalTargetWeight;
 
         bm.totalBalanceInWeth = 0;
-        bm.poolFee = 3000;
         bm.balanceBufferPercent = ss.balanceBufferPercent;
         bm.decimalPrecision = ss.decimalPrecision;
 
@@ -443,6 +442,7 @@ contract AaveLPManager is Context {
     // we do not have to sort, which helps saves on gas.
     function balanceAaveLendingPool() public aaveInitLock onlyOwner {
         BalanceMetadata memory bm = getBalanceMetadata();
+        (uint256 tVBTWethQuote, uint128 decimalPrecision) = IUniswapPriceConsumer(address(this)).getTvbtWethQuote(3600);
 
         //Then, loop through again to balance tokens
         for (uint256 i = 0; i < bm.supportedTokens.length; i++) {
@@ -458,23 +458,27 @@ contract AaveLPManager is Context {
             require(tokenActualPercentage < uint(-1), "Cannot cast tokenActualPercentage - out of range of int max");
 
             //Only balance if token is under-allocated more than our buffer amount
-            int256 iPercentageDiff = int(tokenTargetPercentage) - int(tokenActualPercentage);
-            if (iPercentageDiff > bm.balanceBufferPercent) {
-
+            if (int(tokenTargetPercentage) - int(tokenActualPercentage) > bm.balanceBufferPercent) {
                 //We don't know ahead of time how many tokens will need balancing, but because we got here at least one
                 // token is under-balanced, which means at least one token is over-balanced. Thus, we can subtract one
                 // to optimize how quickly our token's balance
                 uint256 balanceIn = SafeMath.div(bm.treasuryBalance, bm.supportedTokens.length - 1);
 
                 if (balanceIn > 0) {
+                    //Find minimum token amount acceptable to receive for swapping `amountIn` tVBT
+                    uint256 tokenValueInTVBT = SafeMath.div(tVBTWethQuote, bm.tokensValueInWeth[i]);
+                    uint256 expectedAmountOut = SafeMath.mul(balanceIn, tokenValueInTVBT);
+                    uint256 amountOutMinimum = SafeMath.sub(expectedAmountOut,
+                        SafeMath.div(expectedAmountOut, 5));
+
                     SafeERC20.safeApprove(IERC20(address(this)), address(this), balanceIn);
                     uint256 amountOut = IUniswapManager(address(this)).swapExactInputMultihop(
                         address(this),
                         bm.supportedTokens[i],
-                        bm.poolFee,
-                        bm.poolFee,
+                        3000,
+                        3000,
                         balanceIn,
-                        0 //TODO: fix, should be based on an orcale
+                        amountOutMinimum
                     );
                     SafeERC20.safeApprove(IERC20(address(this)), address(this), 0);
 
