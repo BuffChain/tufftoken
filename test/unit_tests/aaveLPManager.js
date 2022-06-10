@@ -248,13 +248,13 @@ describe('AaveLPManager', function () {
         expect(tokenSwappedFor).to.equal(underBalanceTokenAddr);
         expect(amountIn).to.equal(startingTreasuryAmount.div(supportedTokens.length - 1));
 
-        const interestBuffer = hre.ethers.utils.parseUnits('1', 13);
+        const interestBuffer = hre.ethers.utils.parseEther('0.00001');
         const endUnderBalanceAToken = await tuffVBTDiamond.getATokenBalance(underBalanceTokenAddr);
         // Assert that balancing actually occurred and the ending balance didn't just increase due to interest
         expect(endUnderBalanceAToken).to.be.gte(startUnderBalanceAToken.add(amountOut));
         expect(endUnderBalanceAToken).to.be.lte(startUnderBalanceAToken.add(amountOut).add(interestBuffer));
 
-        //Finally, confirm that we didn't balance the other two tokens
+        // Assert that we didn't balance the other two tokens
         const endingAUSDCBal = await tuffVBTDiamond.getATokenBalance(consts("USDC_ADDR"));
         expect(endingAUSDCBal).to.be.lte(startingAUSDCBal.add(interestBuffer));
         const endingAUSDTBal = await tuffVBTDiamond.getATokenBalance(consts("USDT_ADDR"));
@@ -301,7 +301,7 @@ describe('AaveLPManager', function () {
         expect(amountIn2).to.equal(startingTreasuryAmount.div(supportedTokens.length - 1));
 
         // Assert that balancing actually occurred and the ending balance didn't just increase due to interest
-        const interestBuffer = hre.ethers.utils.parseUnits('1', 13);
+        const interestBuffer = hre.ethers.utils.parseEther('0.00001');
 
         const endUnderBalanceAToken1 = await tuffVBTDiamond.getATokenBalance(underBalanceTokenAddr1);
         expect(endUnderBalanceAToken1).to.be.gte(startUnderBalanceAToken1.add(amountOut1));
@@ -311,7 +311,7 @@ describe('AaveLPManager', function () {
         expect(endUnderBalanceAToken2).to.be.gte(startUnderBalanceAToken2.add(amountOut2));
         expect(endUnderBalanceAToken2).to.be.lte(startUnderBalanceAToken2.add(amountOut2).add(interestBuffer));
 
-        //Finally, confirm that we didn't balance the other two tokens
+        // Assert that we didn't balance the over-balanced token
         const endingAUSDTBal = await tuffVBTDiamond.getATokenBalance(consts("USDT_ADDR"));
         expect(endingAUSDTBal).to.be.lte(startingAUSDTBal.add(interestBuffer));
     });
