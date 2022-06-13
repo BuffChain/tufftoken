@@ -12,7 +12,8 @@ import {Address} from "hardhat-deploy/dist/types";
 import {
     BUFFCHAIN_INIT_TUFF_LIQUIDITY_PERCENTAGE,
     BUFFCHAIN_INIT_WETH_LIQUIDITY_WETH, TOKEN_DECIMALS,
-    TOKEN_SYMBOL
+    TOKEN_SYMBOL,
+    UNISWAP_POOL_OBSERVATION_CARDINALITY
 } from '../utils/consts';
 
 const {consts, UNISWAP_POOL_BASE_FEE} = require("../utils/consts");
@@ -87,6 +88,9 @@ async function createPool(uniswapV3Factory: IUniswapV3Factory, tuffDUU: TuffVBT)
 
     console.log(`Initializing ${TOKEN_SYMBOL} pool. Target price: ${price} ETH`);
     await tuffDUUUniswapPool.initialize(tuffDUUSqrtPriceX96);
+
+    console.log(`Setting the amount of observations the pool will track to [${UNISWAP_POOL_OBSERVATION_CARDINALITY}]`);
+    await tuffDUUUniswapPool.increaseObservationCardinalityNext(UNISWAP_POOL_OBSERVATION_CARDINALITY);
 
     console.log(`Excluding ${TOKEN_SYMBOL} Uniswap pool from fees`);
     await tuffDUU.excludeFromFee(tuffDUUUniswapPool.address);

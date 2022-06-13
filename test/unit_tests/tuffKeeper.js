@@ -7,7 +7,7 @@ const {randomBytes} = require('crypto');
 const Web3 = require('web3');
 const {mineBlock} = require("../../utils/back_test_utils");
 const utils = require("../../utils/test_utils");
-const {consts, TOKEN_DEV_FEE} = require("../../utils/consts");
+const {consts} = require("../../utils/consts");
 
 describe('TuffKeeper', function () {
 
@@ -47,6 +47,9 @@ describe('TuffKeeper', function () {
     });
 
     it('should perform upkeep on balancing assets', async () => {
+        //Increase the block time to prime the pool
+        await hre.ethers.provider.send("evm_increaseTime", [3600]);
+        await hre.ethers.provider.send("evm_mine", []);
 
         const interval = await tuffVBTDiamond.getBalanceAssetsInterval();
         const weekInSeconds = 86400 * 7;
