@@ -15,8 +15,7 @@ import {SafeERC20} from "@openzeppelin/contracts-v6/token/ERC20/SafeERC20.sol";
 
 import {AaveLPManagerLib} from "./AaveLPManagerLib.sol";
 import {IUniswapManager} from "./IUniswapManager.sol";
-import {IUniswapPriceConsumer} from "./IUniswapPriceConsumer.sol";
-import {IChainLinkPriceConsumer} from "./IChainLinkPriceConsumer.sol";
+import {IPriceConsumer} from "./IPriceConsumer.sol";
 import "./ITuffOwnerV6.sol";
 
 //Within this contract is a purposeful difference between percentage and weight. Percentage is a token value out of
@@ -216,7 +215,7 @@ contract AaveLPManager is Context {
                 10 ** uint256(18 - ERC20(bm.supportedTokens[i]).decimals()));
 
             //Get the value of each token in the same denomination, in this case WETH
-            uint256 wethQuote = IChainLinkPriceConsumer(address(this))
+            uint256 wethQuote = IPriceConsumer(address(this))
             .getChainLinkPrice(
                 ss.tokenMetadata[bm.supportedTokens[i]].chainlinkEthTokenAggrAddr
             );
@@ -442,7 +441,7 @@ contract AaveLPManager is Context {
     // we do not have to sort, which helps saves on gas.
     function balanceAaveLendingPool() public aaveInitLock onlyOwner {
         BalanceMetadata memory bm = getBalanceMetadata();
-        (uint256 tVBTWethQuote, uint128 decimalPrecision) = IUniswapPriceConsumer(address(this)).getTvbtWethQuote(3600);
+        (uint256 tVBTWethQuote, uint128 decimalPrecision) = IPriceConsumer(address(this)).getTvbtWethQuote(3600);
 
         //Then, loop through again to balance tokens
         for (uint256 i = 0; i < bm.supportedTokens.length; i++) {

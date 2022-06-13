@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: agpl-3.0
 pragma solidity >=0.7.0;
 
-library UniswapPriceConsumerLib {
+library PriceConsumerLib {
     //IMPORTANT: You must increment this string if you add a new variable to StateStorage that is not at the end
     string constant NAMESPACE =
-    "io.BuffChain.TuffToken.UniswapPriceConsumerLib.1";
+    "io.BuffChain.TuffToken.PriceConsumerLib.1";
     bytes32 constant POSITION = keccak256(bytes(NAMESPACE));
 
     struct StateStorage {

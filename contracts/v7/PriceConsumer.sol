@@ -6,23 +6,22 @@ import "@uniswap/v3-core/contracts/libraries/TickMath.sol";
 import "@uniswap/v3-core/contracts/libraries/FixedPoint96.sol";
 import "@uniswap/v3-core/contracts/libraries/FullMath.sol";
 import "@uniswap/v3-periphery/contracts/libraries/OracleLibrary.sol";
+import "@chainlink/contracts/src/v0.7/interfaces/AggregatorV3Interface.sol";
 import "@openzeppelin/contracts-v6/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts-v6/math/SafeMath.sol";
 
-import {UniswapPriceConsumerLib} from "./UniswapPriceConsumerLib.sol";
+import {PriceConsumerLib} from "./PriceConsumerLib.sol";
 
-import "hardhat/console.sol";
-
-contract UniswapPriceConsumer {
+contract PriceConsumer {
 
     using SafeMath for uint256;
 
-    modifier uniswapPriceConsumerInitLock() {
+    modifier priceConsumerInitLock() {
         require(
-            isUniswapPriceConsumerInit(),
+            isPriceConsumerInit(),
             string(
                 abi.encodePacked(
-                    UniswapPriceConsumerLib.NAMESPACE,
+                    PriceConsumerLib.NAMESPACE,
                     ": ",
                     "UNINITIALIZED"
                 )
@@ -31,28 +30,28 @@ contract UniswapPriceConsumer {
         _;
     }
 
-    function isUniswapPriceConsumerInit() public view returns (bool) {
-        UniswapPriceConsumerLib.StateStorage
-        storage ss = UniswapPriceConsumerLib.getState();
+    function isPriceConsumerInit() public view returns (bool) {
+        PriceConsumerLib.StateStorage
+        storage ss = PriceConsumerLib.getState();
         return ss.isInit;
     }
 
     //Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
     // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
-    function initUniswapPriceConsumer(address _factoryAddr) public {
+    function initPriceConsumer(address _factoryAddr) public {
         require(
-            !isUniswapPriceConsumerInit(),
+            !isPriceConsumerInit(),
             string(
                 abi.encodePacked(
-                    UniswapPriceConsumerLib.NAMESPACE,
+                    PriceConsumerLib.NAMESPACE,
                     ": ",
                     "ALREADY_INITIALIZED"
                 )
             )
         );
 
-        UniswapPriceConsumerLib.StateStorage
-        storage ss = UniswapPriceConsumerLib.getState();
+        PriceConsumerLib.StateStorage
+        storage ss = PriceConsumerLib.getState();
 
         ss.factoryAddr = _factoryAddr;
         ss.isInit = true;
@@ -60,25 +59,27 @@ contract UniswapPriceConsumer {
 
     function getTvbtWethQuote(
         uint32 _period
-    ) external view uniswapPriceConsumerInitLock returns (uint256, uint128) {
-        UniswapPriceConsumerLib.StateStorage
-        storage ss = UniswapPriceConsumerLib.getState();
+    ) external view priceConsumerInitLock returns (uint256, uint128) {
+        PriceConsumerLib.StateStorage
+        storage ss = PriceConsumerLib.getState();
 
         address _tokenA = address(this);
         address _tokenB = address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
         uint24 _fee = 3000;
-        uint128 _decimalPrecision = uint128(10 ** 4);
+//        uint128 _decimalPrecision = uint128(10 ** 9);
+        uint8 _decimalPrecision = 18;
 
         address _poolAddr = IUniswapV3Factory(ss.factoryAddr).getPool(
             _tokenA,
             _tokenB,
             _fee
         );
+
         require(
             _poolAddr != address(0),
             string(
                 abi.encodePacked(
-                    UniswapPriceConsumerLib.NAMESPACE,
+                    PriceConsumerLib.NAMESPACE,
                     ": ",
                     "Pool does not exist"
                 )
@@ -93,7 +94,7 @@ contract UniswapPriceConsumer {
         uint256 quoteAmt =
             OracleLibrary.getQuoteAtTick(
                 timeWeightedAverageTick,
-                _decimalPrecision,
+                uint128(10 ** _decimalPrecision),
                 _tokenA,
                 _tokenB
             );
@@ -101,5 +102,47 @@ contract UniswapPriceConsumer {
         require(quoteAmt > 0, "LDP");
 
         return (quoteAmt, _decimalPrecision);
+    }
+
+    ///ChainLink price feed functions
+    function getLatestRoundData(address _aggregatorAddr)
+    public
+    view
+    returns (
+        uint80,
+        int256,
+        uint256,
+        uint256,
+        uint80
+    )
+    {
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(_aggregatorAddr);
+        return priceFeed.latestRoundData();
+    }
+
+    function getDecimals(address _aggregatorAddr)
+    public
+    view
+    returns (
+        uint8
+    )
+    {
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(_aggregatorAddr);
+        return priceFeed.decimals();
+    }
+
+    function getChainLinkPrice(address _aggregatorAddr)
+    external
+    view
+    returns (uint256)
+    {
+        (
+        /*uint80 roundID*/,
+        int price,
+        /*uint startedAt*/,
+        /*uint timeStamp*/,
+        /*uint80 answeredInRound*/
+        ) = getLatestRoundData(_aggregatorAddr);
+        return uint256(price);
     }
 }

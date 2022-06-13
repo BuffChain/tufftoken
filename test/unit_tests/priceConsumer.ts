@@ -1,20 +1,28 @@
 // SPDX-License-Identifier: agpl-3.0
 
 import hre from "hardhat";
-import {Signer, BigNumber} from "ethers";
+import {BigNumber, Signer} from "ethers";
 import {expect} from "chai";
 
-import {TuffVBT, ChainLinkPriceConsumer} from "../../src/types";
+const {
+    expectRevert, // Assertions for transactions that should fail
+} = require('@openzeppelin/test-helpers');
 
-type TuffVBTDiamond = TuffVBT & ChainLinkPriceConsumer;
+import {TuffVBT, PriceConsumer} from "../../src/types";
+
+type TuffVBTDiamond = TuffVBT & PriceConsumer;
 
 import {consts, UNISWAP_POOL_BASE_FEE} from '../../utils/consts';
 import {
+    getDAIContract,
     getUniswapPriceQuote,
+    getUSDCContract,
+    getUSDTContract,
 } from '../../utils/test_utils';
 
-describe("ChainLinkPriceConsumer", function () {
+describe("PriceConsumer", function () {
 
+    const poolPeriod = 3600;
     let owner: Signer;
     let accounts: Signer[];
 
@@ -31,9 +39,34 @@ describe("ChainLinkPriceConsumer", function () {
     beforeEach(async function () {
         const {tDUU} = await hre.deployments.fixture();
         tuffVBTDiamond = await hre.ethers.getContractAt(tDUU.abi, tDUU.address, owner) as TuffVBTDiamond;
+
+        //Increase the block time to prime the pool
+        await hre.ethers.provider.send("evm_increaseTime", [poolPeriod]);
+        await hre.ethers.provider.send("evm_mine", []);
     });
 
-    it('should have an accurate quote (ETH to DAI)', async () => {
+    it('should have accurate and precise quote from Uniswap', async () => {
+        //Get on-chain quote
+        const [tuffVBTWethQuote, totalDecimalPrecision] = await tuffVBTDiamond.getTvbtWethQuote(poolPeriod);
+        const expectedTuffVBTWethQuote = tuffVBTWethQuote.toNumber() /
+            Math.pow(10, totalDecimalPrecision.toNumber());
+
+        //Get off-chain quote
+        const actualTuffVBTWethQuote = await getUniswapPriceQuote(
+            consts("WETH9_ADDR"),
+            tuffVBTDiamond.address,
+            UNISWAP_POOL_BASE_FEE,
+            poolPeriod,
+            false
+        );
+
+        //Compare quotes. Include a very small decimal buffer to allow for lost of precision when using
+        // DECIMAL_PRECISION and converting from Solidity BigNumbers to JavaScript numbers
+        const buffer = 1e-15;
+        expect(actualTuffVBTWethQuote).to.be.approximately(expectedTuffVBTWethQuote, buffer);
+    });
+
+    it('should have an accurate quote from ChainLink (ETH to DAI)', async () => {
         //Get on-chain quote
         const ethDaiDecimals = await tuffVBTDiamond.getDecimals(
             consts("CHAINLINK_ETH_DAI_AGGR_ADDR"));
@@ -56,7 +89,7 @@ describe("ChainLinkPriceConsumer", function () {
         expect(actualEthDaiQuote).to.be.approximately(expectedEthDaiQuote, buffer);
     });
 
-    it('should have similar quotes between stablecoins', async () => {
+    it('should have similar quotes from ChainLink between stablecoins', async () => {
         //DAI
         const ethDAIDecimals = await tuffVBTDiamond.getDecimals(
             consts("CHAINLINK_ETH_DAI_AGGR_ADDR"));

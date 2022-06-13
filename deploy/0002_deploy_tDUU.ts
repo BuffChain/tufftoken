@@ -29,8 +29,7 @@ module.exports = async () => {
             "TuffKeeper",
             "TokenMaturity",
             "UniswapManager",
-            "UniswapPriceConsumer",
-            "ChainLinkPriceConsumer"
+            "PriceConsumer"
         ],
         log: true
     });
@@ -97,9 +96,9 @@ module.exports = async () => {
         logDeploymentTx("Initialized UniswapManager:", initTx);
     }
 
-    if (!await tuffDUU.isUniswapPriceConsumerInit()) {
-        let initTx = await tuffDUU.initUniswapPriceConsumer(consts("UNISWAP_V3_FACTORY_ADDR"));
-        logDeploymentTx("Initialized UniswapPriceConsumer:", initTx);
+    if (!await tuffDUU.isPriceConsumerInit()) {
+        let initTx = await tuffDUU.initPriceConsumer(consts("UNISWAP_V3_FACTORY_ADDR"));
+        logDeploymentTx("Initialized PriceConsumer:", initTx);
     }
 };
 
