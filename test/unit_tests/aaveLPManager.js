@@ -53,6 +53,10 @@ describe('AaveLPManager', function () {
         tuffVBTDiamond = await hre.ethers.getContractAt(tDUU.abi, tDUU.address, owner);
 
         await utils.sendTokensToAddr(accounts.at(-1), tuffVBTDiamond.address);
+
+        //Increase the block time to prime the pool
+        await hre.ethers.provider.send("evm_increaseTime", [3600]);
+        await hre.ethers.provider.send("evm_mine", []);
     });
 
     it('should be initialized', async () => {
