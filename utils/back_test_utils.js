@@ -161,11 +161,8 @@ async function sendTxsFromBlocks(startBlockNumber, endBlockNumber) {
  * @returns {Promise<void>}
  */
 async function mineBlock() {
-    console.log(`Increasing time`);
     await hre.ethers.provider.send("evm_increaseTime", [consts("BLOCKTIME")]);
-    console.log(`Mining block`);
     await hre.ethers.provider.send("evm_mine");
-    console.log(`Finished mining block`);
 }
 
 function convertToHexString(str) {

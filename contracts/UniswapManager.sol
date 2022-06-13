@@ -61,25 +61,23 @@ contract UniswapManager {
         ss.isInit = true;
     }
 
-    //TODO: Fix this
-    /// based on https://docs.uniswap.org/protocol/guides/swaps/multihop-swaps
-    function swapExactInputMultihop(
+    //    based on https://docs.uniswap.org/protocol/guides/swaps/single-swaps
+    /// @notice swapExactOutputSingle swaps a minimum possible amount of DAI for a fixed amount of WETH.
+    /// @dev The calling address must approve this contract to spend its DAI for this function to succeed. As the amount of input DAI is variable,
+    ///  the calling address will need to approve for a slightly higher amount, anticipating some variance.
+    /// @param amountIn The exact amount of `outputToken` to receive from the swap.
+    /// @param amountOutMinimum: The lowest amount of `outputToken` we are willing to receive from spending the `amountIn` of `inputToken`
+    ///     Ideally, use an oracle or other data source to choose a safer value for amountOutMinimum.
+    /// @return amountOut The amount of DAI actually spent in the swap.
+    function swapExactInputSingle(
         address inputToken,
-        uint256 poolAFee,
-        uint256 poolBFee,
         address outputToken,
-        uint256 amountIn
+        uint24 poolFee,
+        uint256 amountIn,
+        uint256 amountOutMinimum
     ) external onlyOwner returns (uint256 amountOut) {
         UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
             .getState();
-
-        //        //Transfer `amountIn` of `inputToken` to this contract
-        //        TransferHelper.safeTransferFrom(
-        //            inputToken,
-        //            address(this),
-        //            address(this),
-        //            amountIn
-        //        );
 
         //Approve the router to spend `inputToken`
         TransferHelper.safeApprove(
@@ -88,60 +86,7 @@ contract UniswapManager {
             amountIn
         );
 
-        //Multiple pool swaps are encoded through bytes called a `path`. A path is a sequence of token addresses and
-        // poolFees that define the pools used in the swaps.The format for pool encoding is (tokenIn, fee,
-        // tokenOut/tokenIn, fee, tokenOut) where tokenIn/tokenOut parameter is the shared token across the pools.
-        // Since we are swapping `inputToken` to WETH9 and then WETH9 to `outputToken` the path encoding is
-        // (inputToken, 0.3%, WETH9, 0.3%, outputToken).
-        ISwapRouter.ExactInputParams memory params = ISwapRouter
-            .ExactInputParams({
-                path: abi.encodePacked(
-                    inputToken,
-                    poolAFee,
-                    ss.WETHAddress,
-                    poolBFee,
-                    outputToken
-                ),
-                recipient: address(this),
-                deadline: block.timestamp,
-                amountIn: amountIn,
-                amountOutMinimum: 0
-            });
-
-        // Executes the swap.
-        amountOut = ss.swapRouter.exactInput(params);
-    }
-
-    //    based on https://docs.uniswap.org/protocol/guides/swaps/single-swaps
-    function swapExactInputSingle(
-        address inputToken,
-        uint24 poolFee,
-        address outputToken,
-        uint256 amountIn
-    ) external onlyOwner returns (uint256 amountOut) {
-        UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
-            .getState();
-
-        // msg.sender must approve this contract
-
-        // Transfer the specified amount of DAI to this contract.
-        TransferHelper.safeTransferFrom(
-            inputToken,
-            address(this),
-            address(this),
-            amountIn
-        );
-
-        // Approve the router to spend DAI.
-        TransferHelper.safeApprove(
-            inputToken,
-            address(ss.swapRouter),
-            amountIn
-        );
-
-        //TODO: Need to fix amountOutMinimum set to 0!
-        // Naively set amountOutMinimum to 0. In production, use an oracle or other data source to choose a safer value for amountOutMinimum.
-        // We also set the sqrtPriceLimitx96 to be 0 to ensure we swap our exact input amount.
+        //Set the sqrtPriceLimitx96 to be 0 to ensure we swap our exact input amount.
         ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
             .ExactInputSingleParams({
                 tokenIn: inputToken,
@@ -150,11 +95,10 @@ contract UniswapManager {
                 recipient: address(this),
                 deadline: block.timestamp,
                 amountIn: amountIn,
-                amountOutMinimum: 0,
+                amountOutMinimum: amountOutMinimum,
                 sqrtPriceLimitX96: 0
             });
 
-        // The call to `exactInputSingle` executes the swap.
         amountOut = ss.swapRouter.exactInputSingle(params);
     }
 
@@ -174,35 +118,22 @@ contract UniswapManager {
         UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
             .getState();
 
-        //Transfer the specified amount of `inputToken` to this contract
-        TransferHelper.safeTransferFrom(
-            inputToken,
-            address(this),
-            address(this),
-            amountInMaximum
-        );
-
         //Approve the router to spend the specified `amountInMaximum` of `inputToken`
         TransferHelper.safeApprove(
             inputToken,
             address(ss.swapRouter),
             amountInMaximum
         );
-        TransferHelper.safeApprove(
-            inputToken,
-            address(ss.swapRouter),
-            amountInMaximum
-        );
 
-        ISwapRouter.ExactOutputSingleParams memory params = ISwapRouter
-            .ExactOutputSingleParams({
+        ISwapRouter.ExactOutputSingleParams memory params =
+            ISwapRouter.ExactOutputSingleParams({
                 tokenIn: inputToken,
                 tokenOut: outputToken,
                 fee: poolFee,
                 recipient: address(this),
                 deadline: block.timestamp,
                 amountOut: amountOut,
-                amountInMaximum: 0,
+                amountInMaximum: amountInMaximum,
                 sqrtPriceLimitX96: 0
             });
 
@@ -220,5 +151,42 @@ contract UniswapManager {
                 amountInMaximum - amountIn
             );
         }
+    }
+
+    /// based on https://docs.uniswap.org/protocol/guides/swaps/multihop-swaps
+    function swapExactInputMultihop(
+        address inputToken,
+        address outputToken,
+        uint24 poolAFee,
+        uint24 poolBFee,
+        uint256 amountIn,
+        uint256 amountOutMinimum
+    ) external onlyOwner returns (uint256) {
+        UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
+        .getState();
+
+        //Approve the router to spend `inputToken`
+        TransferHelper.safeApprove(
+            inputToken,
+            address(ss.swapRouter),
+            amountIn
+        );
+
+        ISwapRouter.ExactInputParams memory params = ISwapRouter
+        .ExactInputParams({
+            path: abi.encodePacked(
+                inputToken,
+                poolAFee,
+                ss.WETHAddress,
+                poolBFee,
+                outputToken
+            ),
+            recipient: address(this),
+            deadline: block.timestamp,
+            amountIn: amountIn,
+            amountOutMinimum: amountOutMinimum
+        });
+
+        return ss.swapRouter.exactInput(params);
     }
 }

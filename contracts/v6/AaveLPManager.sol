@@ -12,7 +12,6 @@ import {IERC20} from "@openzeppelin/contracts-v6/token/ERC20/IERC20.sol";
 
 import {AaveLPManagerLib} from "./AaveLPManagerLib.sol";
 import {IUniswapManager} from "./IUniswapManager.sol";
-import {IUniswapPriceConsumer} from "./IUniswapPriceConsumer.sol";
 import "./ITuffOwnerV6.sol";
 
 contract AaveLPManager is Context {
@@ -350,14 +349,15 @@ contract AaveLPManager is Context {
             uint256 aTokenBalance = getATokenBalance(supportedTokens[i]);
 
             // Get the value of each token in the same denomination, in this case WETH
+            //TODO: fix in TUFF-149
             uint32 period = 60; //TODO: Make 3600?
-            uint256 wethQuote = IUniswapPriceConsumer(address(this))
-                .getUniswapQuote(
-                    ss.wethAddr,
-                    supportedTokens[i],
-                    poolFee,
-                    period
-                );
+            uint256 wethQuote = 10000;
+//                .getUniswapQuote(
+//                    ss.wethAddr,
+//                    supportedTokens[i],
+//                    poolFee,
+//                    period
+//                );
 
             //Track balances
             uint256 tokenValueInWeth = SafeMath.mul(aTokenBalance, wethQuote);
@@ -407,9 +407,10 @@ contract AaveLPManager is Context {
 
                 IUniswapManager(address(this)).swapExactInputSingle(
                     supportedTokens[i],
-                    poolFee,
                     ss.wethAddr,
-                    balanceOutAmountInWeth
+                    poolFee,
+                    balanceOutAmountInWeth,
+                    0
                 );
 
                 //TODO: Add event when balance swap occurs

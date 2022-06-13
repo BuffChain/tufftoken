@@ -17,9 +17,9 @@ module.exports = async () => {
     const deployerAcct = await hre.ethers.getSigner(deployer);
     const buffChainAcct = await hre.ethers.getSigner(buffChain);
 
-    //Arbitrary amounts
-    const ethAmt = hre.ethers.utils.parseEther("100");
-    const wethAmt = hre.ethers.utils.parseEther("40");
+    //Arbitrary amounts, at least `BUFFCHAIN_INIT_WETH_LIQUIDITY_WETH` is needed
+    const ethAmt = hre.ethers.utils.parseEther("500");
+    const wethAmt = hre.ethers.utils.parseEther("200");
 
     console.log(`Sending [${ethAmt}] ETH to buffChain [${buffChain}]`);
     await deployerAcct.sendTransaction({

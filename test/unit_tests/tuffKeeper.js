@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: agpl-3.0
 
 const {expect} = require("chai");
+const {expectRevert} = require("@openzeppelin/test-helpers");
 const hre = require("hardhat");
 const {randomBytes} = require('crypto');
 const Web3 = require('web3');
 const {mineBlock} = require("../../utils/back_test_utils");
 const utils = require("../../utils/test_utils");
 const {consts, TOKEN_DEV_FEE} = require("../../utils/consts");
-const {expectRevert} = require("@openzeppelin/test-helpers");
-const web3 = new Web3('wss://mainnet.infura.io/ws/v3/'  +  process.env.INFURA_KEY);
 
 describe('TuffKeeper', function () {
 
@@ -26,8 +25,8 @@ describe('TuffKeeper', function () {
     });
 
     beforeEach(async function () {
-        const {TuffVBTDiamond} = await hre.deployments.fixture();
-        tuffVBTDiamond = await hre.ethers.getContractAt(TuffVBTDiamond.abi, TuffVBTDiamond.address, owner);
+        const {tDUU} = await hre.deployments.fixture();
+        tuffVBTDiamond = await hre.ethers.getContractAt(tDUU.abi, tDUU.address, owner);
 
         await utils.sendTokensToAddr(accounts.at(-1), tuffVBTDiamond.address);
 
@@ -81,7 +80,7 @@ describe('TuffKeeper', function () {
 
         expect(needed).to.equal(false, "should not need upkeep yet.");
 
-        const expectedBlockTimestamp = parseInt(web3.utils.toAscii(performData));
+        const expectedBlockTimestamp = parseInt(Web3.utils.toAscii(performData));
 
         let latestBlock = await hre.ethers.provider.getBlock("latest")
         const startingBlockTimestamp = latestBlock.timestamp;
@@ -131,5 +130,4 @@ describe('TuffKeeper', function () {
         interval = await tuffVBTDiamond.getDevFee();
         expect(interval).to.equal(1, "interval should be left unchanged");
     });
-
 });

@@ -7,6 +7,7 @@ const {
     expectRevert, // Assertions for transactions that should fail
 } = require('@openzeppelin/test-helpers');
 const utils = require("../../utils/test_utils");
+const {getERC20Contract} = require("../../utils/test_utils");
 const {TOKEN_TOTAL_SUPPLY, TOKEN_DEV_FEE} = require("../../utils/consts");
 
 describe("TuffGovernor", function () {
@@ -45,7 +46,7 @@ describe("TuffGovernor", function () {
 
     async function assertProposalCreated(description) {
         const tokenAddress = tuffToken.address
-        const token = await hre.ethers.getContractAt('ERC20', tokenAddress);
+        const token = await getERC20Contract(tokenAddress);
         const calldata = token.interface.encodeFunctionData('name', []);
 
         const targets = [tokenAddress];
@@ -182,6 +183,4 @@ describe("TuffGovernor", function () {
         votingPeriod = await tuffGovernor.votingPeriod();
         expect(votingPeriod).to.equal(1, "voting period should be left unchanged");
     });
-
-
 });

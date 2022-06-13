@@ -61,8 +61,8 @@ describe('AaveLPManager', function () {
     });
 
     beforeEach(async function () {
-        const {TuffVBTDiamond} = await hre.deployments.fixture();
-        tuffVBTDiamond = await hre.ethers.getContractAt(TuffVBTDiamond.abi, TuffVBTDiamond.address, owner);
+        const {tDUU} = await hre.deployments.fixture();
+        tuffVBTDiamond = await hre.ethers.getContractAt(tDUU.abi, tDUU.address, owner);
 
         await utils.sendTokensToAddr(accounts.at(-1), tuffVBTDiamond.address);
     });
