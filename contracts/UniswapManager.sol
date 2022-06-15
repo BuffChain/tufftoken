@@ -14,20 +14,6 @@ contract UniswapManager {
         _;
     }
 
-    modifier uniswapManagerInitLock() {
-        require(
-            isUniswapManagerInit(),
-            string(
-                abi.encodePacked(
-                    UniswapManagerLib.NAMESPACE,
-                    ": ",
-                    "UNINITIALIZED"
-                )
-            )
-        );
-        _;
-    }
-
     function isUniswapManagerInit() public view returns (bool) {
         UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
             .getState();

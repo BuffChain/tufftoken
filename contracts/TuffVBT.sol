@@ -6,11 +6,11 @@ import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
 import "@openzeppelin/contracts/utils/Address.sol";
 
+import {TuffVBTLib} from "./TuffVBTLib.sol";
 import "./TokenMaturity.sol";
 import "./TuffOwner.sol";
-import {TuffVBTStorage, WithStorage} from "./LibStorage.sol";
 
-contract TuffVBT is Context, IERC20, WithStorage {
+contract TuffVBT is Context, IERC20 {
     modifier onlyOwner() {
         TuffOwner(address(this)).requireOnlyOwner(msg.sender);
         _;
@@ -19,16 +19,64 @@ contract TuffVBT is Context, IERC20, WithStorage {
     using SafeMath for uint256;
     using Address for address;
 
+    //Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
+    // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
+    function initTuffVBT(
+        address initialOwner,
+        string memory name,
+        string memory symbol,
+        uint8 decimals,
+        uint256 farmFee,
+        uint256 devFee,
+        address devWalletAddress,
+        uint256 totalSupply
+    ) public onlyOwner {
+        require(
+            !isTuffVBTInit(),
+            string(
+                abi.encodePacked(
+                    TuffVBTLib.NAMESPACE,
+                    ": ",
+                    "ALREADY_INITIALIZED"
+                )
+            )
+        );
+
+        TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
+
+        ss.name = name;
+        ss.symbol = symbol;
+        ss.decimals = decimals;
+        ss.farmFee = farmFee;
+        ss.devFee = devFee;
+        ss.devWalletAddress = devWalletAddress;
+        ss.totalSupply = totalSupply * 10**ss.decimals;
+
+        //Set owner balancer and exclude from fees
+        ss.balances[initialOwner] = ss.totalSupply;
+        ss.isExcludedFromFee[initialOwner] = true;
+
+        ss.isInit = true;
+    }
+
+    function isTuffVBTInit() public view returns (bool) {
+        TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
+        return ss.isInit;
+    }
+
     function name() public view returns (string memory) {
-        return tuffVBTStorage().name;
+        TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
+        return ss.name;
     }
 
     function symbol() public view returns (string memory) {
-        return tuffVBTStorage().symbol;
+        TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
+        return ss.symbol;
     }
 
     function decimals() public view returns (uint8) {
-        return tuffVBTStorage().decimals;
+        TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
+        return ss.decimals;
     }
 
     function totalSupply()
@@ -37,23 +85,28 @@ contract TuffVBT is Context, IERC20, WithStorage {
         override
         returns (uint256)
     {
-        return tuffVBTStorage().totalSupply;
+        TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
+        return ss.totalSupply;
     }
 
     function getFarmFee() public view returns (uint256) {
-        return tuffVBTStorage().farmFee;
+        TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
+        return ss.farmFee;
     }
 
     function setFarmFee(uint256 _farmFee) public onlyOwner {
-        tuffVBTStorage().farmFee = _farmFee;
+        TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
+        ss.farmFee = _farmFee;
     }
 
     function getDevFee() public view returns (uint256) {
-        return tuffVBTStorage().devFee;
+        TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
+        return ss.devFee;
     }
 
     function setDevFee(uint256 _devFee) public onlyOwner {
-        tuffVBTStorage().devFee = _devFee;
+        TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
+        ss.devFee = _devFee;
     }
 
     function getDevWalletAddress()
@@ -61,14 +114,16 @@ contract TuffVBT is Context, IERC20, WithStorage {
         view
         returns (address)
     {
-        return tuffVBTStorage().devWalletAddress;
+        TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
+        return ss.devWalletAddress;
     }
 
     function setDevWalletAddress(address _devWalletAddress)
         public
         onlyOwner
     {
-        tuffVBTStorage().devWalletAddress = _devWalletAddress;
+        TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
+        ss.devWalletAddress = _devWalletAddress;
     }
 
     function balanceOf(address account)
@@ -77,7 +132,8 @@ contract TuffVBT is Context, IERC20, WithStorage {
         override
         returns (uint256)
     {
-        return tuffVBTStorage().balances[account];
+        TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
+        return ss.balances[account];
     }
 
     function transfer(address recipient, uint256 amount)
@@ -95,7 +151,8 @@ contract TuffVBT is Context, IERC20, WithStorage {
         override
         returns (uint256)
     {
-        return tuffVBTStorage().allowances[owner][spender];
+        TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
+        return ss.allowances[owner][spender];
     }
 
     function approve(address spender, uint256 amount)
@@ -158,7 +215,6 @@ contract TuffVBT is Context, IERC20, WithStorage {
     function increaseAllowance(address spender, uint256 addedValue)
         public
         virtual
-
         returns (bool)
     {
         address owner = _msgSender();
@@ -183,7 +239,6 @@ contract TuffVBT is Context, IERC20, WithStorage {
     function decreaseAllowance(address spender, uint256 subtractedValue)
         public
         virtual
-
         returns (bool)
     {
         address owner = _msgSender();
@@ -200,11 +255,13 @@ contract TuffVBT is Context, IERC20, WithStorage {
     }
 
     function excludeFromFee(address account) public onlyOwner {
-        tuffVBTStorage().isExcludedFromFee[account] = true;
+        TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
+        ss.isExcludedFromFee[account] = true;
     }
 
     function includeInFee(address account) public onlyOwner {
-        tuffVBTStorage().isExcludedFromFee[account] = false;
+        TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
+        ss.isExcludedFromFee[account] = false;
     }
 
     function isExcludedFromFee(address account)
@@ -213,7 +270,8 @@ contract TuffVBT is Context, IERC20, WithStorage {
         onlyOwner
         returns (bool)
     {
-        return tuffVBTStorage().isExcludedFromFee[account];
+        TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
+        return ss.isExcludedFromFee[account];
     }
 
     function calculateFee(
@@ -227,7 +285,13 @@ contract TuffVBT is Context, IERC20, WithStorage {
         uint256 fee = _amount.mul(feePercent).div(10**2);
         require(
             fee > 0,
-            "Insufficient amount."
+            string(
+                abi.encodePacked(
+                    TuffVBTLib.NAMESPACE,
+                    ": ",
+                    "Insufficient amount."
+                )
+            )
         );
         return fee;
     }
@@ -253,7 +317,9 @@ contract TuffVBT is Context, IERC20, WithStorage {
         require(owner != address(0), "ERC20: approve from the zero address");
         require(spender != address(0), "ERC20: approve to the zero address");
 
-        tuffVBTStorage().allowances[owner][spender] = amount;
+        TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
+
+        ss.allowances[owner][spender] = amount;
         emit Approval(owner, spender, amount);
     }
 
@@ -280,16 +346,16 @@ contract TuffVBT is Context, IERC20, WithStorage {
         require(to != address(0), "ERC20: transfer to the zero address");
         require(amount > 0, "Transfer amount must be greater than zero");
 
-        TuffVBTStorage storage s = tuffVBTStorage();
+        TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
 
-        uint256 fromBal = s.balances[from];
+        uint256 fromBal = ss.balances[from];
         require(fromBal >= amount, "Sender does not have adequate funds.");
 
         //indicates if fee should be deducted from transfer
         bool takeFee = true;
 
         //if any account belongs to _isExcludedFromFee account then remove the fee
-        if (s.isExcludedFromFee[from] || s.isExcludedFromFee[to]) {
+        if (ss.isExcludedFromFee[from] || ss.isExcludedFromFee[to]) {
             takeFee = false;
         }
 
@@ -298,20 +364,20 @@ contract TuffVBT is Context, IERC20, WithStorage {
             takeFee = false;
         }
 
-        uint256 farmFeeAmount = calculateFee(amount, s.farmFee, takeFee);
+        uint256 farmFeeAmount = calculateFee(amount, ss.farmFee, takeFee);
 
         uint256 devFeeAmount = 0;
-        if (s.devFee != 0) {
-            devFeeAmount = calculateFee(amount, s.devFee, takeFee);
+        if (ss.devFee != 0) {
+            devFeeAmount = calculateFee(amount, ss.devFee, takeFee);
         }
 
         uint256 totalFeeAmount = farmFeeAmount.add(devFeeAmount);
         uint256 transferAmount = amount.sub(totalFeeAmount);
 
-        s.balances[from] = fromBal.sub(amount);
-        s.balances[to] = s.balances[to].add(transferAmount);
+        ss.balances[from] = fromBal.sub(amount);
+        ss.balances[to] = ss.balances[to].add(transferAmount);
 
-        s.balances[address(this)] = s.balances[address(this)].add(
+        ss.balances[address(this)] = ss.balances[address(this)].add(
             farmFeeAmount
         );
 
@@ -319,10 +385,10 @@ contract TuffVBT is Context, IERC20, WithStorage {
         emit Transfer(from, address(this), farmFeeAmount);
 
         if (devFeeAmount != 0) {
-            s.balances[s.devWalletAddress] = s
-                .balances[s.devWalletAddress]
+            ss.balances[ss.devWalletAddress] = ss
+                .balances[ss.devWalletAddress]
                 .add(devFeeAmount);
-            emit Transfer(from, s.devWalletAddress, devFeeAmount);
+            emit Transfer(from, ss.devWalletAddress, devFeeAmount);
         }
     }
 
@@ -332,14 +398,14 @@ contract TuffVBT is Context, IERC20, WithStorage {
     {
         require(account != address(0), "ERC20: burn from the zero address");
 
-        TuffVBTStorage storage s = tuffVBTStorage();
+        TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
 
-        uint256 accountBalance = s.balances[account];
+        uint256 accountBalance = ss.balances[account];
         require(accountBalance >= amount, "ERC20: burn amount exceeds balance");
         unchecked {
-            s.balances[account] = accountBalance - amount;
+            ss.balances[account] = accountBalance - amount;
         }
-        s.totalSupply -= amount;
+        ss.totalSupply -= amount;
 
         emit Transfer(account, address(0), amount);
     }

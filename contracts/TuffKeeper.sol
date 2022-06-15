@@ -15,16 +15,6 @@ contract TuffKeeper is KeeperCompatibleInterface {
         _;
     }
 
-    modifier initTuffKeeperLock() {
-        require(
-            isTuffKeeperInit(),
-            string(
-                abi.encodePacked(TuffKeeperLib.NAMESPACE, ": ", "UNINITIALIZED")
-            )
-        );
-        _;
-    }
-
     function isTuffKeeperInit() public view returns (bool) {
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
         return ss.isInit;
@@ -56,7 +46,7 @@ contract TuffKeeper is KeeperCompatibleInterface {
 
     function setTokenMaturityInterval(uint256 _tokenMaturityInterval)
         public
-        initTuffKeeperLock
+
         onlyOwner
     {
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
@@ -70,7 +60,7 @@ contract TuffKeeper is KeeperCompatibleInterface {
 
     function setBalanceAssetsInterval(uint256 _balanceAssetsInterval)
         public
-        initTuffKeeperLock
+
         onlyOwner
     {
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
@@ -84,7 +74,7 @@ contract TuffKeeper is KeeperCompatibleInterface {
 
     function setLastTokenMaturityTimestamp(uint256 _lastTimestamp)
         public
-        initTuffKeeperLock
+
         onlyOwner
     {
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
@@ -98,7 +88,7 @@ contract TuffKeeper is KeeperCompatibleInterface {
 
     function setLastBalanceAssetsTimestamp(uint256 _lastTimestamp)
         public
-        initTuffKeeperLock
+
         onlyOwner
     {
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
@@ -114,7 +104,7 @@ contract TuffKeeper is KeeperCompatibleInterface {
         uint256 timestamp,
         uint256 lastTimestamp,
         uint256 interval
-    ) private view initTuffKeeperLock returns (bool) {
+    ) private view returns (bool) {
         return (timestamp - lastTimestamp) >= interval;
     }
 
@@ -124,7 +114,6 @@ contract TuffKeeper is KeeperCompatibleInterface {
         external
         view
         override
-        initTuffKeeperLock
         returns (bool needed, bytes memory performData)
     {
         needed =
@@ -143,7 +132,7 @@ contract TuffKeeper is KeeperCompatibleInterface {
 
     function performUpkeep(
         bytes calldata /* performData */
-    ) external override initTuffKeeperLock {
+    ) external override {
         TokenMaturity tokenMaturity = TokenMaturity(address(this));
 
         if (

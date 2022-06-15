@@ -16,20 +16,6 @@ contract PriceConsumer {
 
     using SafeMath for uint256;
 
-    modifier priceConsumerInitLock() {
-        require(
-            isPriceConsumerInit(),
-            string(
-                abi.encodePacked(
-                    PriceConsumerLib.NAMESPACE,
-                    ": ",
-                    "UNINITIALIZED"
-                )
-            )
-        );
-        _;
-    }
-
     function isPriceConsumerInit() public view returns (bool) {
         PriceConsumerLib.StateStorage
         storage ss = PriceConsumerLib.getState();
@@ -59,7 +45,7 @@ contract PriceConsumer {
 
     function getTvbtWethQuote(
         uint32 _period
-    ) external view priceConsumerInitLock returns (uint256, uint128) {
+    ) external view returns (uint256, uint128) {
         PriceConsumerLib.StateStorage
         storage ss = PriceConsumerLib.getState();
 

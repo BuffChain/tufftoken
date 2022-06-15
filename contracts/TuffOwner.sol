@@ -9,16 +9,6 @@ import "./TuffOwnerLib.sol";
  * the existing definition and we need to allow calls coming from other facets on the diamond contract.
  */
 contract TuffOwner {
-    modifier tuffOwnerInitLock() {
-        require(
-            isTuffOwnerInit(),
-            string(
-                abi.encodePacked(TuffOwnerLib.NAMESPACE, ": ", "UNINITIALIZED")
-            )
-        );
-        _;
-    }
-
     function isTuffOwnerInit() public view returns (bool) {
         TuffOwnerLib.StateStorage storage ss = TuffOwnerLib.getState();
         return ss.isInit;

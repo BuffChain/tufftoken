@@ -26,20 +26,6 @@ contract AaveLPManager is Context {
         _;
     }
 
-    modifier aaveInitLock() {
-        require(
-            isAaveInit(),
-            string(
-                abi.encodePacked(
-                    AaveLPManagerLib.NAMESPACE,
-                    ": ",
-                    "UNINITIALIZED"
-                )
-            )
-        );
-        _;
-    }
-
     using SafeMath for uint256;
 
     struct BalanceMetadata {
@@ -53,8 +39,8 @@ contract AaveLPManager is Context {
         uint24 decimalPrecision;
     }
 
-    //Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
-    // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
+    //Basically a constructor, but Diamonds use their own state which the constructor of a contract is not a part of.
+    // We imitate a constructor with a one-time only function. This is called immediately after deployment
     function initAaveLPManager(
         address _lendingPoolProviderAddr,
         address _protocolDataProviderAddr,
@@ -89,7 +75,7 @@ contract AaveLPManager is Context {
         return ss.isInit;
     }
 
-    function getAaveLPAddr() public view aaveInitLock returns (address) {
+    function getAaveLPAddr() public view returns (address) {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
         return LendingPoolAddressesProvider(ss.lpProviderAddr).getLendingPool();
     }
@@ -97,7 +83,7 @@ contract AaveLPManager is Context {
     function getProtocolDataProviderAddr()
         public
         view
-        aaveInitLock
+
         returns (address)
     {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
@@ -107,7 +93,7 @@ contract AaveLPManager is Context {
     function getBalanceBufferPercent()
         public
         view
-        aaveInitLock
+
         returns (uint24)
     {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
@@ -116,7 +102,7 @@ contract AaveLPManager is Context {
 
     function setBalanceBufferPercent(uint24 _balanceBufferPercent)
         public
-        aaveInitLock onlyOwner
+    onlyOwner
     {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
         ss.balanceBufferPercent = _balanceBufferPercent;
@@ -125,7 +111,6 @@ contract AaveLPManager is Context {
     function getAllAaveSupportedTokens()
     public
     view
-    aaveInitLock
     returns (address[] memory)
     {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
@@ -135,7 +120,7 @@ contract AaveLPManager is Context {
     function setAaveTokenTargetWeight(
         address tokenAddr,
         uint24 targetWeight
-    ) public aaveInitLock onlyOwner {
+    ) public onlyOwner {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
 
         ss.totalTargetWeight = SafeMath.sub(
@@ -153,7 +138,6 @@ contract AaveLPManager is Context {
     function getAaveTokenTargetWeight(address tokenAddr)
     public
     view
-    aaveInitLock
     returns (uint256)
     {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
@@ -163,7 +147,6 @@ contract AaveLPManager is Context {
     function getAaveTokenCurrentPercentage(address tokenAddr)
     public
     view
-    aaveInitLock
     returns (uint256)
     {
         BalanceMetadata memory bm = getBalanceMetadata();
@@ -184,7 +167,6 @@ contract AaveLPManager is Context {
     function getBalanceMetadata()
     private
     view
-    aaveInitLock
     returns (BalanceMetadata memory)
     {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
@@ -236,7 +218,6 @@ contract AaveLPManager is Context {
     function getAaveTotalTargetWeight()
     public
     view
-    aaveInitLock
     returns (uint256)
     {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
@@ -246,7 +227,6 @@ contract AaveLPManager is Context {
     function getAaveIncome(address tokenAddr)
     public
     view
-    aaveInitLock
     returns (uint256)
     {
         return
@@ -257,7 +237,6 @@ contract AaveLPManager is Context {
     function getATokenBalance(address asset)
     public
     view
-    aaveInitLock
     returns (uint256)
     {
         (
@@ -278,7 +257,6 @@ contract AaveLPManager is Context {
     function getATokenAddress(address asset)
     public
     view
-    aaveInitLock
     returns (address)
     {
         (address aTokenAddress, , ) = AaveProtocolDataProvider(
@@ -289,7 +267,7 @@ contract AaveLPManager is Context {
 
     function depositToAave(address erc20TokenAddr, uint256 amount)
         public
-        aaveInitLock
+
         onlyOwner
     {
         (bool _isSupportedToken, ) = isAaveSupportedToken(erc20TokenAddr);
@@ -316,7 +294,7 @@ contract AaveLPManager is Context {
     function isAaveSupportedToken(address tokenAddr)
         public
         view
-        aaveInitLock
+
         returns (bool, uint256)
     {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
@@ -336,7 +314,7 @@ contract AaveLPManager is Context {
 
     function addAaveSupportedToken(address tokenAddr, address chainlinkEthTokenAggrAddr, uint24 targetWeight)
         public
-        aaveInitLock
+
         onlyOwner
     {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
@@ -356,7 +334,7 @@ contract AaveLPManager is Context {
 
     function removeAaveSupportedToken(address tokenAddr)
         public
-        aaveInitLock
+
         onlyOwner
     {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
@@ -380,7 +358,7 @@ contract AaveLPManager is Context {
 
     function liquidateAaveTreasury()
         public
-        aaveInitLock
+
         onlyOwner
         returns (bool)
     {
@@ -398,7 +376,7 @@ contract AaveLPManager is Context {
 
     function withdrawFromAave(address erc20TokenAddr, uint256 amount)
         public
-        aaveInitLock
+
         onlyOwner
         returns (uint256)
     {
@@ -426,7 +404,7 @@ contract AaveLPManager is Context {
             );
     }
 
-    function withdrawAllFromAave(address asset) public aaveInitLock onlyOwner {
+    function withdrawAllFromAave(address asset) public onlyOwner {
         withdrawFromAave(asset, type(uint256).max);
     }
 
@@ -439,7 +417,7 @@ contract AaveLPManager is Context {
     // finally swap and deposit to balance the tokens based on their targetedPercentages
     //Note: Only buy tokens to balance instead of trying to balance by selling first then buying. This means
     // we do not have to sort, which helps saves on gas.
-    function balanceAaveLendingPool() public aaveInitLock onlyOwner {
+    function balanceAaveLendingPool() public onlyOwner {
         BalanceMetadata memory bm = getBalanceMetadata();
         (uint256 tVBTWethQuote, uint128 decimalPrecision) = IPriceConsumer(address(this)).getTvbtWethQuote(3600);
 
