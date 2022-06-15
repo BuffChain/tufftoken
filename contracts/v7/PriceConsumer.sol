@@ -40,7 +40,6 @@ contract PriceConsumer {
         address _tokenA = address(this);
         address _tokenB = address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
         uint24 _fee = 3000;
-        //        uint128 _decimalPrecision = uint128(10 ** 9);
         uint8 _decimalPrecision = 18;
 
         address _poolAddr = IUniswapV3Factory(ss.factoryAddr).getPool(_tokenA, _tokenB, _fee);
@@ -86,15 +85,7 @@ contract PriceConsumer {
     }
 
     function getChainLinkPrice(address _aggregatorAddr) external view returns (uint256) {
-        (
-            ,
-            /*uint80 roundID*/
-            int256 price, /*uint startedAt*/ /*uint timeStamp*/
-            ,
-            ,
-
-        ) = /*uint80 answeredInRound*/
-            getLatestRoundData(_aggregatorAddr);
+        (, int256 price, , , ) = getLatestRoundData(_aggregatorAddr);
         return uint256(price);
     }
 }
