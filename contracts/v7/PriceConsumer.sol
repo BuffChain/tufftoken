@@ -13,12 +13,10 @@ import "@openzeppelin/contracts-v6/math/SafeMath.sol";
 import {PriceConsumerLib} from "./PriceConsumerLib.sol";
 
 contract PriceConsumer {
-
     using SafeMath for uint256;
 
     function isPriceConsumerInit() public view returns (bool) {
-        PriceConsumerLib.StateStorage
-        storage ss = PriceConsumerLib.getState();
+        PriceConsumerLib.StateStorage storage ss = PriceConsumerLib.getState();
         return ss.isInit;
     }
 
@@ -36,23 +34,23 @@ contract PriceConsumer {
             )
         );
 
-        PriceConsumerLib.StateStorage
-        storage ss = PriceConsumerLib.getState();
+        PriceConsumerLib.StateStorage storage ss = PriceConsumerLib.getState();
 
         ss.factoryAddr = _factoryAddr;
         ss.isInit = true;
     }
 
-    function getTvbtWethQuote(
-        uint32 _period
-    ) external view returns (uint256, uint128) {
-        PriceConsumerLib.StateStorage
-        storage ss = PriceConsumerLib.getState();
+    function getTvbtWethQuote(uint32 _period)
+        external
+        view
+        returns (uint256, uint128)
+    {
+        PriceConsumerLib.StateStorage storage ss = PriceConsumerLib.getState();
 
         address _tokenA = address(this);
         address _tokenB = address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
         uint24 _fee = 3000;
-//        uint128 _decimalPrecision = uint128(10 ** 9);
+        //        uint128 _decimalPrecision = uint128(10 ** 9);
         uint8 _decimalPrecision = 18;
 
         address _poolAddr = IUniswapV3Factory(ss.factoryAddr).getPool(
@@ -72,18 +70,17 @@ contract PriceConsumer {
             )
         );
 
-        (int24 timeWeightedAverageTick,) = OracleLibrary.consult(
+        (int24 timeWeightedAverageTick, ) = OracleLibrary.consult(
             _poolAddr,
             _period
         );
 
-        uint256 quoteAmt =
-            OracleLibrary.getQuoteAtTick(
-                timeWeightedAverageTick,
-                uint128(10 ** _decimalPrecision),
-                _tokenA,
-                _tokenB
-            );
+        uint256 quoteAmt = OracleLibrary.getQuoteAtTick(
+            timeWeightedAverageTick,
+            uint128(10**_decimalPrecision),
+            _tokenA,
+            _tokenB
+        );
         //LDP: Low Decimal Precision
         require(quoteAmt > 0, "LDP");
 
@@ -92,43 +89,45 @@ contract PriceConsumer {
 
     ///ChainLink price feed functions
     function getLatestRoundData(address _aggregatorAddr)
-    public
-    view
-    returns (
-        uint80,
-        int256,
-        uint256,
-        uint256,
-        uint80
-    )
+        public
+        view
+        returns (
+            uint80,
+            int256,
+            uint256,
+            uint256,
+            uint80
+        )
     {
-        AggregatorV3Interface priceFeed = AggregatorV3Interface(_aggregatorAddr);
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(
+            _aggregatorAddr
+        );
         return priceFeed.latestRoundData();
     }
 
-    function getDecimals(address _aggregatorAddr)
-    public
-    view
-    returns (
-        uint8
-    )
-    {
-        AggregatorV3Interface priceFeed = AggregatorV3Interface(_aggregatorAddr);
+    function getDecimals(address _aggregatorAddr) public view returns (uint8) {
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(
+            _aggregatorAddr
+        );
         return priceFeed.decimals();
     }
 
     function getChainLinkPrice(address _aggregatorAddr)
-    external
-    view
-    returns (uint256)
+        external
+        view
+        returns (uint256)
     {
         (
-        /*uint80 roundID*/,
-        int price,
-        /*uint startedAt*/,
-        /*uint timeStamp*/,
-        /*uint80 answeredInRound*/
-        ) = getLatestRoundData(_aggregatorAddr);
+            ,
+            /*uint80 roundID*/
+            int256 price,
+            ,
+            ,
+
+        ) = /*uint startedAt*/
+            /*uint timeStamp*/
+            /*uint80 answeredInRound*/
+            getLatestRoundData(_aggregatorAddr);
         return uint256(price);
     }
 }

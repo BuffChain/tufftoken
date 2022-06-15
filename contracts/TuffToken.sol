@@ -25,7 +25,7 @@ contract TuffToken is Context, ERC20, ERC20Permit, ERC20Votes {
         _name = name_;
         _symbol = symbol_;
         _decimals = 9;
-        uint256 _totalSupply = 1 gwei * 10 ** _decimals;
+        uint256 _totalSupply = 1 gwei * 10**_decimals;
         _mint(_msgSender(), _totalSupply);
     }
 

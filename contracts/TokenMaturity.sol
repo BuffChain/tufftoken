@@ -64,37 +64,22 @@ contract TokenMaturity {
         return ss.isInit;
     }
 
-    function getContractMaturityTimestamp()
-        public
-        view
-        returns (uint256)
-    {
+    function getContractMaturityTimestamp() public view returns (uint256) {
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
         return ss.contractMaturityTimestamp;
     }
 
-    function setContractMaturityTimestamp(uint256 timestamp)
-        public
-        onlyOwner
-    {
+    function setContractMaturityTimestamp(uint256 timestamp) public onlyOwner {
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
         ss.contractMaturityTimestamp = timestamp;
     }
 
-    function isTokenMatured(uint256 timestamp)
-        public
-        view
-        returns (bool)
-    {
+    function isTokenMatured(uint256 timestamp) public view returns (bool) {
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
         return timestamp >= ss.contractMaturityTimestamp;
     }
 
-    function totalSupplyForRedemption()
-        public
-        view
-        returns (uint256)
-    {
+    function totalSupplyForRedemption() public view returns (uint256) {
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
         return ss.totalSupplyForRedemption;
     }
@@ -107,11 +92,7 @@ contract TokenMaturity {
         ss.totalSupplyForRedemption = _totalSupplyForRedemption;
     }
 
-    function getContractStartingEthBalance()
-        public
-        view
-        returns (uint256)
-    {
+    function getContractStartingEthBalance() public view returns (uint256) {
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
         return ss.startingEthBalance;
     }
@@ -138,11 +119,7 @@ contract TokenMaturity {
             );
     }
 
-    function getIsTreasuryLiquidated()
-        public
-        view
-        returns (bool)
-    {
+    function getIsTreasuryLiquidated() public view returns (bool) {
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
         return ss.isTreasuryLiquidated;
     }
@@ -190,11 +167,7 @@ contract TokenMaturity {
         emit Redeemed(account, ownerBalance, redemptionAmount);
     }
 
-    function hasRedeemed(address account)
-        public
-        view
-        returns (bool, uint256)
-    {
+    function hasRedeemed(address account) public view returns (bool, uint256) {
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
         return (
             ss.ownersRedeemed[account],
@@ -202,19 +175,11 @@ contract TokenMaturity {
         );
     }
 
-    function balanceOfEth(address account)
-        public
-        view
-        returns (uint256)
-    {
+    function balanceOfEth(address account) public view returns (uint256) {
         return account.balance;
     }
 
-    function getCurrentContractEthBalance()
-        public
-        view
-        returns (uint256)
-    {
+    function getCurrentContractEthBalance() public view returns (uint256) {
         return address(this).balance;
     }
 
@@ -299,11 +264,7 @@ contract TokenMaturity {
     }
 
     //    unwraps WETH and returns remaining WETH balance
-    function unwrapWETH()
-        public
-        onlyOwner
-        returns (uint256)
-    {
+    function unwrapWETH() public onlyOwner returns (uint256) {
         UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
             .getState();
 

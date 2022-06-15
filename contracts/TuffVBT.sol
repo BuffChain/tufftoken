@@ -79,12 +79,7 @@ contract TuffVBT is Context, IERC20 {
         return ss.decimals;
     }
 
-    function totalSupply()
-        public
-        view
-        override
-        returns (uint256)
-    {
+    function totalSupply() public view override returns (uint256) {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
         return ss.totalSupply;
     }
@@ -109,29 +104,17 @@ contract TuffVBT is Context, IERC20 {
         ss.devFee = _devFee;
     }
 
-    function getDevWalletAddress()
-        public
-        view
-        returns (address)
-    {
+    function getDevWalletAddress() public view returns (address) {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
         return ss.devWalletAddress;
     }
 
-    function setDevWalletAddress(address _devWalletAddress)
-        public
-        onlyOwner
-    {
+    function setDevWalletAddress(address _devWalletAddress) public onlyOwner {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
         ss.devWalletAddress = _devWalletAddress;
     }
 
-    function balanceOf(address account)
-        public
-        view
-        override
-        returns (uint256)
-    {
+    function balanceOf(address account) public view override returns (uint256) {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
         return ss.balances[account];
     }
@@ -392,10 +375,7 @@ contract TuffVBT is Context, IERC20 {
         }
     }
 
-    function burn(address account, uint256 amount)
-        public
-        onlyOwner
-    {
+    function burn(address account, uint256 amount) public onlyOwner {
         require(account != address(0), "ERC20: burn from the zero address");
 
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();

@@ -46,7 +46,6 @@ contract TuffKeeper is KeeperCompatibleInterface {
 
     function setTokenMaturityInterval(uint256 _tokenMaturityInterval)
         public
-
         onlyOwner
     {
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
@@ -60,7 +59,6 @@ contract TuffKeeper is KeeperCompatibleInterface {
 
     function setBalanceAssetsInterval(uint256 _balanceAssetsInterval)
         public
-
         onlyOwner
     {
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
@@ -74,7 +72,6 @@ contract TuffKeeper is KeeperCompatibleInterface {
 
     function setLastTokenMaturityTimestamp(uint256 _lastTimestamp)
         public
-
         onlyOwner
     {
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
@@ -88,7 +85,6 @@ contract TuffKeeper is KeeperCompatibleInterface {
 
     function setLastBalanceAssetsTimestamp(uint256 _lastTimestamp)
         public
-
         onlyOwner
     {
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
@@ -110,12 +106,7 @@ contract TuffKeeper is KeeperCompatibleInterface {
 
     function checkUpkeep(
         bytes calldata /* checkData */
-    )
-        external
-        view
-        override
-        returns (bool needed, bytes memory performData)
-    {
+    ) external view override returns (bool needed, bytes memory performData) {
         needed =
             isIntervalComplete(
                 block.timestamp,
