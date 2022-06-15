@@ -15,8 +15,7 @@ contract UniswapManager {
     }
 
     function isUniswapManagerInit() public view returns (bool) {
-        UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
-            .getState();
+        UniswapManagerLib.StateStorage storage ss = UniswapManagerLib.getState();
         return ss.isInit;
     }
 
@@ -29,17 +28,10 @@ contract UniswapManager {
     ) public onlyOwner {
         require(
             !isUniswapManagerInit(),
-            string(
-                abi.encodePacked(
-                    UniswapManagerLib.NAMESPACE,
-                    ": ",
-                    "ALREADY_INITIALIZED"
-                )
-            )
+            string(abi.encodePacked(UniswapManagerLib.NAMESPACE, ": ", "ALREADY_INITIALIZED"))
         );
 
-        UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
-            .getState();
+        UniswapManagerLib.StateStorage storage ss = UniswapManagerLib.getState();
 
         ss.swapRouter = _swapRouter;
         ss.WETHAddress = WETHAddress;
@@ -62,28 +54,22 @@ contract UniswapManager {
         uint256 amountIn,
         uint256 amountOutMinimum
     ) external onlyOwner returns (uint256 amountOut) {
-        UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
-            .getState();
+        UniswapManagerLib.StateStorage storage ss = UniswapManagerLib.getState();
 
         //Approve the router to spend `inputToken`
-        TransferHelper.safeApprove(
-            inputToken,
-            address(ss.swapRouter),
-            amountIn
-        );
+        TransferHelper.safeApprove(inputToken, address(ss.swapRouter), amountIn);
 
         //Set the sqrtPriceLimitx96 to be 0 to ensure we swap our exact input amount.
-        ISwapRouter.ExactInputSingleParams memory params = ISwapRouter
-            .ExactInputSingleParams({
-                tokenIn: inputToken,
-                tokenOut: outputToken,
-                fee: poolFee,
-                recipient: address(this),
-                deadline: block.timestamp,
-                amountIn: amountIn,
-                amountOutMinimum: amountOutMinimum,
-                sqrtPriceLimitX96: 0
-            });
+        ISwapRouter.ExactInputSingleParams memory params = ISwapRouter.ExactInputSingleParams({
+            tokenIn: inputToken,
+            tokenOut: outputToken,
+            fee: poolFee,
+            recipient: address(this),
+            deadline: block.timestamp,
+            amountIn: amountIn,
+            amountOutMinimum: amountOutMinimum,
+            sqrtPriceLimitX96: 0
+        });
 
         amountOut = ss.swapRouter.exactInputSingle(params);
     }
@@ -101,27 +87,21 @@ contract UniswapManager {
         uint256 amountOut,
         uint256 amountInMaximum
     ) external onlyOwner returns (uint256 amountIn) {
-        UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
-            .getState();
+        UniswapManagerLib.StateStorage storage ss = UniswapManagerLib.getState();
 
         //Approve the router to spend the specified `amountInMaximum` of `inputToken`
-        TransferHelper.safeApprove(
-            inputToken,
-            address(ss.swapRouter),
-            amountInMaximum
-        );
+        TransferHelper.safeApprove(inputToken, address(ss.swapRouter), amountInMaximum);
 
-        ISwapRouter.ExactOutputSingleParams memory params = ISwapRouter
-            .ExactOutputSingleParams({
-                tokenIn: inputToken,
-                tokenOut: outputToken,
-                fee: poolFee,
-                recipient: address(this),
-                deadline: block.timestamp,
-                amountOut: amountOut,
-                amountInMaximum: amountInMaximum,
-                sqrtPriceLimitX96: 0
-            });
+        ISwapRouter.ExactOutputSingleParams memory params = ISwapRouter.ExactOutputSingleParams({
+            tokenIn: inputToken,
+            tokenOut: outputToken,
+            fee: poolFee,
+            recipient: address(this),
+            deadline: block.timestamp,
+            amountOut: amountOut,
+            amountInMaximum: amountInMaximum,
+            sqrtPriceLimitX96: 0
+        });
 
         //Executes the swap returning the amountIn needed to spend to receive the desired amountOut.
         amountIn = ss.swapRouter.exactOutputSingle(params);
@@ -131,11 +111,7 @@ contract UniswapManager {
         // msg.sender and approve the swapRouter to spend 0.
         if (amountIn < amountInMaximum) {
             TransferHelper.safeApprove(inputToken, address(ss.swapRouter), 0);
-            TransferHelper.safeTransfer(
-                inputToken,
-                address(this),
-                amountInMaximum - amountIn
-            );
+            TransferHelper.safeTransfer(inputToken, address(this), amountInMaximum - amountIn);
         }
     }
 
@@ -148,30 +124,18 @@ contract UniswapManager {
         uint256 amountIn,
         uint256 amountOutMinimum
     ) external onlyOwner returns (uint256) {
-        UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
-            .getState();
+        UniswapManagerLib.StateStorage storage ss = UniswapManagerLib.getState();
 
         //Approve the router to spend `inputToken`
-        TransferHelper.safeApprove(
-            inputToken,
-            address(ss.swapRouter),
-            amountIn
-        );
+        TransferHelper.safeApprove(inputToken, address(ss.swapRouter), amountIn);
 
-        ISwapRouter.ExactInputParams memory params = ISwapRouter
-            .ExactInputParams({
-                path: abi.encodePacked(
-                    inputToken,
-                    poolAFee,
-                    ss.WETHAddress,
-                    poolBFee,
-                    outputToken
-                ),
-                recipient: address(this),
-                deadline: block.timestamp,
-                amountIn: amountIn,
-                amountOutMinimum: amountOutMinimum
-            });
+        ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
+            path: abi.encodePacked(inputToken, poolAFee, ss.WETHAddress, poolBFee, outputToken),
+            recipient: address(this),
+            deadline: block.timestamp,
+            amountIn: amountIn,
+            amountOutMinimum: amountOutMinimum
+        });
 
         return ss.swapRouter.exactInput(params);
     }

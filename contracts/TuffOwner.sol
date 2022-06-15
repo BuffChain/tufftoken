@@ -15,23 +15,11 @@ contract TuffOwner {
     }
 
     function initTuffOwner(address initialOwner) public {
-        require(
-            !isTuffOwnerInit(),
-            string(
-                abi.encodePacked(
-                    TuffOwnerLib.NAMESPACE,
-                    ": ",
-                    "ALREADY_INITIALIZED"
-                )
-            )
-        );
+        require(!isTuffOwnerInit(), string(abi.encodePacked(TuffOwnerLib.NAMESPACE, ": ", "ALREADY_INITIALIZED")));
         _transferOwnership(initialOwner);
     }
 
-    event OwnershipTransferred(
-        address indexed previousOwner,
-        address indexed newOwner
-    );
+    event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     /**
      * @dev Returns the address of the current owner.
@@ -50,10 +38,7 @@ contract TuffOwner {
      * @dev Throws if called by any account other than the owner.
      */
     function requireOnlyOwner(address sender) public view {
-        require(
-            sender == address(this) || sender == getTuffOwner(),
-            "Ownable: caller is not the owner"
-        );
+        require(sender == address(this) || sender == getTuffOwner(), "Ownable: caller is not the owner");
     }
 
     /**
@@ -72,10 +57,7 @@ contract TuffOwner {
      * Can only be called by the current owner.
      */
     function transferTuffOwnership(address newOwner) public virtual onlyOwner {
-        require(
-            newOwner != address(0),
-            "Ownable: new owner is the zero address"
-        );
+        require(newOwner != address(0), "Ownable: new owner is the zero address");
         _transferOwnership(newOwner);
     }
 

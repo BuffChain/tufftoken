@@ -24,20 +24,12 @@ contract TokenMaturity {
     function initTokenMaturity(uint256 daysUntilMaturity) public onlyOwner {
         require(
             !isTokenMaturityInit(),
-            string(
-                abi.encodePacked(
-                    TokenMaturityLib.NAMESPACE,
-                    ": ",
-                    "ALREADY_INITIALIZED"
-                )
-            )
+            string(abi.encodePacked(TokenMaturityLib.NAMESPACE, ": ", "ALREADY_INITIALIZED"))
         );
 
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
 
-        ss.contractMaturityTimestamp =
-            block.timestamp +
-            (daysUntilMaturity * 1 days);
+        ss.contractMaturityTimestamp = block.timestamp + (daysUntilMaturity * 1 days);
 
         ss.isTreasuryLiquidated = false;
 
@@ -84,10 +76,7 @@ contract TokenMaturity {
         return ss.totalSupplyForRedemption;
     }
 
-    function setTotalSupplyForRedemption(uint256 _totalSupplyForRedemption)
-        public
-        onlyOwner
-    {
+    function setTotalSupplyForRedemption(uint256 _totalSupplyForRedemption) public onlyOwner {
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
         ss.totalSupplyForRedemption = _totalSupplyForRedemption;
     }
@@ -97,26 +86,16 @@ contract TokenMaturity {
         return ss.startingEthBalance;
     }
 
-    function setContractStartingEthBalance(uint256 startingEthBalance)
-        public
-        onlyOwner
-    {
+    function setContractStartingEthBalance(uint256 startingEthBalance) public onlyOwner {
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
         ss.startingEthBalance = startingEthBalance;
     }
 
-    function getRedemptionAmount(uint256 ownerBalance)
-        public
-        view
-        returns (uint256)
-    {
+    function getRedemptionAmount(uint256 ownerBalance) public view returns (uint256) {
         if (ownerBalance == 0) {
             return 0;
         }
-        return
-            getContractStartingEthBalance().mul(ownerBalance).div(
-                totalSupplyForRedemption()
-            );
+        return getContractStartingEthBalance().mul(ownerBalance).div(totalSupplyForRedemption());
     }
 
     function getIsTreasuryLiquidated() public view returns (bool) {
@@ -124,24 +103,15 @@ contract TokenMaturity {
         return ss.isTreasuryLiquidated;
     }
 
-    function setIsTreasuryLiquidated(bool _isTreasuryLiquidated)
-        public
-        onlyOwner
-    {
+    function setIsTreasuryLiquidated(bool _isTreasuryLiquidated) public onlyOwner {
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
         ss.isTreasuryLiquidated = _isTreasuryLiquidated;
     }
 
     function redeem() public {
-        require(
-            isTokenMatured(block.timestamp),
-            "Address can not redeem before expiration."
-        );
+        require(isTokenMatured(block.timestamp), "Address can not redeem before expiration.");
 
-        require(
-            getIsTreasuryLiquidated(),
-            "Address can not redeem before treasury has been liquidated."
-        );
+        require(getIsTreasuryLiquidated(), "Address can not redeem before treasury has been liquidated.");
 
         address payable account = payable(msg.sender);
 
@@ -169,10 +139,7 @@ contract TokenMaturity {
 
     function hasRedeemed(address account) public view returns (bool, uint256) {
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
-        return (
-            ss.ownersRedeemed[account],
-            ss.ownersRedemptionBalances[account]
-        );
+        return (ss.ownersRedeemed[account], ss.ownersRedemptionBalances[account]);
     }
 
     function balanceOfEth(address account) public view returns (uint256) {
@@ -185,10 +152,7 @@ contract TokenMaturity {
 
     //    call via perform upkeep once current timestamp >= contract maturity timestamp
     function onTokenMaturity() public onlyOwner {
-        require(
-            isTokenMatured(block.timestamp),
-            "TUFF: Token must have reached maturity."
-        );
+        require(isTokenMatured(block.timestamp), "TUFF: Token must have reached maturity.");
 
         liquidateTreasury();
 
@@ -199,8 +163,7 @@ contract TokenMaturity {
         uint256 ethBalance = getCurrentContractEthBalance();
         setContractStartingEthBalance(ethBalance);
 
-        uint256 redeemableTotalSupply = TuffVBT(payable(address(this)))
-            .totalSupply();
+        uint256 redeemableTotalSupply = TuffVBT(payable(address(this))).totalSupply();
         setTotalSupplyForRedemption(redeemableTotalSupply);
 
         emit TokenMatured(ethBalance, redeemableTotalSupply);
@@ -213,13 +176,10 @@ contract TokenMaturity {
             allAssetsLiquidated = false;
         }
 
-        address[] memory supportedTokens = IAaveLPManager(address(this))
-            .getAllAaveSupportedTokens();
+        address[] memory supportedTokens = IAaveLPManager(address(this)).getAllAaveSupportedTokens();
 
         for (uint256 i = 0; i < supportedTokens.length; i++) {
-            uint256 balance = IERC20(supportedTokens[i]).balanceOf(
-                address(this)
-            );
+            uint256 balance = IERC20(supportedTokens[i]).balanceOf(address(this));
 
             if (balance == 0) {
                 continue;
@@ -240,13 +200,8 @@ contract TokenMaturity {
     }
 
     //    swaps for WETH and returns new asset balance
-    function swapForWETH(address token, uint256 amount)
-        public
-        onlyOwner
-        returns (uint256)
-    {
-        UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
-            .getState();
+    function swapForWETH(address token, uint256 amount) public onlyOwner returns (uint256) {
+        UniswapManagerLib.StateStorage storage ss = UniswapManagerLib.getState();
         UniswapManager uniswapManager = UniswapManager(address(this));
 
         IERC20 erc20Token = IERC20(token);
@@ -265,8 +220,7 @@ contract TokenMaturity {
 
     //    unwraps WETH and returns remaining WETH balance
     function unwrapWETH() public onlyOwner returns (uint256) {
-        UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
-            .getState();
+        UniswapManagerLib.StateStorage storage ss = UniswapManagerLib.getState();
 
         uint256 balance = IERC20(ss.WETHAddress).balanceOf(address(this));
 

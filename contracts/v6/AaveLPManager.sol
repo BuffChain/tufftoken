@@ -47,16 +47,7 @@ contract AaveLPManager is Context {
         address _wethAddr,
         uint24 _balanceBufferPercent
     ) public onlyOwner {
-        require(
-            !isAaveInit(),
-            string(
-                abi.encodePacked(
-                    AaveLPManagerLib.NAMESPACE,
-                    ": ",
-                    "ALREADY_INITIALIZED"
-                )
-            )
-        );
+        require(!isAaveInit(), string(abi.encodePacked(AaveLPManagerLib.NAMESPACE, ": ", "ALREADY_INITIALIZED")));
 
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
 
@@ -90,61 +81,37 @@ contract AaveLPManager is Context {
         return ss.balanceBufferPercent;
     }
 
-    function setBalanceBufferPercent(uint24 _balanceBufferPercent)
-        public
-        onlyOwner
-    {
+    function setBalanceBufferPercent(uint24 _balanceBufferPercent) public onlyOwner {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
         ss.balanceBufferPercent = _balanceBufferPercent;
     }
 
-    function getAllAaveSupportedTokens()
-        public
-        view
-        returns (address[] memory)
-    {
+    function getAllAaveSupportedTokens() public view returns (address[] memory) {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
         return ss.supportedTokens;
     }
 
-    function setAaveTokenTargetWeight(address tokenAddr, uint24 targetWeight)
-        public
-        onlyOwner
-    {
+    function setAaveTokenTargetWeight(address tokenAddr, uint24 targetWeight) public onlyOwner {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
 
-        ss.totalTargetWeight = SafeMath.sub(
-            ss.totalTargetWeight,
-            ss.tokenMetadata[tokenAddr].targetWeight
-        );
+        ss.totalTargetWeight = SafeMath.sub(ss.totalTargetWeight, ss.tokenMetadata[tokenAddr].targetWeight);
         ss.totalTargetWeight = SafeMath.add(ss.totalTargetWeight, targetWeight);
 
         ss.tokenMetadata[tokenAddr].targetWeight = targetWeight;
     }
 
-    function getAaveTokenTargetWeight(address tokenAddr)
-        public
-        view
-        returns (uint256)
-    {
+    function getAaveTokenTargetWeight(address tokenAddr) public view returns (uint256) {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
         return ss.tokenMetadata[tokenAddr].targetWeight;
     }
 
-    function getAaveTokenCurrentPercentage(address tokenAddr)
-        public
-        view
-        returns (uint256)
-    {
+    function getAaveTokenCurrentPercentage(address tokenAddr) public view returns (uint256) {
         BalanceMetadata memory bm = getBalanceMetadata();
 
         for (uint256 i = 0; i < bm.supportedTokens.length; i++) {
             if (bm.supportedTokens[i] == tokenAddr) {
                 uint256 tokenActualPercentage = SafeMath.div(
-                    SafeMath.mul(
-                        bm.tokensValueInWeth[i],
-                        100 * bm.decimalPrecision
-                    ),
+                    SafeMath.mul(bm.tokensValueInWeth[i], 100 * bm.decimalPrecision),
                     bm.totalBalanceInWeth
                 );
                 return tokenActualPercentage;
@@ -155,11 +122,7 @@ contract AaveLPManager is Context {
         return 0;
     }
 
-    function getBalanceMetadata()
-        private
-        view
-        returns (BalanceMetadata memory)
-    {
+    function getBalanceMetadata() private view returns (BalanceMetadata memory) {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
         BalanceMetadata memory bm;
 
@@ -184,19 +147,14 @@ contract AaveLPManager is Context {
 
             //Get the value of each token in the same denomination, in this case WETH
             uint256 wethQuote = IPriceConsumer(address(this)).getChainLinkPrice(
-                ss
-                    .tokenMetadata[bm.supportedTokens[i]]
-                    .chainlinkEthTokenAggrAddr
+                ss.tokenMetadata[bm.supportedTokens[i]].chainlinkEthTokenAggrAddr
             );
 
             //Track balances
             uint256 tokenValueInWeth = SafeMath.mul(aTokenBalance, wethQuote);
             bm.tokensValueInWeth[i] = tokenValueInWeth;
 
-            bm.totalBalanceInWeth = SafeMath.add(
-                bm.totalBalanceInWeth,
-                tokenValueInWeth
-            );
+            bm.totalBalanceInWeth = SafeMath.add(bm.totalBalanceInWeth, tokenValueInWeth);
         }
 
         return bm;
@@ -208,62 +166,50 @@ contract AaveLPManager is Context {
     }
 
     function getAaveIncome(address tokenAddr) public view returns (uint256) {
-        return
-            LendingPool(getAaveLPAddr()).getReserveNormalizedIncome(tokenAddr);
+        return LendingPool(getAaveLPAddr()).getReserveNormalizedIncome(tokenAddr);
     }
 
     //`asset` is the token address, not aToken address
     function getATokenBalance(address asset) public view returns (uint256) {
-        (uint256 currentATokenBalance, , , , , , , , ) = /*uint256 currentStableDebt*/
-        /*uint256 currentVariableDebt*/
-        /*uint256 principalStableDebt*/
-        /*uint256 scaledVariableDebt*/
-        /*uint256 stableBorrowRate*/
-        /*uint256 liquidityRate*/
-        /*uint40 stableRateLastUpdated*/
-        /*bool usageAsCollateralEnabled*/
-        AaveProtocolDataProvider(getProtocolDataProviderAddr())
-            .getUserReserveData(asset, address(this));
+        (
+            uint256 currentATokenBalance, /*uint256 currentStableDebt*/ /*uint256 currentVariableDebt*/
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+            ,
+
+        ) = /*uint256 principalStableDebt*/
+            /*uint256 scaledVariableDebt*/
+            /*uint256 stableBorrowRate*/
+            /*uint256 liquidityRate*/
+            /*uint40 stableRateLastUpdated*/
+            /*bool usageAsCollateralEnabled*/
+            AaveProtocolDataProvider(getProtocolDataProviderAddr()).getUserReserveData(asset, address(this));
         return currentATokenBalance;
     }
 
     function getATokenAddress(address asset) public view returns (address) {
-        (address aTokenAddress, , ) = AaveProtocolDataProvider(
-            getProtocolDataProviderAddr()
-        ).getReserveTokensAddresses(asset);
+        (address aTokenAddress, , ) = AaveProtocolDataProvider(getProtocolDataProviderAddr()).getReserveTokensAddresses(
+            asset
+        );
         return aTokenAddress;
     }
 
-    function depositToAave(address erc20TokenAddr, uint256 amount)
-        public
-        onlyOwner
-    {
+    function depositToAave(address erc20TokenAddr, uint256 amount) public onlyOwner {
         (bool _isSupportedToken, ) = isAaveSupportedToken(erc20TokenAddr);
         require(
             _isSupportedToken,
-            string(
-                abi.encodePacked(
-                    AaveLPManagerLib.NAMESPACE,
-                    ": ",
-                    "This token is currently not supported"
-                )
-            )
+            string(abi.encodePacked(AaveLPManagerLib.NAMESPACE, ": ", "This token is currently not supported"))
         );
 
         SafeERC20.safeApprove(IERC20(erc20TokenAddr), getAaveLPAddr(), amount);
-        LendingPool(getAaveLPAddr()).deposit(
-            erc20TokenAddr,
-            amount,
-            address(this),
-            0
-        );
+        LendingPool(getAaveLPAddr()).deposit(erc20TokenAddr, amount, address(this), 0);
     }
 
-    function isAaveSupportedToken(address tokenAddr)
-        public
-        view
-        returns (bool, uint256)
-    {
+    function isAaveSupportedToken(address tokenAddr) public view returns (bool, uint256) {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
 
         bool _isSupportedToken = false;
@@ -287,15 +233,10 @@ contract AaveLPManager is Context {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
 
         address aTokenAddr = getATokenAddress(tokenAddr);
-        require(
-            aTokenAddr != address(0),
-            "The tokenAddress provided is not supported by Aave"
-        );
+        require(aTokenAddr != address(0), "The tokenAddress provided is not supported by Aave");
 
         ss.supportedTokens.push(tokenAddr);
-        ss
-            .tokenMetadata[tokenAddr]
-            .chainlinkEthTokenAggrAddr = chainlinkEthTokenAggrAddr;
+        ss.tokenMetadata[tokenAddr].chainlinkEthTokenAggrAddr = chainlinkEthTokenAggrAddr;
         setAaveTokenTargetWeight(tokenAddr, targetWeight);
         //TODO: Remove this to save gas? This cost gas to save, while reading it is a view function, so gas free
         ss.tokenMetadata[tokenAddr].aToken = aTokenAddr;
@@ -304,19 +245,12 @@ contract AaveLPManager is Context {
     function removeAaveSupportedToken(address tokenAddr) public onlyOwner {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
 
-        (bool _isSupportedToken, uint256 _tokenIndex) = isAaveSupportedToken(
-            tokenAddr
-        );
+        (bool _isSupportedToken, uint256 _tokenIndex) = isAaveSupportedToken(tokenAddr);
         if (_isSupportedToken) {
-            ss.totalTargetWeight = SafeMath.sub(
-                ss.totalTargetWeight,
-                ss.tokenMetadata[tokenAddr].targetWeight
-            );
+            ss.totalTargetWeight = SafeMath.sub(ss.totalTargetWeight, ss.tokenMetadata[tokenAddr].targetWeight);
 
             //Remove the token without preserving order
-            ss.supportedTokens[_tokenIndex] = ss.supportedTokens[
-                ss.supportedTokens.length - 1
-            ];
+            ss.supportedTokens[_tokenIndex] = ss.supportedTokens[ss.supportedTokens.length - 1];
             ss.supportedTokens.pop();
         }
     }
@@ -334,33 +268,18 @@ contract AaveLPManager is Context {
         return allTokensWithdrawn;
     }
 
-    function withdrawFromAave(address erc20TokenAddr, uint256 amount)
-        public
-        onlyOwner
-        returns (uint256)
-    {
+    function withdrawFromAave(address erc20TokenAddr, uint256 amount) public onlyOwner returns (uint256) {
         (bool _isSupportedToken, ) = isAaveSupportedToken(erc20TokenAddr);
         require(
             _isSupportedToken,
-            string(
-                abi.encodePacked(
-                    AaveLPManagerLib.NAMESPACE,
-                    ": ",
-                    "This token is not currently supported"
-                )
-            )
+            string(abi.encodePacked(AaveLPManagerLib.NAMESPACE, ": ", "This token is not currently supported"))
         );
 
         if (getATokenBalance(erc20TokenAddr) == 0) {
             return 0;
         }
 
-        return
-            LendingPool(getAaveLPAddr()).withdraw(
-                erc20TokenAddr,
-                amount,
-                address(this)
-            );
+        return LendingPool(getAaveLPAddr()).withdraw(erc20TokenAddr, amount, address(this));
     }
 
     function withdrawAllFromAave(address asset) public onlyOwner {
@@ -370,11 +289,7 @@ contract AaveLPManager is Context {
     /**
      * @dev Emitted when a swap occurs to balance an under-balanced token
      */
-    event AaveLPManagerBalanceSwap(
-        address tokenSwappedFor,
-        uint256 amountIn,
-        uint256 amountOut
-    );
+    event AaveLPManagerBalanceSwap(address tokenSwappedFor, uint256 amountIn, uint256 amountOut);
 
     //We will first need to calculate current/actual percentages, then determine which tokens are under-invested, and
     // finally swap and deposit to balance the tokens based on their targetedPercentages
@@ -382,93 +297,52 @@ contract AaveLPManager is Context {
     // we do not have to sort, which helps saves on gas.
     function balanceAaveLendingPool() public onlyOwner {
         BalanceMetadata memory bm = getBalanceMetadata();
-        (uint256 tVBTWethQuote, uint128 decimalPrecision) = IPriceConsumer(
-            address(this)
-        ).getTvbtWethQuote(3600);
+        (uint256 tVBTWethQuote, uint128 decimalPrecision) = IPriceConsumer(address(this)).getTvbtWethQuote(3600);
 
         //Then, loop through again to balance tokens
         for (uint256 i = 0; i < bm.supportedTokens.length; i++) {
             //Calculate target and actual percentage. Include decimal precision in numerator and multiple by 100 to
             // convert from decimal to percent
-            uint256 tokenTargetWeight = getAaveTokenTargetWeight(
-                bm.supportedTokens[i]
-            );
+            uint256 tokenTargetWeight = getAaveTokenTargetWeight(bm.supportedTokens[i]);
             uint256 tokenTargetPercentage = SafeMath.div(
                 SafeMath.mul(tokenTargetWeight, 100 * bm.decimalPrecision),
                 bm.totalTargetWeight
             );
             uint256 tokenActualPercentage = SafeMath.div(
-                SafeMath.mul(
-                    bm.tokensValueInWeth[i],
-                    100 * bm.decimalPrecision
-                ),
+                SafeMath.mul(bm.tokensValueInWeth[i], 100 * bm.decimalPrecision),
                 bm.totalBalanceInWeth
             );
 
-            require(
-                tokenTargetPercentage < uint256(-1),
-                "Cannot cast tokenTargetPercentage - out of range of int max"
-            );
-            require(
-                tokenActualPercentage < uint256(-1),
-                "Cannot cast tokenActualPercentage - out of range of int max"
-            );
+            require(tokenTargetPercentage < uint256(-1), "Cannot cast tokenTargetPercentage - out of range of int max");
+            require(tokenActualPercentage < uint256(-1), "Cannot cast tokenActualPercentage - out of range of int max");
 
             //Only balance if token is under-allocated more than our buffer amount
-            if (
-                int256(tokenTargetPercentage) - int256(tokenActualPercentage) >
-                bm.balanceBufferPercent
-            ) {
+            if (int256(tokenTargetPercentage) - int256(tokenActualPercentage) > bm.balanceBufferPercent) {
                 //We don't know ahead of time how many tokens will need balancing, but because we got here at least one
                 // token is under-balanced, which means at least one token is over-balanced. Thus, we can subtract one
                 // to optimize how quickly our token's balance
-                uint256 balanceIn = SafeMath.div(
-                    bm.treasuryBalance,
-                    bm.supportedTokens.length - 1
-                );
+                uint256 balanceIn = SafeMath.div(bm.treasuryBalance, bm.supportedTokens.length - 1);
 
                 if (balanceIn > 0) {
                     //Find minimum token amount acceptable to receive for swapping `amountIn` tVBT
-                    uint256 tokenValueInTVBT = SafeMath.div(
-                        tVBTWethQuote,
-                        bm.tokensValueInWeth[i]
-                    );
-                    uint256 expectedAmountOut = SafeMath.mul(
-                        balanceIn,
-                        tokenValueInTVBT
-                    );
-                    uint256 amountOutMinimum = SafeMath.sub(
-                        expectedAmountOut,
-                        SafeMath.div(expectedAmountOut, 5)
-                    );
+                    uint256 tokenValueInTVBT = SafeMath.div(tVBTWethQuote, bm.tokensValueInWeth[i]);
+                    uint256 expectedAmountOut = SafeMath.mul(balanceIn, tokenValueInTVBT);
+                    uint256 amountOutMinimum = SafeMath.sub(expectedAmountOut, SafeMath.div(expectedAmountOut, 5));
 
-                    SafeERC20.safeApprove(
-                        IERC20(address(this)),
+                    SafeERC20.safeApprove(IERC20(address(this)), address(this), balanceIn);
+                    uint256 amountOut = IUniswapManager(address(this)).swapExactInputMultihop(
                         address(this),
-                        balanceIn
+                        bm.supportedTokens[i],
+                        3000,
+                        3000,
+                        balanceIn,
+                        amountOutMinimum
                     );
-                    uint256 amountOut = IUniswapManager(address(this))
-                        .swapExactInputMultihop(
-                            address(this),
-                            bm.supportedTokens[i],
-                            3000,
-                            3000,
-                            balanceIn,
-                            amountOutMinimum
-                        );
-                    SafeERC20.safeApprove(
-                        IERC20(address(this)),
-                        address(this),
-                        0
-                    );
+                    SafeERC20.safeApprove(IERC20(address(this)), address(this), 0);
 
                     depositToAave(bm.supportedTokens[i], amountOut);
 
-                    emit AaveLPManagerBalanceSwap(
-                        bm.supportedTokens[i],
-                        balanceIn,
-                        amountOut
-                    );
+                    emit AaveLPManagerBalanceSwap(bm.supportedTokens[i], balanceIn, amountOut);
                 }
             }
         }

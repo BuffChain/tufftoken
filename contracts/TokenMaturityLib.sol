@@ -19,11 +19,7 @@ library TokenMaturityLib {
         uint256 startingEthBalance;
     }
 
-    function getState()
-        internal
-        pure
-        returns (StateStorage storage stateStorage)
-    {
+    function getState() internal pure returns (StateStorage storage stateStorage) {
         bytes32 position = POSITION;
 
         //In solidity > 0.7, inline assembly slot and offset variables are referenced with a period. For instance,

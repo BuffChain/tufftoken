@@ -25,13 +25,7 @@ contract PriceConsumer {
     function initPriceConsumer(address _factoryAddr) public {
         require(
             !isPriceConsumerInit(),
-            string(
-                abi.encodePacked(
-                    PriceConsumerLib.NAMESPACE,
-                    ": ",
-                    "ALREADY_INITIALIZED"
-                )
-            )
+            string(abi.encodePacked(PriceConsumerLib.NAMESPACE, ": ", "ALREADY_INITIALIZED"))
         );
 
         PriceConsumerLib.StateStorage storage ss = PriceConsumerLib.getState();
@@ -40,11 +34,7 @@ contract PriceConsumer {
         ss.isInit = true;
     }
 
-    function getTvbtWethQuote(uint32 _period)
-        external
-        view
-        returns (uint256, uint128)
-    {
+    function getTvbtWethQuote(uint32 _period) external view returns (uint256, uint128) {
         PriceConsumerLib.StateStorage storage ss = PriceConsumerLib.getState();
 
         address _tokenA = address(this);
@@ -53,27 +43,14 @@ contract PriceConsumer {
         //        uint128 _decimalPrecision = uint128(10 ** 9);
         uint8 _decimalPrecision = 18;
 
-        address _poolAddr = IUniswapV3Factory(ss.factoryAddr).getPool(
-            _tokenA,
-            _tokenB,
-            _fee
-        );
+        address _poolAddr = IUniswapV3Factory(ss.factoryAddr).getPool(_tokenA, _tokenB, _fee);
 
         require(
             _poolAddr != address(0),
-            string(
-                abi.encodePacked(
-                    PriceConsumerLib.NAMESPACE,
-                    ": ",
-                    "Pool does not exist"
-                )
-            )
+            string(abi.encodePacked(PriceConsumerLib.NAMESPACE, ": ", "Pool does not exist"))
         );
 
-        (int24 timeWeightedAverageTick, ) = OracleLibrary.consult(
-            _poolAddr,
-            _period
-        );
+        (int24 timeWeightedAverageTick, ) = OracleLibrary.consult(_poolAddr, _period);
 
         uint256 quoteAmt = OracleLibrary.getQuoteAtTick(
             timeWeightedAverageTick,
@@ -99,34 +76,24 @@ contract PriceConsumer {
             uint80
         )
     {
-        AggregatorV3Interface priceFeed = AggregatorV3Interface(
-            _aggregatorAddr
-        );
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(_aggregatorAddr);
         return priceFeed.latestRoundData();
     }
 
     function getDecimals(address _aggregatorAddr) public view returns (uint8) {
-        AggregatorV3Interface priceFeed = AggregatorV3Interface(
-            _aggregatorAddr
-        );
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(_aggregatorAddr);
         return priceFeed.decimals();
     }
 
-    function getChainLinkPrice(address _aggregatorAddr)
-        external
-        view
-        returns (uint256)
-    {
+    function getChainLinkPrice(address _aggregatorAddr) external view returns (uint256) {
         (
             ,
             /*uint80 roundID*/
-            int256 price,
+            int256 price, /*uint startedAt*/ /*uint timeStamp*/
             ,
             ,
 
-        ) = /*uint startedAt*/
-            /*uint timeStamp*/
-            /*uint80 answeredInRound*/
+        ) = /*uint80 answeredInRound*/
             getLatestRoundData(_aggregatorAddr);
         return uint256(price);
     }

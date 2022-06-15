@@ -31,16 +31,7 @@ contract TuffVBT is Context, IERC20 {
         address devWalletAddress,
         uint256 totalSupply
     ) public onlyOwner {
-        require(
-            !isTuffVBTInit(),
-            string(
-                abi.encodePacked(
-                    TuffVBTLib.NAMESPACE,
-                    ": ",
-                    "ALREADY_INITIALIZED"
-                )
-            )
-        );
+        require(!isTuffVBTInit(), string(abi.encodePacked(TuffVBTLib.NAMESPACE, ": ", "ALREADY_INITIALIZED")));
 
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
 
@@ -119,30 +110,17 @@ contract TuffVBT is Context, IERC20 {
         return ss.balances[account];
     }
 
-    function transfer(address recipient, uint256 amount)
-        public
-        override
-        returns (bool)
-    {
+    function transfer(address recipient, uint256 amount) public override returns (bool) {
         _transfer(_msgSender(), recipient, amount);
         return true;
     }
 
-    function allowance(address owner, address spender)
-        public
-        view
-        override
-        returns (uint256)
-    {
+    function allowance(address owner, address spender) public view override returns (uint256) {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
         return ss.allowances[owner][spender];
     }
 
-    function approve(address spender, uint256 amount)
-        public
-        override
-        returns (bool)
-    {
+    function approve(address spender, uint256 amount) public override returns (bool) {
         _approve(_msgSender(), spender, amount);
         return true;
     }
@@ -173,10 +151,7 @@ contract TuffVBT is Context, IERC20 {
     ) internal virtual {
         uint256 currentAllowance = allowance(owner, spender);
         if (currentAllowance != type(uint256).max) {
-            require(
-                currentAllowance >= amount,
-                "ERC20: insufficient allowance"
-            );
+            require(currentAllowance >= amount, "ERC20: insufficient allowance");
             unchecked {
                 _approve(owner, spender, currentAllowance - amount);
             }
@@ -195,11 +170,7 @@ contract TuffVBT is Context, IERC20 {
      *
      * - `spender` cannot be the zero address.
      */
-    function increaseAllowance(address spender, uint256 addedValue)
-        public
-        virtual
-        returns (bool)
-    {
+    function increaseAllowance(address spender, uint256 addedValue) public virtual returns (bool) {
         address owner = _msgSender();
         _approve(owner, spender, allowance(owner, spender) + addedValue);
         return true;
@@ -219,17 +190,10 @@ contract TuffVBT is Context, IERC20 {
      * - `spender` must have allowance for the caller of at least
      * `subtractedValue`.
      */
-    function decreaseAllowance(address spender, uint256 subtractedValue)
-        public
-        virtual
-        returns (bool)
-    {
+    function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
         address owner = _msgSender();
         uint256 currentAllowance = allowance(owner, spender);
-        require(
-            currentAllowance >= subtractedValue,
-            "ERC20: decreased allowance below zero"
-        );
+        require(currentAllowance >= subtractedValue, "ERC20: decreased allowance below zero");
         unchecked {
             _approve(owner, spender, currentAllowance - subtractedValue);
         }
@@ -247,12 +211,7 @@ contract TuffVBT is Context, IERC20 {
         ss.isExcludedFromFee[account] = false;
     }
 
-    function isExcludedFromFee(address account)
-        public
-        view
-        onlyOwner
-        returns (bool)
-    {
+    function isExcludedFromFee(address account) public view onlyOwner returns (bool) {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
         return ss.isExcludedFromFee[account];
     }
@@ -266,16 +225,7 @@ contract TuffVBT is Context, IERC20 {
             return 0;
         }
         uint256 fee = _amount.mul(feePercent).div(10**2);
-        require(
-            fee > 0,
-            string(
-                abi.encodePacked(
-                    TuffVBTLib.NAMESPACE,
-                    ": ",
-                    "Insufficient amount."
-                )
-            )
-        );
+        require(fee > 0, string(abi.encodePacked(TuffVBTLib.NAMESPACE, ": ", "Insufficient amount.")));
         return fee;
     }
 
@@ -360,17 +310,13 @@ contract TuffVBT is Context, IERC20 {
         ss.balances[from] = fromBal.sub(amount);
         ss.balances[to] = ss.balances[to].add(transferAmount);
 
-        ss.balances[address(this)] = ss.balances[address(this)].add(
-            farmFeeAmount
-        );
+        ss.balances[address(this)] = ss.balances[address(this)].add(farmFeeAmount);
 
         emit Transfer(from, to, transferAmount);
         emit Transfer(from, address(this), farmFeeAmount);
 
         if (devFeeAmount != 0) {
-            ss.balances[ss.devWalletAddress] = ss
-                .balances[ss.devWalletAddress]
-                .add(devFeeAmount);
+            ss.balances[ss.devWalletAddress] = ss.balances[ss.devWalletAddress].add(devFeeAmount);
             emit Transfer(from, ss.devWalletAddress, devFeeAmount);
         }
     }
