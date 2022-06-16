@@ -4,7 +4,7 @@ import hre from 'hardhat';
 
 const {
     consts, UNISWAP_POOL_BASE_FEE, TOKEN_NAME, TOKEN_SYMBOL, TOKEN_DECIMALS, TOKEN_FARM_FEE, TOKEN_DEV_FEE,
-    TOKEN_TOTAL_SUPPLY, TOKEN_DAYS_UNTIL_MATURITY
+    TOKEN_TOTAL_SUPPLY, TOKEN_DAYS_UNTIL_MATURITY, AAVE_BALANCE_BUFFER_PERCENTAGE
 } = require("../utils/consts");
 const {logDeploymentTx} = require("../utils/deployment_helpers");
 
@@ -28,7 +28,7 @@ module.exports = async () => {
             "TuffKeeper",
             "TokenMaturity",
             "UniswapManager",
-            "ChainLinkPriceConsumer"
+            "PriceConsumer"
         ],
         log: true
     });
@@ -59,20 +59,20 @@ module.exports = async () => {
     if (!await tuffDUU.isAaveInit()) {
         let tx = await tuffDUU.initAaveLPManager(
             consts("AAVE_LENDINGPOOL_PROVIDER_ADDR"), consts("AAVE_PROTOCOL_DATA_PROVIDER_ADDR"),
-            consts("WETH9_ADDR")
+            consts("WETH9_ADDR"), AAVE_BALANCE_BUFFER_PERCENTAGE
         );
         logDeploymentTx("Initialized AaveLPManager:", tx);
 
         tx = await tuffDUU.addAaveSupportedToken(
-            consts("DAI_ADDR"), 5000);
+            consts("DAI_ADDR"), consts("CHAINLINK_ETH_DAI_AGGR_ADDR"), 500000);
         logDeploymentTx("Added DAI support to AaveLPManager:", tx);
 
         tx = await tuffDUU.addAaveSupportedToken(
-            consts("USDC_ADDR"), 2500);
+            consts("USDC_ADDR"), consts("CHAINLINK_ETH_USDC_AGGR_ADDR"), 250000);
         logDeploymentTx("Added USDC support to AaveLPManager:", tx);
 
         tx = await tuffDUU.addAaveSupportedToken(
-            consts("USDT_ADDR"), 2500);
+            consts("USDT_ADDR"), consts("CHAINLINK_ETH_USDT_AGGR_ADDR"), 250000);
         logDeploymentTx("Added USDT support to AaveLPManager:", tx);
     }
 
@@ -93,6 +93,11 @@ module.exports = async () => {
             UNISWAP_POOL_BASE_FEE
         );
         logDeploymentTx("Initialized UniswapManager:", initTx);
+    }
+
+    if (!await tuffDUU.isPriceConsumerInit()) {
+        let initTx = await tuffDUU.initPriceConsumer(consts("UNISWAP_V3_FACTORY_ADDR"));
+        logDeploymentTx("Initialized PriceConsumer:", initTx);
     }
 };
 

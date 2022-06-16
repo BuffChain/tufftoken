@@ -2,14 +2,12 @@
 pragma solidity ^0.8.0;
 
 import "./TuffOwnerLib.sol";
-import "hardhat/console.sol";
 
 /**
  * @dev inspired by https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol
  * owner() is already defined in the TuffTokenDiamond, we cannot import openzepplin's Ownable contract as it shadows
  * the existing definition and we need to allow calls coming from other facets on the diamond contract.
  */
-
 contract TuffOwner {
     modifier tuffOwnerInitLock() {
         require(
