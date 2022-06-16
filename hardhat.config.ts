@@ -54,7 +54,7 @@ const config: HardhatUserConfig = {
                 }
             },
             {
-                version: "0.8.9",
+                version: "0.8.15",
                 settings: {
                     optimizer: {
                         enabled: true,
@@ -144,6 +144,11 @@ const config: HardhatUserConfig = {
     mocha: {
         timeout: 30000
     },
+    gasReporter: {
+        currency: 'USD',
+        // gasPrice: 21,
+        showTimeSpent: true
+    },
     typechain: {
         outDir: "src/types",
         target: "ethers-v5",
@@ -212,7 +217,10 @@ task("test")
     .setAction(async (taskArgs: TaskArguments, hre: HardhatRuntimeEnvironment, runSuper: RunSuperFunction<any>) => {
         console.log(`Running tests within ${hre.config.paths.tests}`);
 
-        taskArgs["deployFixture"] = true;
+        //--deploy-fixture makes the test suite faster since it only deploys
+        // each contract once. However, it breaks the gas reporter, which I
+        // find more important. https://github.com/cgewecke/hardhat-gas-reporter/issues/86
+        // taskArgs["deployFixture"] = true;
         return await runSuper(taskArgs);
     });
 
