@@ -146,8 +146,8 @@ const config: HardhatUserConfig = {
     },
     gasReporter: {
         currency: 'USD',
-        // gasPrice: 21,
-        showTimeSpent: true
+        showTimeSpent: true,
+        coinmarketcap: process.env.CMC_API_KEY
     },
     typechain: {
         outDir: "src/types",
