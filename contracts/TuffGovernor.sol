@@ -25,7 +25,6 @@ contract TuffGovernor is
     uint256 private _proposalThreshold;
 
     constructor(ERC20Votes _token, TimelockController _timelock)
-        public
         Governor("TuffGovernor")
         GovernorVotes(_token)
         // GovernorVotesQuorumFraction which works together with ERC20Votes to define quorum as a percentage of

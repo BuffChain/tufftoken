@@ -6,6 +6,7 @@
     "avoid-suicide": "error",
     "avoid-sha3": "warn",
     "no-inline-assembly": "off",
+    "func-visibility": ["warn", {"ignoreConstructors": true}],
     "compiler-version": ["error", ">=0.6.0"]
   },
   "plugins": ["prettier"]

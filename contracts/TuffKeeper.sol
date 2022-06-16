@@ -81,7 +81,7 @@ contract TuffKeeper is KeeperCompatibleInterface {
         uint256 timestamp,
         uint256 lastTimestamp,
         uint256 interval
-    ) private view returns (bool) {
+    ) private pure returns (bool) {
         return (timestamp - lastTimestamp) >= interval;
     }
 

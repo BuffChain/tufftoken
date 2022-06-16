@@ -22,31 +22,31 @@ contract TuffVBT is Context, IERC20 {
     //Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
     // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
     function initTuffVBT(
-        address initialOwner,
-        string memory name,
-        string memory symbol,
-        uint8 decimals,
-        uint256 farmFee,
-        uint256 devFee,
-        address devWalletAddress,
-        uint256 totalSupply
+        address _initialOwner,
+        string memory _name,
+        string memory _symbol,
+        uint8 _decimals,
+        uint256 _farmFee,
+        uint256 _devFee,
+        address _devWalletAddress,
+        uint256 _totalSupply
     ) public onlyOwner {
-        //TokenVBT Already Initialized
+        //TuffVBT Already Initialized
         require(!isTuffVBTInit(), "TVAI");
 
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
 
-        ss.name = name;
-        ss.symbol = symbol;
-        ss.decimals = decimals;
-        ss.farmFee = farmFee;
-        ss.devFee = devFee;
-        ss.devWalletAddress = devWalletAddress;
-        ss.totalSupply = totalSupply * 10**ss.decimals;
+        ss.name = _name;
+        ss.symbol = _symbol;
+        ss.decimals = _decimals;
+        ss.farmFee = _farmFee;
+        ss.devFee = _devFee;
+        ss.devWalletAddress = _devWalletAddress;
+        ss.totalSupply = _totalSupply * 10**ss.decimals;
 
         //Set owner balancer and exclude from fees
-        ss.balances[initialOwner] = ss.totalSupply;
-        ss.isExcludedFromFee[initialOwner] = true;
+        ss.balances[_initialOwner] = ss.totalSupply;
+        ss.isExcludedFromFee[_initialOwner] = true;
 
         ss.isInit = true;
     }
@@ -223,7 +223,7 @@ contract TuffVBT is Context, IERC20 {
         uint256 _amount,
         uint256 feePercent,
         bool takeFee
-    ) public view returns (uint256) {
+    ) public pure returns (uint256) {
         if (!takeFee || feePercent == 0) {
             return 0;
         }
