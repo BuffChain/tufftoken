@@ -23,10 +23,8 @@ contract TokenMaturity {
     using SafeMath for uint256;
 
     function initTokenMaturity(uint256 daysUntilMaturity) public onlyOwner {
-        require(
-            !isTokenMaturityInit(),
-            string(abi.encodePacked(TokenMaturityLib.NAMESPACE, ": ", "ALREADY_INITIALIZED"))
-        );
+        //TokenMaturity Already Initialized
+        require(!isTokenMaturityInit(), "TMAI");
 
         TokenMaturityLib.StateStorage storage ss = TokenMaturityLib.getState();
 

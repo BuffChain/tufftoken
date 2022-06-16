@@ -26,10 +26,8 @@ contract UniswapManager {
         address wethAddr,
         uint24 basePoolFee
     ) public onlyOwner {
-        require(
-            !isUniswapManagerInit(),
-            string(abi.encodePacked(UniswapManagerLib.NAMESPACE, ": ", "ALREADY_INITIALIZED"))
-        );
+        //UniswapManager Already Initialized
+        require(!isUniswapManagerInit(), "UMAI");
 
         UniswapManagerLib.StateStorage storage ss = UniswapManagerLib.getState();
 

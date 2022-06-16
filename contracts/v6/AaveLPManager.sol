@@ -47,7 +47,8 @@ contract AaveLPManager is Context {
         address _wethAddr,
         uint24 _balanceBufferPercent
     ) public onlyOwner {
-        require(!isAaveInit(), string(abi.encodePacked(AaveLPManagerLib.NAMESPACE, ": ", "ALREADY_INITIALIZED")));
+        //AaveLPManager Already Initialized
+        require(!isAaveInit(), "ALPMAI");
 
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
 

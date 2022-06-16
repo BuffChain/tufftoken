@@ -24,7 +24,8 @@ contract TuffKeeper is KeeperCompatibleInterface {
     //Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
     // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
     function initTuffKeeper() public onlyOwner {
-        require(!isTuffKeeperInit(), string(abi.encodePacked(TuffKeeperLib.NAMESPACE, ": ", "ALREADY_INITIALIZED")));
+        //TuffKeeper Already Initialized
+        require(!isTuffKeeperInit(), "TKAI");
 
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
 

@@ -23,10 +23,8 @@ contract PriceConsumer {
     //Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
     // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
     function initPriceConsumer(address _factoryAddr) public {
-        require(
-            !isPriceConsumerInit(),
-            string(abi.encodePacked(PriceConsumerLib.NAMESPACE, ": ", "ALREADY_INITIALIZED"))
-        );
+        //PriceConsumer Already Initialized
+        require(!isPriceConsumerInit(), "PCAI");
 
         PriceConsumerLib.StateStorage storage ss = PriceConsumerLib.getState();
 
@@ -44,10 +42,8 @@ contract PriceConsumer {
 
         address _poolAddr = IUniswapV3Factory(ss.factoryAddr).getPool(_tokenA, _tokenB, _fee);
 
-        require(
-            _poolAddr != address(0),
-            string(abi.encodePacked(PriceConsumerLib.NAMESPACE, ": ", "Pool does not exist"))
-        );
+        //PDE: Pool does not exist
+        require(_poolAddr != address(0), "PDE");
 
         (int24 timeWeightedAverageTick, ) = OracleLibrary.consult(_poolAddr, _period);
 

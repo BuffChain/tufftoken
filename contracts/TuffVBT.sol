@@ -31,7 +31,8 @@ contract TuffVBT is Context, IERC20 {
         address devWalletAddress,
         uint256 totalSupply
     ) public onlyOwner {
-        require(!isTuffVBTInit(), string(abi.encodePacked(TuffVBTLib.NAMESPACE, ": ", "ALREADY_INITIALIZED")));
+        //TokenVBT Already Initialized
+        require(!isTuffVBTInit(), "TVAI");
 
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
 
@@ -151,7 +152,8 @@ contract TuffVBT is Context, IERC20 {
     ) internal virtual {
         uint256 currentAllowance = allowance(owner, spender);
         if (currentAllowance != type(uint256).max) {
-            require(currentAllowance >= amount, "ERC20: insufficient allowance");
+            //Insufficient Allowance: ERC20 - insufficient allowance
+            require(currentAllowance >= amount, "IA");
             unchecked {
                 _approve(owner, spender, currentAllowance - amount);
             }
@@ -226,7 +228,8 @@ contract TuffVBT is Context, IERC20 {
             return 0;
         }
         uint256 fee = _amount.mul(feePercent).div(10**2);
-        require(fee > 0, string(abi.encodePacked(TuffVBTLib.NAMESPACE, ": ", "Insufficient amount.")));
+        //Insufficient Amount
+        require(fee > 0, "IA");
         return fee;
     }
 

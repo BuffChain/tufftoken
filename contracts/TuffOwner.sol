@@ -15,7 +15,8 @@ contract TuffOwner {
     }
 
     function initTuffOwner(address initialOwner) public {
-        require(!isTuffOwnerInit(), string(abi.encodePacked(TuffOwnerLib.NAMESPACE, ": ", "ALREADY_INITIALIZED")));
+        //TokenOwner Already Initialized
+        require(!isTuffOwnerInit(), "TOAI");
         _transferOwnership(initialOwner);
     }
 
@@ -38,7 +39,8 @@ contract TuffOwner {
      * @dev Throws if called by any account other than the owner.
      */
     function requireOnlyOwner(address sender) public view {
-        require(sender == address(this) || sender == getTuffOwner(), "Ownable: caller is not the owner");
+        //Not Owner: Ownable - caller is not the owner
+        require(sender == address(this) || sender == getTuffOwner(), "NO");
     }
 
     /**
