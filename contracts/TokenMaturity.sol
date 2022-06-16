@@ -13,6 +13,7 @@ import {IWETH9} from "./IWETH9.sol";
 import {IAaveLPManager} from "./IAaveLPManager.sol";
 import "./TuffOwner.sol";
 
+/* solhint-disable not-rely-on-time */
 contract TokenMaturity {
     modifier onlyOwner() {
         TuffOwner(address(this)).requireOnlyOwner(msg.sender);
@@ -109,20 +110,23 @@ contract TokenMaturity {
     }
 
     function redeem() public {
-        require(isTokenMatured(block.timestamp), "Address can not redeem before expiration.");
-
-        require(getIsTreasuryLiquidated(), "Address can not redeem before treasury has been liquidated.");
+        //Redemption Before Expiration: Address can not redeem before expiration
+        require(isTokenMatured(block.timestamp), "RBE");
+        //Redemption Before Treasury Liquidation: Address can not redeem before treasury has been liquidated
+        require(getIsTreasuryLiquidated(), "RBTL");
 
         address payable account = payable(msg.sender);
 
         (bool _hasRedeemed, ) = hasRedeemed(account);
 
-        require(!_hasRedeemed, "Address can only redeem once.");
+        //Single Redemption: Address can only redeem once
+        require(!_hasRedeemed, "SR");
 
         TuffVBT tuffVBT = TuffVBT(payable(address(this)));
         uint256 ownerBalance = tuffVBT.balanceOf(account);
 
-        require(ownerBalance > 0, "Owner balance needs to be greater than 0.");
+        //OBGTZ: Owner balance needs to be greater than 0
+        require(ownerBalance > 0, "OBGTZ");
 
         uint256 redemptionAmount = getRedemptionAmount(ownerBalance);
 
@@ -152,7 +156,8 @@ contract TokenMaturity {
 
     //    call via perform upkeep once current timestamp >= contract maturity timestamp
     function onTokenMaturity() public onlyOwner {
-        require(isTokenMatured(block.timestamp), "TUFF: Token must have reached maturity.");
+        //Not Matured: TUFF - Token must have reached maturity
+        require(isTokenMatured(block.timestamp), "NM");
 
         liquidateTreasury();
 

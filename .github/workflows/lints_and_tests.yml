@@ -22,7 +22,7 @@ jobs:
           npm run compile
       - name: Lint Solidity Contracts
         run: |-
-          npm run prettier:solidity
+          npm run solhint
       - name: Run tests
         run: |
           ALCHEMY_API_KEY="${{ secrets.ALCHEMY_API_KEY }}" \

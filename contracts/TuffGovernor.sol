@@ -20,11 +20,12 @@ contract TuffGovernor is
     GovernorTimelockControl,
     Ownable
 {
-    uint256 _votingDelay;
-    uint256 _votingPeriod;
-    uint256 _proposalThreshold;
+    uint256 private _votingDelay;
+    uint256 private _votingPeriod;
+    uint256 private _proposalThreshold;
 
     constructor(ERC20Votes _token, TimelockController _timelock)
+        public
         Governor("TuffGovernor")
         GovernorVotes(_token)
         // GovernorVotesQuorumFraction which works together with ERC20Votes to define quorum as a percentage of

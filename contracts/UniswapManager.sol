@@ -23,7 +23,7 @@ contract UniswapManager {
     // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
     function initUniswapManager(
         ISwapRouter _swapRouter,
-        address WETHAddress,
+        address wethAddr,
         uint24 basePoolFee
     ) public onlyOwner {
         require(
@@ -34,7 +34,7 @@ contract UniswapManager {
         UniswapManagerLib.StateStorage storage ss = UniswapManagerLib.getState();
 
         ss.swapRouter = _swapRouter;
-        ss.WETHAddress = WETHAddress;
+        ss.wethAddr = wethAddr;
         ss.basePoolFee = basePoolFee;
         ss.isInit = true;
     }
@@ -65,7 +65,7 @@ contract UniswapManager {
             tokenOut: outputToken,
             fee: poolFee,
             recipient: address(this),
-            deadline: block.timestamp,
+            deadline: block.timestamp, // solhint-disable-line not-rely-on-time
             amountIn: amountIn,
             amountOutMinimum: amountOutMinimum,
             sqrtPriceLimitX96: 0
@@ -97,7 +97,7 @@ contract UniswapManager {
             tokenOut: outputToken,
             fee: poolFee,
             recipient: address(this),
-            deadline: block.timestamp,
+            deadline: block.timestamp, // solhint-disable-line not-rely-on-time
             amountOut: amountOut,
             amountInMaximum: amountInMaximum,
             sqrtPriceLimitX96: 0
@@ -130,9 +130,9 @@ contract UniswapManager {
         TransferHelper.safeApprove(inputToken, address(ss.swapRouter), amountIn);
 
         ISwapRouter.ExactInputParams memory params = ISwapRouter.ExactInputParams({
-            path: abi.encodePacked(inputToken, poolAFee, ss.WETHAddress, poolBFee, outputToken),
+            path: abi.encodePacked(inputToken, poolAFee, ss.wethAddr, poolBFee, outputToken),
             recipient: address(this),
-            deadline: block.timestamp,
+            deadline: block.timestamp, // solhint-disable-line not-rely-on-time
             amountIn: amountIn,
             amountOutMinimum: amountOutMinimum
         });

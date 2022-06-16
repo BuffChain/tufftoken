@@ -193,7 +193,8 @@ contract TuffVBT is Context, IERC20 {
     function decreaseAllowance(address spender, uint256 subtractedValue) public virtual returns (bool) {
         address owner = _msgSender();
         uint256 currentAllowance = allowance(owner, spender);
-        require(currentAllowance >= subtractedValue, "ERC20: decreased allowance below zero");
+        //Allowance Below Zero: ERC20 - decreased allowance below zero
+        require(currentAllowance >= subtractedValue, "ABZ");
         unchecked {
             _approve(owner, spender, currentAllowance - subtractedValue);
         }
@@ -247,8 +248,10 @@ contract TuffVBT is Context, IERC20 {
         address spender,
         uint256 amount
     ) private {
-        require(owner != address(0), "ERC20: approve from the zero address");
-        require(spender != address(0), "ERC20: approve to the zero address");
+        //Approved From Zero Address: ERC20 - approve from the zero address
+        require(owner != address(0), "AFZA");
+        //Approved To Zero Address: ERC20 - approve to the zero address
+        require(spender != address(0), "ATZA");
 
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
 
@@ -275,14 +278,18 @@ contract TuffVBT is Context, IERC20 {
         address to,
         uint256 amount
     ) internal virtual {
-        require(from != address(0), "ERC20: transfer from the zero address");
-        require(to != address(0), "ERC20: transfer to the zero address");
-        require(amount > 0, "Transfer amount must be greater than zero");
+        //Transfer From Zero Address: ERC20 - transfer from the zero address
+        require(from != address(0), "TFZA");
+        //Transfer To Zero Address: ERC20 - transfer to the zero address
+        require(to != address(0), "TTZA");
+        //Transfer Greater Than Zero: Transfer amount must be greater than zero
+        require(amount > 0, "TGTZ");
 
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
 
         uint256 fromBal = ss.balances[from];
-        require(fromBal >= amount, "Sender does not have adequate funds.");
+        //Sender Missing Adequate Balance: Transfer amount must be greater than zero
+        require(fromBal >= amount, "SMAB");
 
         //indicates if fee should be deducted from transfer
         bool takeFee = true;
@@ -293,6 +300,7 @@ contract TuffVBT is Context, IERC20 {
         }
 
         TokenMaturity tokenMaturity = TokenMaturity(address(this));
+        // solhint-disable-next-line not-rely-on-time
         if (takeFee && tokenMaturity.isTokenMatured(block.timestamp)) {
             takeFee = false;
         }
@@ -322,12 +330,14 @@ contract TuffVBT is Context, IERC20 {
     }
 
     function burn(address account, uint256 amount) public onlyOwner {
-        require(account != address(0), "ERC20: burn from the zero address");
+        //Burn From Zero Address: ERC20 - burn from the zero address
+        require(account != address(0), "BFZA");
 
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
 
         uint256 accountBalance = ss.balances[account];
-        require(accountBalance >= amount, "ERC20: burn amount exceeds balance");
+        //Burn Amount Exceeds Balance: ERC20 - burn amount exceeds balance
+        require(accountBalance >= amount, "BAEB");
         unchecked {
             ss.balances[account] = accountBalance - amount;
         }
@@ -336,5 +346,6 @@ contract TuffVBT is Context, IERC20 {
         emit Transfer(account, address(0), amount);
     }
 
+    // solhint-disable-next-line no-empty-blocks
     receive() external payable {}
 }

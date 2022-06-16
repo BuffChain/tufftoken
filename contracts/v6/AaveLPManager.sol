@@ -218,7 +218,8 @@ contract AaveLPManager is Context {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
 
         address aTokenAddr = getATokenAddress(tokenAddr);
-        require(aTokenAddr != address(0), "The tokenAddress provided is not supported by Aave");
+        //Unsupported Token: The tokenAddress provided is not supported by Aave
+        require(aTokenAddr != address(0), "UT");
 
         ss.supportedTokens.push(tokenAddr);
         ss.tokenMetadata[tokenAddr].chainlinkEthTokenAggrAddr = chainlinkEthTokenAggrAddr;
@@ -282,7 +283,7 @@ contract AaveLPManager is Context {
     // we do not have to sort, which helps saves on gas.
     function balanceAaveLendingPool() public onlyOwner {
         BalanceMetadata memory bm = getBalanceMetadata();
-        (uint256 tVBTWethQuote, uint128 decimalPrecision) = IPriceConsumer(address(this)).getTvbtWethQuote(3600);
+        (uint256 tVBTWethQuote, ) = IPriceConsumer(address(this)).getTvbtWethQuote(3600);
 
         //Then, loop through again to balance tokens
         for (uint256 i = 0; i < bm.supportedTokens.length; i++) {
@@ -298,8 +299,10 @@ contract AaveLPManager is Context {
                 bm.totalBalanceInWeth
             );
 
-            require(tokenTargetPercentage < uint256(-1), "Cannot cast tokenTargetPercentage - out of range of int max");
-            require(tokenActualPercentage < uint256(-1), "Cannot cast tokenActualPercentage - out of range of int max");
+            //Out Of Range Target Percentage: Cannot cast tokenTargetPercentage - out of range of int max
+            require(tokenTargetPercentage < uint256(-1), "OORTP");
+            //Out Of Range Actual Percentage: Cannot cast tokenActualPercentage - out of range of int max
+            require(tokenActualPercentage < uint256(-1), "OORAP");
 
             //Only balance if token is under-allocated more than our buffer amount
             if (int256(tokenTargetPercentage) - int256(tokenActualPercentage) > bm.balanceBufferPercent) {

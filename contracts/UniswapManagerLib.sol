@@ -5,13 +5,13 @@ import {ISwapRouter} from "@uniswap/v3-periphery/contracts/interfaces/ISwapRoute
 
 library UniswapManagerLib {
     //IMPORTANT: You must increment this string if you add a new variable to StateStorage that is not at the end
-    string constant NAMESPACE = "io.BuffChain.TuffToken.UniswapManagerLib.1";
-    bytes32 constant POSITION = keccak256(bytes(NAMESPACE));
+    string public constant NAMESPACE = "io.BuffChain.TuffToken.UniswapManagerLib.1";
+    bytes32 public constant POSITION = keccak256(bytes(NAMESPACE));
 
     struct StateStorage {
         bool isInit;
         ISwapRouter swapRouter;
-        address WETHAddress;
+        address wethAddr;
         uint24 basePoolFee;
     }
 

@@ -9,6 +9,7 @@ import {TokenMaturity} from "./TokenMaturity.sol";
 import {IAaveLPManager} from "./IAaveLPManager.sol";
 import "./TuffOwner.sol";
 
+/* solhint-disable not-rely-on-time */
 contract TuffKeeper is KeeperCompatibleInterface {
     modifier onlyOwner() {
         TuffOwner(address(this)).requireOnlyOwner(msg.sender);

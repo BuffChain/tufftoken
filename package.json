@@ -13,9 +13,8 @@
     "deploy_kovan": "hardhat --network kovan deploy && hardhat --network kovan etherscan-verify",
     "deploy_rinkeby": "TODO: https://github.com/wighawag/hardhat-deploy/tree/master#how-to-deploy-contracts",
     "deploy_mainnet": "TODO: https://github.com/wighawag/hardhat-deploy/tree/master#how-to-deploy-contracts",
-    "solhint": "./node_modules/.bin/solhint -f table contracts/*.sol && ./node_modules/.bin/solhint -f table contracts/**/*.sol",
-    "prettier:solidity": "prettier --check contracts/*",
-    "prettier:solidity:write": "prettier --write contracts/*",
+    "solhint": "solhint -f table contracts/*.sol contracts/**/*.sol",
+    "prettier:solidity": "prettier --write contracts/*",
     "docgen": "hardhat docgen"
   },
   "repository": {

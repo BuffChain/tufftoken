@@ -14,11 +14,11 @@ import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
  */
 
 contract TuffToken is Context, ERC20, ERC20Permit, ERC20Votes {
-    string _name;
-    string _symbol;
-    uint8 _decimals;
+    string private _name;
+    string private _symbol;
+    uint8 private _decimals;
 
-    constructor(string memory name_, string memory symbol_) ERC20(name_, symbol_) ERC20Permit(name_) {
+    constructor(string memory name_, string memory symbol_) public ERC20(name_, symbol_) ERC20Permit(name_) {
         _name = name_;
         _symbol = symbol_;
         _decimals = 9;

@@ -57,7 +57,8 @@ contract TuffOwner {
      * Can only be called by the current owner.
      */
     function transferTuffOwnership(address newOwner) public virtual onlyOwner {
-        require(newOwner != address(0), "Ownable: new owner is the zero address");
+        //New Owner Zero Address: Ownable - new owner is the zero address
+        require(newOwner != address(0), "NOZA");
         _transferOwnership(newOwner);
     }
 
