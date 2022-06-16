@@ -358,11 +358,9 @@ describe("TuffVBT", function () {
         const nonOwnerAccountAddress = accounts[1].address;
         await tuffVBTDiamond.transferTuffOwnership(nonOwnerAccountAddress);
 
-        await expectRevert(tuffVBTDiamond.setDevFee(3),
-            "Ownable: caller is not the owner");
+        await expectRevert(tuffVBTDiamond.setDevFee(3), "NO");
 
         devFee = await tuffVBTDiamond.getDevFee();
         expect(devFee).to.equal(2, "dev fee should be left unchanged");
     });
-
 });

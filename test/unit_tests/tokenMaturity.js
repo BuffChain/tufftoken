@@ -156,8 +156,7 @@ describe('TokenMaturity', function () {
         expect(senderTuffVBTBalanceAfterRedemption).to.equal(0,
             "Holder's balance was not reset");
 
-        await expectRevert(tuffVBTDiamond.redeem(),
-            "Address can only redeem once.");
+        await expectRevert(tuffVBTDiamond.redeem(), "SR");
 
         return expectedETHRedemptionAmount;
     }
@@ -306,7 +305,7 @@ describe('TokenMaturity', function () {
         await tuffVBTDiamond.transferTuffOwnership(nonOwnerAccountAddress);
 
         await expectRevert(tuffVBTDiamond.setContractMaturityTimestamp(2),
-            "Ownable: caller is not the owner");
+            "NO");
 
         timestamp = await tuffVBTDiamond.getContractMaturityTimestamp();
         expect(timestamp).to.equal(1, "timestamp should be left unchanged");

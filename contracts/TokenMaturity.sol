@@ -212,7 +212,7 @@ contract TokenMaturity {
 
         uniswapManager.swapExactInputSingle(
             token,
-            ss.WETHAddress,
+            ss.wethAddr,
             ss.basePoolFee,
             amount,
             0 //TODO: fix, should be based on an orcale
@@ -225,10 +225,10 @@ contract TokenMaturity {
     function unwrapWETH() public onlyOwner returns (uint256) {
         UniswapManagerLib.StateStorage storage ss = UniswapManagerLib.getState();
 
-        uint256 balance = IERC20(ss.WETHAddress).balanceOf(address(this));
+        uint256 balance = IERC20(ss.wethAddr).balanceOf(address(this));
 
-        IWETH9(ss.WETHAddress).withdraw(balance);
+        IWETH9(ss.wethAddr).withdraw(balance);
 
-        return IERC20(ss.WETHAddress).balanceOf(address(this));
+        return IERC20(ss.wethAddr).balanceOf(address(this));
     }
 }
