@@ -1,11 +1,10 @@
 // SPDX-License-Identifier: agpl-3.0
 
 import hre from 'hardhat';
-import { AAVE_BALANCE_BUFFER_PERCENTAGE } from '../utils/consts';
 
 const {
     consts, UNISWAP_POOL_BASE_FEE, TOKEN_NAME, TOKEN_SYMBOL, TOKEN_DECIMALS, TOKEN_FARM_FEE, TOKEN_DEV_FEE,
-    TOKEN_TOTAL_SUPPLY, TOKEN_DAYS_UNTIL_MATURITY
+    TOKEN_TOTAL_SUPPLY, TOKEN_DAYS_UNTIL_MATURITY, AAVE_BALANCE_BUFFER_PERCENTAGE
 } = require("../utils/consts");
 const {logDeploymentTx} = require("../utils/deployment_helpers");
 
