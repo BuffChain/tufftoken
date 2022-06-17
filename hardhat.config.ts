@@ -1,3 +1,5 @@
+// SPDX-License-Identifier: agpl-3.0
+
 import * as fs from 'fs';
 import path from "path";
 
@@ -7,6 +9,7 @@ import '@nomiclabs/hardhat-web3';
 import 'hardhat-deploy';
 import 'hardhat-deploy-ethers';
 import 'hardhat-gas-reporter';
+import 'solidity-coverage';
 import '@typechain/hardhat'; //Generate types from ABI of compiled contracts
 import {TASK_DEPLOY_MAIN} from 'hardhat-deploy';
 import {task, extendEnvironment, HardhatUserConfig, subtask} from 'hardhat/config';

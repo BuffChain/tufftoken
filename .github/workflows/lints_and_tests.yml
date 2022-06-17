@@ -23,9 +23,16 @@ jobs:
       - name: Lint Solidity Contracts
         run: |-
           npm run solhint
-      - name: Run tests
+      - name: Run Unit Tests
         run: |
           ALCHEMY_API_KEY="${{ secrets.ALCHEMY_API_KEY }}" \
           INFURA_URL="${{ secrets.INFURA_URL }}" \
           ETH_HARDHAT_ACCOUNT_MNEMONIC="${{ secrets.ETH_HARDHAT_ACCOUNT_MNEMONIC }}" \
+          CMC_API_KEY="${{ secrets.CMC_API_KEY }}" \
           npm run test
+      - name: Run Test Coverage
+        run: |
+          ALCHEMY_API_KEY="${{ secrets.ALCHEMY_API_KEY }}" \
+          INFURA_URL="${{ secrets.INFURA_URL }}" \
+          ETH_HARDHAT_ACCOUNT_MNEMONIC="${{ secrets.ETH_HARDHAT_ACCOUNT_MNEMONIC }}" \
+          npm run coverage
