@@ -2,12 +2,11 @@
 
 import hre from "hardhat";
 
-const {
+import {
     consts, UNISWAP_POOL_BASE_FEE
-} = require("../utils/consts");
-import {getUniswapPriceQuote} from "../utils/test_utils";
-
-const { log } = require("../utils/deployment_helpers");
+} from "../utils/consts";
+import { getUniswapPriceQuote } from "../utils/utils";
+import { log } from "../utils/deployment_helpers";
 
 module.exports.tags = ["v0000"];
 module.exports = async () => {

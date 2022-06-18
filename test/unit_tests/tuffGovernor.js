@@ -7,7 +7,7 @@ const {
     expectRevert, // Assertions for transactions that should fail
 } = require('@openzeppelin/test-helpers');
 const utils = require("../../utils/test_utils");
-const {getERC20Contract} = require("../../utils/test_utils");
+const {getERC20Contract} = require("../../utils/utils");
 const {TOKEN_TOTAL_SUPPLY, TOKEN_DEV_FEE} = require("../../utils/consts");
 
 describe("TuffGovernor", function () {

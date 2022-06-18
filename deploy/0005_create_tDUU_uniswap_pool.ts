@@ -2,24 +2,22 @@
 
 import hre from "hardhat";
 import { ethers, Contract } from "ethers";
-
 import { nearestUsableTick } from "@uniswap/v3-sdk";
 import {
     abi as NonfungiblePositionManagerABI
 } from "@uniswap/v3-periphery/artifacts/contracts/NonfungiblePositionManager.sol/NonfungiblePositionManager.json";
-import { NonfungiblePositionManager, IUniswapV3Pool, IUniswapV3Factory, TuffVBT } from "../src/types";
 import { Address } from "hardhat-deploy/dist/types";
+import { NonfungiblePositionManager, IUniswapV3Pool, IUniswapV3Factory, TuffVBT } from "../src/types";
+
 import {
+    consts,
     BUFFCHAIN_INIT_TUFF_LIQUIDITY_PERCENTAGE,
     BUFFCHAIN_INIT_WETH_LIQUIDITY_WETH, TOKEN_DECIMALS,
-    TOKEN_SYMBOL,
+    TOKEN_SYMBOL, UNISWAP_POOL_BASE_FEE,
     UNISWAP_POOL_OBSERVATION_CARDINALITY
 } from "../utils/consts";
-
-const { consts, UNISWAP_POOL_BASE_FEE } = require("../utils/consts");
-
-const { getSqrtPriceX96, getWETH9Contract, getAcctBal } = require("../utils/test_utils");
-const { log } = require("../utils/deployment_helpers");
+import { getSqrtPriceX96, getWETH9Contract, getAcctBal } from "../utils/utils";
+import { log } from "../utils/deployment_helpers";
 
 module.exports.tags = ["v0005", "test"];
 module.exports = async () => {

@@ -2,8 +2,8 @@
 
 import hre from "hardhat";
 
-import {swapEthForWeth} from '../utils/test_utils';
-const { log } = require("../utils/deployment_helpers");
+import { swapEthForWeth } from "../utils/test_utils";
+import { log } from "../utils/deployment_helpers";
 
 module.exports.tags = ["v0004", "test"];
 module.exports = async () => {
@@ -14,8 +14,8 @@ module.exports = async () => {
         log("Supplying ETH and WETH to buffChain");
     }
 
-    const {getNamedAccounts} = hre;
-    const {deployer, buffChain} = await getNamedAccounts();
+    const { getNamedAccounts } = hre;
+    const { deployer, buffChain } = await getNamedAccounts();
     const deployerAcct = await hre.ethers.getSigner(deployer);
     const buffChainAcct = await hre.ethers.getSigner(buffChain);
 
@@ -26,7 +26,7 @@ module.exports = async () => {
     log(`Sending [${ethAmt}] ETH to buffChain [${buffChain}]`);
     await deployerAcct.sendTransaction({
         to: buffChain,
-        value: ethAmt,
+        value: ethAmt
     });
 
     log(`Swapping [${wethAmt}] WETH for buffChain [${buffChain}]`);

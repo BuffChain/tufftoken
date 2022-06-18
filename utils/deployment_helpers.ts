@@ -5,7 +5,7 @@ import path from "path";
 
 let recognizedVersions: string[] = [];
 
-module.exports.log = (message: string) => {
+export function log(message: string) {
     //Get the version from the caller's filename
     const callerFilename = path.parse(caller()).base;
     const deployVersion = callerFilename.split('_')[0];
@@ -16,4 +16,4 @@ module.exports.log = (message: string) => {
     }
 
     console.log(`[DEPLOY][v${deployVersion}] - ${message}`);
-};
+}

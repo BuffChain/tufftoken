@@ -1,37 +1,38 @@
 // SPDX-License-Identifier: agpl-3.0
 
 import hre from "hardhat";
-import {Signer} from "ethers";
-import {expect} from "chai";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { expect } from "chai";
 
-import {TuffVBT, IUniswapV3Factory} from "../../src/types";
+import { TuffVBT, IUniswapV3Factory } from "../../src/types";
 
-import {consts, TOKEN_DECIMALS, UNISWAP_POOL_BASE_FEE} from '../../utils/consts';
+import { consts, TOKEN_DECIMALS, UNISWAP_POOL_BASE_FEE } from "../../utils/consts";
+import {
+    swapEthForWeth, swapTokens
+} from "../../utils/test_utils";
 import {
     getERC20Contract,
-    getSqrtPriceX96, getUniswapPriceQuote,
-    swapEthForWeth,
-    swapTokens, transferTuffDUU
-} from '../../utils/test_utils';
+    getSqrtPriceX96, getUniswapPriceQuote, transferTuffDUU
+} from "../../utils/utils";
 
-describe("UniswapPool Deployment", function () {
+describe("UniswapPool Deployment", function() {
 
     const poolPeriod = 3600;
-    let owner: Signer;
-    let accounts: Signer[];
+    let owner: SignerWithAddress;
+    let accounts: SignerWithAddress[];
 
     let tuffVBTDiamond: TuffVBT;
 
-    before(async function () {
-        const {contractOwner} = await hre.getNamedAccounts();
+    before(async function() {
+        const { contractOwner } = await hre.getNamedAccounts();
         owner = await hre.ethers.getSigner(contractOwner);
 
         //Per `hardhat.config.ts`, the 0 and 1 index accounts are named accounts. They are reserved for deployment uses
         [, , ...accounts] = await hre.ethers.getSigners();
     });
 
-    beforeEach(async function () {
-        const {tDUU} = await hre.deployments.fixture();
+    beforeEach(async function() {
+        const { tDUU } = await hre.deployments.fixture();
         tuffVBTDiamond = await hre.ethers.getContractAt(tDUU.abi, tDUU.address, owner) as TuffVBT;
 
         //Increase the block time to prime the pool
@@ -39,7 +40,7 @@ describe("UniswapPool Deployment", function () {
         await hre.ethers.provider.send("evm_mine", []);
     });
 
-    it('should exist a pool between TUFF and WETH9, with liquidity', async () => {
+    it("should exist a pool between TUFF and WETH9, with liquidity", async () => {
         const uniswapV3Factory = await hre.ethers.getContractAt("UniswapV3Factory",
             consts("UNISWAP_V3_FACTORY_ADDR")) as IUniswapV3Factory;
         const tuffVBTPoolAddr = await uniswapV3Factory.getPool(
@@ -52,7 +53,7 @@ describe("UniswapPool Deployment", function () {
             tuff_weth9Pool.tickSpacing(),
             tuff_weth9Pool.maxLiquidityPerTick(),
             tuff_weth9Pool.liquidity(),
-            tuff_weth9Pool.slot0(),
+            tuff_weth9Pool.slot0()
         ]);
         const sqrtPriceX96 = slot[0];
         const tick = slot[1];
@@ -62,7 +63,7 @@ describe("UniswapPool Deployment", function () {
         expect(sqrtPriceX96).to.equal(getSqrtPriceX96(consts("TUFF_STARTING_PRICE")));
     });
 
-    it('should have accurate and precise quote', async () => {
+    it("should have accurate and precise quote", async () => {
         //Get TuffVBT <-> WETH quotes in both directions
         let actualTuffVBTWethQuote = await getUniswapPriceQuote(
             tuffVBTDiamond.address,
@@ -101,44 +102,42 @@ describe("UniswapPool Deployment", function () {
         expect(actualTuffVBTDaiQuote).to.be.approximately(expectedTuffVBTDaiQuote, buffer);
     });
 
-    it('should swap from TUFF to WETH9', async () => {
+    it("should swap from TUFF to WETH9", async () => {
         //Setup
         const recipient = accounts[3];
-        const recipientAddr = await recipient.getAddress();
         const tuffAmt = hre.ethers.utils.parseUnits("250", TOKEN_DECIMALS);
         const wethAmt = hre.ethers.utils.parseEther("20");
 
-        await transferTuffDUU(recipientAddr);
-        const {weth9Contract} = await swapEthForWeth(recipient, wethAmt);
-        const startingTuffBalance = await tuffVBTDiamond.balanceOf(recipientAddr);
-        const startingWethBalance = await weth9Contract.balanceOf(recipientAddr);
+        await transferTuffDUU(recipient.address);
+        const { weth9Contract } = await swapEthForWeth(recipient, wethAmt);
+        const startingTuffBalance = await tuffVBTDiamond.balanceOf(recipient.address);
+        const startingWethBalance = await weth9Contract.balanceOf(recipient.address);
 
         await weth9Contract.connect(recipient).approve(consts("UNISWAP_V3_ROUTER_ADDR"), hre.ethers.constants.MaxUint256);
         await swapTokens(recipient, weth9Contract.address, tuffVBTDiamond.address, tuffAmt);
 
-        const endingTuffBalance = await tuffVBTDiamond.balanceOf(recipientAddr);
-        const endingWethBalance = await weth9Contract.balanceOf(recipientAddr);
+        const endingTuffBalance = await tuffVBTDiamond.balanceOf(recipient.address);
+        const endingWethBalance = await weth9Contract.balanceOf(recipient.address);
         expect(endingTuffBalance).to.equal(startingTuffBalance.add(tuffAmt));
         expect(endingWethBalance).to.be.lt(startingWethBalance);
     });
 
-    it('should swap from WETH9 to TUFF', async () => {
+    it("should swap from WETH9 to TUFF", async () => {
         //Setup
         const recipient = accounts[3];
-        const recipientAddr = await recipient.getAddress();
         const startingWethAmt = hre.ethers.utils.parseEther("20");
         const swapWethAmt = hre.ethers.utils.parseUnits("1", "gwei");
 
-        await transferTuffDUU(recipientAddr, "400000");
-        const {weth9Contract} = await swapEthForWeth(recipient, startingWethAmt);
-        const startingTuffBalance = await tuffVBTDiamond.balanceOf(recipientAddr);
-        const startingWethBalance = await weth9Contract.balanceOf(recipientAddr);
+        await transferTuffDUU(recipient.address, "400000");
+        const { weth9Contract } = await swapEthForWeth(recipient, startingWethAmt);
+        const startingTuffBalance = await tuffVBTDiamond.balanceOf(recipient.address);
+        const startingWethBalance = await weth9Contract.balanceOf(recipient.address);
 
         await tuffVBTDiamond.connect(recipient).approve(consts("UNISWAP_V3_ROUTER_ADDR"), hre.ethers.constants.MaxUint256);
         await swapTokens(recipient, tuffVBTDiamond.address, weth9Contract.address, swapWethAmt);
 
-        const endingTuffBalance = await tuffVBTDiamond.balanceOf(recipientAddr);
-        const endingWethBalance = await weth9Contract.balanceOf(recipientAddr);
+        const endingTuffBalance = await tuffVBTDiamond.balanceOf(recipient.address);
+        const endingWethBalance = await weth9Contract.balanceOf(recipient.address);
         expect(endingWethBalance).to.equal(startingWethBalance.add(swapWethAmt));
         expect(endingTuffBalance).to.be.lt(startingTuffBalance);
     });

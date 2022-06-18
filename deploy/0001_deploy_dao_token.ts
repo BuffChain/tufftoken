@@ -3,7 +3,7 @@
 import hre from "hardhat";
 
 const AccessControlABI = require("../artifacts/@openzeppelin/contracts/access/AccessControl.sol/AccessControl.json").abi;
-const { log } = require("../utils/deployment_helpers");
+import { log } from "../utils/deployment_helpers";
 
 module.exports.tags = ["v0001"];
 module.exports = async () => {

@@ -10,10 +10,10 @@ import {
     BUFFCHAIN_TOTAL_TUFF_PERCENTAGE,
     TOKEN_SYMBOL,
     TOKEN_DECIMALS,
-    TOKEN_TOTAL_SUPPLY,
+    TOKEN_TOTAL_SUPPLY
 } from "../utils/consts";
+import { log } from "../utils/deployment_helpers";
 
-const { log } = require("../utils/deployment_helpers");
 
 module.exports.tags = ["v0003"];
 module.exports = async () => {

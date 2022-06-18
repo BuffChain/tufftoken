@@ -1,6 +1,6 @@
 {
   "name": "@buffchain/tufftoken",
-  "version": "1.3.6",
+  "version": "1.3.11",
   "description": "TuffToken Smart Contract",
   "scripts": {
     "clean": "hardhat clean",
