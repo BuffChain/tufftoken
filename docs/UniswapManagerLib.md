@@ -20,7 +20,7 @@ bytes32 POSITION
 struct StateStorage {
   bool isInit;
   contract ISwapRouter swapRouter;
-  address WETHAddress;
+  address wethAddr;
   uint24 basePoolFee;
 }
 ```

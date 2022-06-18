@@ -24,7 +24,9 @@ struct StateStorage {
   address lpProviderAddr;
   address protocolDataProviderAddr;
   address wethAddr;
+  uint24 balanceBufferPercent;
   uint256 totalTargetWeight;
+  uint24 decimalPrecision;
 }
 ```
 
@@ -32,8 +34,8 @@ struct StateStorage {
 
 ```solidity
 struct TokenMetadata {
-  uint256 targetPercent;
-  uint256 actualPercent;
+  address chainlinkEthTokenAggrAddr;
+  uint256 targetWeight;
   address aToken;
 }
 ```

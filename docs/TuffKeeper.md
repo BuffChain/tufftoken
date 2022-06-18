@@ -8,12 +8,6 @@
 modifier onlyOwner()
 ```
 
-### initTuffKeeperLock
-
-```solidity
-modifier initTuffKeeperLock()
-```
-
 ### isTuffKeeperInit
 
 ```solidity
@@ -77,7 +71,7 @@ function getLastBalanceAssetsTimestamp() public view returns (uint256)
 ### isIntervalComplete
 
 ```solidity
-function isIntervalComplete(uint256 timestamp, uint256 lastTimestamp, uint256 interval) private view returns (bool)
+function isIntervalComplete(uint256 timestamp, uint256 lastTimestamp, uint256 interval) private pure returns (bool)
 ```
 
 ### checkUpkeep

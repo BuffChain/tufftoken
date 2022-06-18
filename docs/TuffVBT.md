@@ -8,16 +8,10 @@
 modifier onlyOwner()
 ```
 
-### tuffVBTInitLock
-
-```solidity
-modifier tuffVBTInitLock()
-```
-
 ### initTuffVBT
 
 ```solidity
-function initTuffVBT(address initialOwner, string name, string symbol, uint8 decimals, uint256 farmFee, uint256 devFee, address devWalletAddress, uint256 totalSupply) public
+function initTuffVBT(address _initialOwner, string _name, string _symbol, uint8 _decimals, uint256 _farmFee, uint256 _devFee, address _devWalletAddress, uint256 _totalSupply) public
 ```
 
 ### isTuffVBTInit
@@ -217,7 +211,7 @@ function isExcludedFromFee(address account) public view returns (bool)
 ### calculateFee
 
 ```solidity
-function calculateFee(uint256 _amount, uint256 feePercent, bool takeFee) public view returns (uint256)
+function calculateFee(uint256 _amount, uint256 feePercent, bool takeFee) public pure returns (uint256)
 ```
 
 ### _approve

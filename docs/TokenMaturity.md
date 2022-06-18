@@ -8,12 +8,6 @@
 modifier onlyOwner()
 ```
 
-### tokenMaturityInitLock
-
-```solidity
-modifier tokenMaturityInitLock()
-```
-
 ### initTokenMaturity
 
 ```solidity
