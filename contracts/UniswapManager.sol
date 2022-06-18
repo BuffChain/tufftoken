@@ -14,20 +14,6 @@ contract UniswapManager {
         _;
     }
 
-    modifier uniswapManagerInitLock() {
-        require(
-            isUniswapManagerInit(),
-            string(
-                abi.encodePacked(
-                    UniswapManagerLib.NAMESPACE,
-                    ": ",
-                    "UNINITIALIZED"
-                )
-            )
-        );
-        _;
-    }
-
     function isUniswapManagerInit() public view returns (bool) {
         UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
             .getState();
@@ -125,8 +111,8 @@ contract UniswapManager {
             amountInMaximum
         );
 
-        ISwapRouter.ExactOutputSingleParams memory params =
-            ISwapRouter.ExactOutputSingleParams({
+        ISwapRouter.ExactOutputSingleParams memory params = ISwapRouter
+            .ExactOutputSingleParams({
                 tokenIn: inputToken,
                 tokenOut: outputToken,
                 fee: poolFee,
@@ -163,7 +149,7 @@ contract UniswapManager {
         uint256 amountOutMinimum
     ) external onlyOwner returns (uint256) {
         UniswapManagerLib.StateStorage storage ss = UniswapManagerLib
-        .getState();
+            .getState();
 
         //Approve the router to spend `inputToken`
         TransferHelper.safeApprove(
@@ -173,19 +159,19 @@ contract UniswapManager {
         );
 
         ISwapRouter.ExactInputParams memory params = ISwapRouter
-        .ExactInputParams({
-            path: abi.encodePacked(
-                inputToken,
-                poolAFee,
-                ss.WETHAddress,
-                poolBFee,
-                outputToken
-            ),
-            recipient: address(this),
-            deadline: block.timestamp,
-            amountIn: amountIn,
-            amountOutMinimum: amountOutMinimum
-        });
+            .ExactInputParams({
+                path: abi.encodePacked(
+                    inputToken,
+                    poolAFee,
+                    ss.WETHAddress,
+                    poolBFee,
+                    outputToken
+                ),
+                recipient: address(this),
+                deadline: block.timestamp,
+                amountIn: amountIn,
+                amountOutMinimum: amountOutMinimum
+            });
 
         return ss.swapRouter.exactInput(params);
     }

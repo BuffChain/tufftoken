@@ -16,16 +16,6 @@ contract TuffVBT is Context, IERC20 {
         _;
     }
 
-    modifier tuffVBTInitLock() {
-        require(
-            isTuffVBTInit(),
-            string(
-                abi.encodePacked(TuffVBTLib.NAMESPACE, ": ", "UNINITIALIZED")
-            )
-        );
-        _;
-    }
-
     using SafeMath for uint256;
     using Address for address;
 
@@ -74,78 +64,57 @@ contract TuffVBT is Context, IERC20 {
         return ss.isInit;
     }
 
-    function name() public view tuffVBTInitLock returns (string memory) {
+    function name() public view returns (string memory) {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
         return ss.name;
     }
 
-    function symbol() public view tuffVBTInitLock returns (string memory) {
+    function symbol() public view returns (string memory) {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
         return ss.symbol;
     }
 
-    function decimals() public view tuffVBTInitLock returns (uint8) {
+    function decimals() public view returns (uint8) {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
         return ss.decimals;
     }
 
-    function totalSupply()
-        public
-        view
-        override
-        tuffVBTInitLock
-        returns (uint256)
-    {
+    function totalSupply() public view override returns (uint256) {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
         return ss.totalSupply;
     }
 
-    function getFarmFee() public view tuffVBTInitLock returns (uint256) {
+    function getFarmFee() public view returns (uint256) {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
         return ss.farmFee;
     }
 
-    function setFarmFee(uint256 _farmFee) public tuffVBTInitLock onlyOwner {
+    function setFarmFee(uint256 _farmFee) public onlyOwner {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
         ss.farmFee = _farmFee;
     }
 
-    function getDevFee() public view tuffVBTInitLock returns (uint256) {
+    function getDevFee() public view returns (uint256) {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
         return ss.devFee;
     }
 
-    function setDevFee(uint256 _devFee) public tuffVBTInitLock onlyOwner {
+    function setDevFee(uint256 _devFee) public onlyOwner {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
         ss.devFee = _devFee;
     }
 
-    function getDevWalletAddress()
-        public
-        view
-        tuffVBTInitLock
-        returns (address)
-    {
+    function getDevWalletAddress() public view returns (address) {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
         return ss.devWalletAddress;
     }
 
-    function setDevWalletAddress(address _devWalletAddress)
-        public
-        tuffVBTInitLock
-        onlyOwner
-    {
+    function setDevWalletAddress(address _devWalletAddress) public onlyOwner {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
         ss.devWalletAddress = _devWalletAddress;
     }
 
-    function balanceOf(address account)
-        public
-        view
-        override
-        tuffVBTInitLock
-        returns (uint256)
-    {
+    function balanceOf(address account) public view override returns (uint256) {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
         return ss.balances[account];
     }
@@ -153,7 +122,6 @@ contract TuffVBT is Context, IERC20 {
     function transfer(address recipient, uint256 amount)
         public
         override
-        tuffVBTInitLock
         returns (bool)
     {
         _transfer(_msgSender(), recipient, amount);
@@ -164,7 +132,6 @@ contract TuffVBT is Context, IERC20 {
         public
         view
         override
-        tuffVBTInitLock
         returns (uint256)
     {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
@@ -174,7 +141,6 @@ contract TuffVBT is Context, IERC20 {
     function approve(address spender, uint256 amount)
         public
         override
-        tuffVBTInitLock
         returns (bool)
     {
         _approve(_msgSender(), spender, amount);
@@ -185,7 +151,7 @@ contract TuffVBT is Context, IERC20 {
         address from,
         address to,
         uint256 amount
-    ) public override tuffVBTInitLock returns (bool) {
+    ) public override returns (bool) {
         address spender = _msgSender();
         _spendAllowance(from, spender, amount);
         _transfer(from, to, amount);
@@ -204,7 +170,7 @@ contract TuffVBT is Context, IERC20 {
         address owner,
         address spender,
         uint256 amount
-    ) internal virtual tuffVBTInitLock {
+    ) internal virtual {
         uint256 currentAllowance = allowance(owner, spender);
         if (currentAllowance != type(uint256).max) {
             require(
@@ -232,7 +198,6 @@ contract TuffVBT is Context, IERC20 {
     function increaseAllowance(address spender, uint256 addedValue)
         public
         virtual
-        tuffVBTInitLock
         returns (bool)
     {
         address owner = _msgSender();
@@ -257,7 +222,6 @@ contract TuffVBT is Context, IERC20 {
     function decreaseAllowance(address spender, uint256 subtractedValue)
         public
         virtual
-        tuffVBTInitLock
         returns (bool)
     {
         address owner = _msgSender();
@@ -273,12 +237,12 @@ contract TuffVBT is Context, IERC20 {
         return true;
     }
 
-    function excludeFromFee(address account) public tuffVBTInitLock onlyOwner {
+    function excludeFromFee(address account) public onlyOwner {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
         ss.isExcludedFromFee[account] = true;
     }
 
-    function includeInFee(address account) public tuffVBTInitLock onlyOwner {
+    function includeInFee(address account) public onlyOwner {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
         ss.isExcludedFromFee[account] = false;
     }
@@ -286,7 +250,6 @@ contract TuffVBT is Context, IERC20 {
     function isExcludedFromFee(address account)
         public
         view
-        tuffVBTInitLock
         onlyOwner
         returns (bool)
     {
@@ -298,7 +261,7 @@ contract TuffVBT is Context, IERC20 {
         uint256 _amount,
         uint256 feePercent,
         bool takeFee
-    ) public view tuffVBTInitLock returns (uint256) {
+    ) public view returns (uint256) {
         if (!takeFee || feePercent == 0) {
             return 0;
         }
@@ -412,11 +375,7 @@ contract TuffVBT is Context, IERC20 {
         }
     }
 
-    function burn(address account, uint256 amount)
-        public
-        tuffVBTInitLock
-        onlyOwner
-    {
+    function burn(address account, uint256 amount) public onlyOwner {
         require(account != address(0), "ERC20: burn from the zero address");
 
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();

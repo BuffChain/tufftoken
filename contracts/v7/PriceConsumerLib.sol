@@ -3,8 +3,7 @@ pragma solidity >=0.7.0;
 
 library PriceConsumerLib {
     //IMPORTANT: You must increment this string if you add a new variable to StateStorage that is not at the end
-    string constant NAMESPACE =
-    "io.BuffChain.TuffToken.PriceConsumerLib.1";
+    string constant NAMESPACE = "io.BuffChain.TuffToken.PriceConsumerLib.1";
     bytes32 constant POSITION = keccak256(bytes(NAMESPACE));
 
     struct StateStorage {
@@ -13,9 +12,9 @@ library PriceConsumerLib {
     }
 
     function getState()
-    internal
-    pure
-    returns (StateStorage storage stateStorage)
+        internal
+        pure
+        returns (StateStorage storage stateStorage)
     {
         bytes32 position = POSITION;
 
