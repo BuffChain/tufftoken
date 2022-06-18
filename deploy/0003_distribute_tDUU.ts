@@ -17,7 +17,7 @@ const { log } = require("../utils/deployment_helpers");
 
 module.exports.tags = ["v0003"];
 module.exports = async () => {
-    log(`[DEPLOY][v0003] - Distributing ${TOKEN_SYMBOL} tokens to initial holders`);
+    log(`Distributing ${TOKEN_SYMBOL} tokens to initial holders`);
 
     const { deployments, getNamedAccounts } = hre;
     const { contractOwner, buffChain } = await getNamedAccounts();
