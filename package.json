@@ -64,6 +64,7 @@
     "@uniswap/sdk-core": "^3.0.1",
     "@uniswap/v3-periphery": "^1.4.1",
     "@uniswap/v3-sdk": "^3.8.3",
+    "caller": "^1.1.0",
     "chai": "^4.3.6",
     "dotenv": "^16.0.1",
     "ethereum-waffle": "^3.4.4",

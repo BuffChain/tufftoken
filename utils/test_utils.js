@@ -262,7 +262,7 @@ async function getUniswapPriceQuote(tokenA, tokenB, poolFee, period, inverse=tru
     return inverse ? 1 / (quote * decimalFactor) : quote * decimalFactor;
 }
 
-async function getAcctBal(tuffVBTDiamond, acctAddr, print=false) {
+async function getAcctBal(tuffVBTDiamond, acctAddr, logPrefix="") {
     const ethBal = BigNumber.from(await hre.ethers.provider.getBalance(acctAddr));
 
     const weth9Contract = await getWETH9Contract();
@@ -279,13 +279,13 @@ async function getAcctBal(tuffVBTDiamond, acctAddr, print=false) {
 
     const tuffBal = BigNumber.from(await tuffVBTDiamond.balanceOf(acctAddr));
 
-    if (print) {
-        console.log(`[${acctAddr}] has [${hre.ethers.utils.formatEther(ethBal)}] ETH`);
-        console.log(`[${acctAddr}] has [${hre.ethers.utils.formatEther(wethBal)}] WETH`);
-        console.log(`[${acctAddr}] has [${hre.ethers.utils.formatUnits(daiBal, await daiContract.decimals())}] DAI`);
-        console.log(`[${acctAddr}] has [${hre.ethers.utils.formatUnits(usdcBal, await usdcContract.decimals())}] USDC`);
-        console.log(`[${acctAddr}] has [${hre.ethers.utils.formatUnits(usdtBal, await usdtContract.decimals())}] USDT`);
-        console.log(`[${acctAddr}] has [${hre.ethers.utils.formatUnits(tuffBal, TOKEN_DECIMALS)}] ${TOKEN_SYMBOL}`);
+    if (logPrefix) {
+        console.log(`${logPrefix}[${acctAddr}] has [${hre.ethers.utils.formatEther(ethBal)}] ETH`);
+        console.log(`${logPrefix}[${acctAddr}] has [${hre.ethers.utils.formatEther(wethBal)}] WETH`);
+        console.log(`${logPrefix}[${acctAddr}] has [${hre.ethers.utils.formatUnits(daiBal, await daiContract.decimals())}] DAI`);
+        console.log(`${logPrefix}[${acctAddr}] has [${hre.ethers.utils.formatUnits(usdcBal, await usdcContract.decimals())}] USDC`);
+        console.log(`${logPrefix}[${acctAddr}] has [${hre.ethers.utils.formatUnits(usdtBal, await usdtContract.decimals())}] USDT`);
+        console.log(`${logPrefix}[${acctAddr}] has [${hre.ethers.utils.formatUnits(tuffBal, TOKEN_DECIMALS)}] ${TOKEN_SYMBOL}`);
     }
 
     return {ethBal, wethBal, daiBal, usdcBal, usdtBal, tuffBal};
