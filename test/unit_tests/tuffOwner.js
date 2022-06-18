@@ -37,7 +37,6 @@ describe("TuffOwner", function () {
         tuffOwner = await tuffVBTDiamond.getTuffOwner();
         expect(tuffOwner).to.equal(nonOwnerAccountAddress, "unexpected owner after set");
 
-        await expectRevert(tuffVBTDiamond.transferTuffOwnership(owner.address), "Ownable: caller is not the owner");
+        await expectRevert(tuffVBTDiamond.transferTuffOwnership(owner.address), "NO");
     });
-
 });

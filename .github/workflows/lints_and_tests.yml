@@ -1,4 +1,4 @@
-name: Run Unit Tests
+name: Run Linting and Tests
 
 on:
   pull_request:
@@ -6,7 +6,7 @@ on:
     types: [ opened, synchronize ]
 
 jobs:
-  RunUnitTests:
+  lints_and_tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -20,9 +20,19 @@ jobs:
         run: |
           npm run clean
           npm run compile
-      - name: Run tests
+      - name: Lint Solidity Contracts
+        run: |-
+          npm run solhint
+      - name: Run Unit Tests
         run: |
           ALCHEMY_API_KEY="${{ secrets.ALCHEMY_API_KEY }}" \
           INFURA_URL="${{ secrets.INFURA_URL }}" \
           ETH_HARDHAT_ACCOUNT_MNEMONIC="${{ secrets.ETH_HARDHAT_ACCOUNT_MNEMONIC }}" \
+          CMC_API_KEY="${{ secrets.CMC_API_KEY }}" \
           npm run test
+      - name: Run Test Coverage
+        run: |
+          ALCHEMY_API_KEY="${{ secrets.ALCHEMY_API_KEY }}" \
+          INFURA_URL="${{ secrets.INFURA_URL }}" \
+          ETH_HARDHAT_ACCOUNT_MNEMONIC="${{ secrets.ETH_HARDHAT_ACCOUNT_MNEMONIC }}" \
+          npm run coverage
