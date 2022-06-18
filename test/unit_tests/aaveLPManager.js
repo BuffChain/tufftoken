@@ -169,7 +169,7 @@ describe('AaveLPManager', function () {
     it('reverts if adding an unsupported aave token', async () => {
         await expectRevert(tuffVBTDiamond.addAaveSupportedToken(
             consts("UNISWAP_V3_ROUTER_ADDR"), consts("UNISWAP_V3_ROUTER_ADDR"), 2500),
-            "The tokenAddress provided is not supported by Aave");
+            "UT");
     });
 
     it("should get correct aToken balance", async () => {
@@ -432,7 +432,7 @@ describe('AaveLPManager', function () {
 
         await expectRevert(tuffVBTDiamond.addAaveSupportedToken(
             tokenAddr, consts("CHAINLINK_ETH_DAI_AGGR_ADDR"), tokenWeight),
-            "Ownable: caller is not the owner");
+            "NO");
 
         supportedTokens = await tuffVBTDiamond.getAllAaveSupportedTokens();
         expect(supportedTokens).to.not.contain(tokenAddr);

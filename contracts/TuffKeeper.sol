@@ -9,6 +9,7 @@ import {TokenMaturity} from "./TokenMaturity.sol";
 import {IAaveLPManager} from "./IAaveLPManager.sol";
 import "./TuffOwner.sol";
 
+/* solhint-disable not-rely-on-time */
 contract TuffKeeper is KeeperCompatibleInterface {
     modifier onlyOwner() {
         TuffOwner(address(this)).requireOnlyOwner(msg.sender);
@@ -23,16 +24,8 @@ contract TuffKeeper is KeeperCompatibleInterface {
     //Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
     // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
     function initTuffKeeper() public onlyOwner {
-        require(
-            !isTuffKeeperInit(),
-            string(
-                abi.encodePacked(
-                    TuffKeeperLib.NAMESPACE,
-                    ": ",
-                    "ALREADY_INITIALIZED"
-                )
-            )
-        );
+        //TuffKeeper Already Initialized
+        require(!isTuffKeeperInit(), "TKAI");
 
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
 
@@ -44,10 +37,7 @@ contract TuffKeeper is KeeperCompatibleInterface {
         ss.isInit = true;
     }
 
-    function setTokenMaturityInterval(uint256 _tokenMaturityInterval)
-        public
-        onlyOwner
-    {
+    function setTokenMaturityInterval(uint256 _tokenMaturityInterval) public onlyOwner {
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
         ss.tokenMaturityInterval = _tokenMaturityInterval;
     }
@@ -57,10 +47,7 @@ contract TuffKeeper is KeeperCompatibleInterface {
         return ss.tokenMaturityInterval;
     }
 
-    function setBalanceAssetsInterval(uint256 _balanceAssetsInterval)
-        public
-        onlyOwner
-    {
+    function setBalanceAssetsInterval(uint256 _balanceAssetsInterval) public onlyOwner {
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
         ss.balanceAssetsInterval = _balanceAssetsInterval;
     }
@@ -70,10 +57,7 @@ contract TuffKeeper is KeeperCompatibleInterface {
         return ss.balanceAssetsInterval;
     }
 
-    function setLastTokenMaturityTimestamp(uint256 _lastTimestamp)
-        public
-        onlyOwner
-    {
+    function setLastTokenMaturityTimestamp(uint256 _lastTimestamp) public onlyOwner {
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
         ss.lastTokenMaturityTimestamp = _lastTimestamp;
     }
@@ -83,10 +67,7 @@ contract TuffKeeper is KeeperCompatibleInterface {
         return ss.lastTokenMaturityTimestamp;
     }
 
-    function setLastBalanceAssetsTimestamp(uint256 _lastTimestamp)
-        public
-        onlyOwner
-    {
+    function setLastBalanceAssetsTimestamp(uint256 _lastTimestamp) public onlyOwner {
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
         ss.lastBalanceAssetsTimestamp = _lastTimestamp;
     }
@@ -100,7 +81,7 @@ contract TuffKeeper is KeeperCompatibleInterface {
         uint256 timestamp,
         uint256 lastTimestamp,
         uint256 interval
-    ) private view returns (bool) {
+    ) private pure returns (bool) {
         return (timestamp - lastTimestamp) >= interval;
     }
 
@@ -108,16 +89,8 @@ contract TuffKeeper is KeeperCompatibleInterface {
         bytes calldata /* checkData */
     ) external view override returns (bool needed, bytes memory performData) {
         needed =
-            isIntervalComplete(
-                block.timestamp,
-                getLastTokenMaturityTimestamp(),
-                getTokenMaturityInterval()
-            ) ||
-            isIntervalComplete(
-                block.timestamp,
-                getLastBalanceAssetsTimestamp(),
-                getBalanceAssetsInterval()
-            );
+            isIntervalComplete(block.timestamp, getLastTokenMaturityTimestamp(), getTokenMaturityInterval()) ||
+            isIntervalComplete(block.timestamp, getLastBalanceAssetsTimestamp(), getBalanceAssetsInterval());
         performData = bytes(Strings.toString(block.timestamp));
     }
 
@@ -126,13 +99,7 @@ contract TuffKeeper is KeeperCompatibleInterface {
     ) external override {
         TokenMaturity tokenMaturity = TokenMaturity(address(this));
 
-        if (
-            isIntervalComplete(
-                block.timestamp,
-                getLastTokenMaturityTimestamp(),
-                getTokenMaturityInterval()
-            )
-        ) {
+        if (isIntervalComplete(block.timestamp, getLastTokenMaturityTimestamp(), getTokenMaturityInterval())) {
             if (tokenMaturity.isTokenMatured(block.timestamp)) {
                 tokenMaturity.onTokenMaturity();
             }
@@ -140,11 +107,8 @@ contract TuffKeeper is KeeperCompatibleInterface {
         }
 
         if (
-            isIntervalComplete(
-                block.timestamp,
-                getLastBalanceAssetsTimestamp(),
-                getBalanceAssetsInterval()
-            ) && !tokenMaturity.isTokenMatured(block.timestamp)
+            isIntervalComplete(block.timestamp, getLastBalanceAssetsTimestamp(), getBalanceAssetsInterval()) &&
+            !tokenMaturity.isTokenMatured(block.timestamp)
         ) {
             IAaveLPManager aaveLPManager = IAaveLPManager(address(this));
             aaveLPManager.balanceAaveLendingPool();

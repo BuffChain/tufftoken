@@ -128,7 +128,7 @@ describe('TuffKeeper', function () {
         await tuffVBTDiamond.transferTuffOwnership(nonOwnerAccountAddress);
 
         await expectRevert(tuffVBTDiamond.setTokenMaturityInterval(2),
-            "Ownable: caller is not the owner");
+            "NO");
 
         interval = await tuffVBTDiamond.getDevFee();
         expect(interval).to.equal(1, "interval should be left unchanged");

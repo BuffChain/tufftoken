@@ -1,4 +1,4 @@
-name: Run Unit Tests
+name: Run Linting and Tests
 
 on:
   pull_request:
@@ -6,7 +6,7 @@ on:
     types: [ opened, synchronize ]
 
 jobs:
-  RunUnitTests:
+  lints_and_tests:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -20,6 +20,9 @@ jobs:
         run: |
           npm run clean
           npm run compile
+      - name: Lint Solidity Contracts
+        run: |-
+          npm run solhint
       - name: Run tests
         run: |
           ALCHEMY_API_KEY="${{ secrets.ALCHEMY_API_KEY }}" \

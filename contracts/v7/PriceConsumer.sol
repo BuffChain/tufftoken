@@ -23,16 +23,8 @@ contract PriceConsumer {
     //Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
     // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
     function initPriceConsumer(address _factoryAddr) public {
-        require(
-            !isPriceConsumerInit(),
-            string(
-                abi.encodePacked(
-                    PriceConsumerLib.NAMESPACE,
-                    ": ",
-                    "ALREADY_INITIALIZED"
-                )
-            )
-        );
+        //PriceConsumer Already Initialized
+        require(!isPriceConsumerInit(), "PCAI");
 
         PriceConsumerLib.StateStorage storage ss = PriceConsumerLib.getState();
 
@@ -40,40 +32,20 @@ contract PriceConsumer {
         ss.isInit = true;
     }
 
-    function getTvbtWethQuote(uint32 _period)
-        external
-        view
-        returns (uint256, uint128)
-    {
+    function getTvbtWethQuote(uint32 _period) external view returns (uint256, uint128) {
         PriceConsumerLib.StateStorage storage ss = PriceConsumerLib.getState();
 
         address _tokenA = address(this);
         address _tokenB = address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2);
         uint24 _fee = 3000;
-        //        uint128 _decimalPrecision = uint128(10 ** 9);
         uint8 _decimalPrecision = 18;
 
-        address _poolAddr = IUniswapV3Factory(ss.factoryAddr).getPool(
-            _tokenA,
-            _tokenB,
-            _fee
-        );
+        address _poolAddr = IUniswapV3Factory(ss.factoryAddr).getPool(_tokenA, _tokenB, _fee);
 
-        require(
-            _poolAddr != address(0),
-            string(
-                abi.encodePacked(
-                    PriceConsumerLib.NAMESPACE,
-                    ": ",
-                    "Pool does not exist"
-                )
-            )
-        );
+        //PDE: Pool does not exist
+        require(_poolAddr != address(0), "PDE");
 
-        (int24 timeWeightedAverageTick, ) = OracleLibrary.consult(
-            _poolAddr,
-            _period
-        );
+        (int24 timeWeightedAverageTick, ) = OracleLibrary.consult(_poolAddr, _period);
 
         uint256 quoteAmt = OracleLibrary.getQuoteAtTick(
             timeWeightedAverageTick,
@@ -99,35 +71,17 @@ contract PriceConsumer {
             uint80
         )
     {
-        AggregatorV3Interface priceFeed = AggregatorV3Interface(
-            _aggregatorAddr
-        );
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(_aggregatorAddr);
         return priceFeed.latestRoundData();
     }
 
     function getDecimals(address _aggregatorAddr) public view returns (uint8) {
-        AggregatorV3Interface priceFeed = AggregatorV3Interface(
-            _aggregatorAddr
-        );
+        AggregatorV3Interface priceFeed = AggregatorV3Interface(_aggregatorAddr);
         return priceFeed.decimals();
     }
 
-    function getChainLinkPrice(address _aggregatorAddr)
-        external
-        view
-        returns (uint256)
-    {
-        (
-            ,
-            /*uint80 roundID*/
-            int256 price,
-            ,
-            ,
-
-        ) = /*uint startedAt*/
-            /*uint timeStamp*/
-            /*uint80 answeredInRound*/
-            getLatestRoundData(_aggregatorAddr);
+    function getChainLinkPrice(address _aggregatorAddr) external view returns (uint256) {
+        (, int256 price, , , ) = getLatestRoundData(_aggregatorAddr);
         return uint256(price);
     }
 }

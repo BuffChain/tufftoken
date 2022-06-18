@@ -3,10 +3,7 @@
 pragma solidity ^0.8.0;
 
 interface IAaveLPManager {
-    function getAllAaveSupportedTokens()
-        external
-        view
-        returns (address[] memory);
+    function getAllAaveSupportedTokens() external view returns (address[] memory);
 
     function liquidateAaveTreasury() external returns (bool);
 
