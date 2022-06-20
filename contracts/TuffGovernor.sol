@@ -75,6 +75,7 @@ contract TuffGovernor is
     }
 
     /// @notice Minimum number of cast voted required for a proposal to be successful.
+    /// @param blockNumber quorum at specified block number
     /// @inheritdoc GovernorVotesQuorumFraction
     function quorum(uint256 blockNumber)
         public
@@ -85,7 +86,7 @@ contract TuffGovernor is
         return super.quorum(blockNumber);
     }
 
-    /// Get votes
+    /// @notice Get votes for an account given a specific block number
     /// @inheritdoc IGovernor
     function getVotes(address account, uint256 blockNumber)
         public
@@ -141,10 +142,12 @@ contract TuffGovernor is
         return super._cancel(targets, values, calldatas, descriptionHash);
     }
 
+    /// @inheritdoc GovernorTimelockControl
     function _executor() internal view override(Governor, GovernorTimelockControl) returns (address) {
         return super._executor();
     }
 
+    /// @inheritdoc GovernorTimelockControl
     function supportsInterface(bytes4 interfaceId)
         public
         view
@@ -154,6 +157,7 @@ contract TuffGovernor is
         return super.supportsInterface(interfaceId);
     }
 
+    /// @notice propose wrapper
     function doPropose(
         address[] memory targets,
         uint256[] memory values,
@@ -163,6 +167,7 @@ contract TuffGovernor is
         return propose(targets, values, calldatas, description);
     }
 
+    /// @notice queue wrapper
     function doQueue(
         address[] memory targets,
         uint256[] memory values,
@@ -172,6 +177,7 @@ contract TuffGovernor is
         return super.queue(targets, values, calldatas, descriptionHash);
     }
 
+    /// @notice execute wrapper
     function doExecute(
         address[] memory targets,
         uint256[] memory values,

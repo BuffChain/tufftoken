@@ -165,6 +165,9 @@ Minimum number of cast voted required for a proposal to be successful.
 
 _Returns the quorum for a block number, in terms of number of votes: `supply * numerator / denominator`._
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| blockNumber | uint256 | quorum at specified block number |
 
 
 
@@ -174,7 +177,7 @@ _Returns the quorum for a block number, in terms of number of votes: `supply * n
 function getVotes(address account, uint256 blockNumber) public view returns (uint256)
 ```
 
-Get votes
+Get votes for an account given a specific block number
 
 _Voting power of an `account` at a specific `blockNumber`.
 
@@ -250,6 +253,7 @@ function _executor() internal view returns (address)
 
 
 
+_Address through which the governor executes action. In this case, the timelock._
 
 
 
@@ -262,6 +266,7 @@ function supportsInterface(bytes4 interfaceId) public view returns (bool)
 
 
 
+_See {IERC165-supportsInterface}._
 
 
 
@@ -272,7 +277,7 @@ function supportsInterface(bytes4 interfaceId) public view returns (bool)
 function doPropose(address[] targets, uint256[] values, bytes[] calldatas, string description) public returns (uint256)
 ```
 
-
+propose wrapper
 
 
 
@@ -284,7 +289,7 @@ function doPropose(address[] targets, uint256[] values, bytes[] calldatas, strin
 function doQueue(address[] targets, uint256[] values, bytes[] calldatas, bytes32 descriptionHash) public returns (uint256)
 ```
 
-
+queue wrapper
 
 
 
@@ -296,7 +301,7 @@ function doQueue(address[] targets, uint256[] values, bytes[] calldatas, bytes32
 function doExecute(address[] targets, uint256[] values, bytes[] calldatas, bytes32 descriptionHash) public payable returns (uint256)
 ```
 
-
+execute wrapper
 
 
 
