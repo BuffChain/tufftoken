@@ -48,6 +48,15 @@ export async function runCallbackImpersonatingAcct(acct: SignerWithAddress, call
         });
 }
 
+/**
+ * Force hardhat to mine a block
+ * @returns {Promise<void>}
+ */
+export async function mineBlock() {
+    await hre.ethers.provider.send("evm_increaseTime", [consts("BLOCKTIME")]);
+    await hre.ethers.provider.send("evm_mine", []);
+}
+
 export async function swapEthForWeth(toAcct: SignerWithAddress, qtyInWETH: BigNumber) {
     const weth9Contract = await getWETH9Contract();
     const uniswapSwapRouterContract = await hre.ethers.getContractAt(

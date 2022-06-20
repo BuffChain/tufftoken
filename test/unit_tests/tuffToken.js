@@ -2,7 +2,6 @@
 
 const {expect} = require("chai");
 const hre = require("hardhat");
-const {mineBlock} = require("../../utils/back_test_utils");
 const {
     expectRevert, // Assertions for transactions that should fail
 } = require('@openzeppelin/test-helpers');

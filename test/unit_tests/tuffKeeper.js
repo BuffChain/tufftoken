@@ -5,9 +5,9 @@ const {expectRevert} = require("@openzeppelin/test-helpers");
 const hre = require("hardhat");
 const {randomBytes} = require('crypto');
 const Web3 = require('web3');
-const {mineBlock} = require("../../utils/back_test_utils");
 const utils = require("../../utils/test_utils");
 const {consts} = require("../../utils/consts");
+const { mineBlock } = require("../../utils/test_utils");
 
 describe('TuffKeeper', function () {
 
