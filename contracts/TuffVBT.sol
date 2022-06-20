@@ -10,6 +10,9 @@ import {TuffVBTLib} from "./TuffVBTLib.sol";
 import "./TokenMaturity.sol";
 import "./TuffOwner.sol";
 
+/// @notice This contract is the implementation of a TuffVBT (volume bond token). It is an ERC20 token that takes fees
+/// upon transfer to help build up the treasury.
+
 contract TuffVBT is Context, IERC20 {
     modifier onlyOwner() {
         TuffOwner(address(this)).requireOnlyOwner(msg.sender);
@@ -19,8 +22,8 @@ contract TuffVBT is Context, IERC20 {
     using SafeMath for uint256;
     using Address for address;
 
-    //Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
-    // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
+    /// Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
+    /// constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
     function initTuffVBT(
         address _initialOwner,
         string memory _name,
@@ -56,76 +59,91 @@ contract TuffVBT is Context, IERC20 {
         return ss.isInit;
     }
 
+    /// @notice returns the name of the token
     function name() public view returns (string memory) {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
         return ss.name;
     }
 
+    /// @notice returns the symbol of the token
     function symbol() public view returns (string memory) {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
         return ss.symbol;
     }
 
+    /// @notice returns the decimals of the token
     function decimals() public view returns (uint8) {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
         return ss.decimals;
     }
 
+    /// @notice returns the total supply of the token
     function totalSupply() public view override returns (uint256) {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
         return ss.totalSupply;
     }
 
+    /// @notice returns the farm fee (treasury fee) of the token
     function getFarmFee() public view returns (uint256) {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
         return ss.farmFee;
     }
 
+    /// @notice used by contract owner to set the farm fee
     function setFarmFee(uint256 _farmFee) public onlyOwner {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
         ss.farmFee = _farmFee;
     }
 
+    /// @notice returns the dev fee of the token
     function getDevFee() public view returns (uint256) {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
         return ss.devFee;
     }
 
+    /// @notice used by contract owner to set the dev fee
     function setDevFee(uint256 _devFee) public onlyOwner {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
         ss.devFee = _devFee;
     }
 
+    /// @notice returns the dev wallet address of the token
     function getDevWalletAddress() public view returns (address) {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
         return ss.devWalletAddress;
     }
 
+    /// @notice used by contract owner to set the dev wallet address
     function setDevWalletAddress(address _devWalletAddress) public onlyOwner {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
         ss.devWalletAddress = _devWalletAddress;
     }
 
+    /// @notice returns the balance of an address
     function balanceOf(address account) public view override returns (uint256) {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
         return ss.balances[account];
     }
 
+    /// @notice transfer an amount of the TuffVBT to an account
     function transfer(address recipient, uint256 amount) public override returns (bool) {
         _transfer(_msgSender(), recipient, amount);
         return true;
     }
 
+    /// @notice set an allowance for a given holder and spender
     function allowance(address owner, address spender) public view override returns (uint256) {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
         return ss.allowances[owner][spender];
     }
 
+    /// @notice approve a holder to spend an amount
     function approve(address spender, uint256 amount) public override returns (bool) {
         _approve(_msgSender(), spender, amount);
         return true;
     }
 
+    /// @notice transfer from a an account to another
     function transferFrom(
         address from,
         address to,
@@ -204,21 +222,25 @@ contract TuffVBT is Context, IERC20 {
         return true;
     }
 
+    /// @notice exclude an account from fees
     function excludeFromFee(address account) public onlyOwner {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
         ss.isExcludedFromFee[account] = true;
     }
 
+    /// @notice include an account in fees
     function includeInFee(address account) public onlyOwner {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
         ss.isExcludedFromFee[account] = false;
     }
 
+    /// @notice checks if an address is excluded from fees
     function isExcludedFromFee(address account) public view onlyOwner returns (bool) {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
         return ss.isExcludedFromFee[account];
     }
 
+    /// @notice helper to calculate fee
     function calculateFee(
         uint256 _amount,
         uint256 feePercent,
@@ -268,6 +290,8 @@ contract TuffVBT is Context, IERC20 {
      * This internal function is equivalent to {transfer}, and can be used to
      * e.g. implement automatic token fees, slashing mechanisms, etc.
      *
+     * Fees will be taken unless the address is excluded or if the token has reached maturity.
+     *
      * Emits a {Transfer} event.
      *
      * Requirements:
@@ -275,6 +299,7 @@ contract TuffVBT is Context, IERC20 {
      * - `from` cannot be the zero address.
      * - `to` cannot be the zero address.
      * - `from` must have a balance of at least `amount`.
+     *
      */
     function _transfer(
         address from,
@@ -332,6 +357,7 @@ contract TuffVBT is Context, IERC20 {
         }
     }
 
+    /// @notice used by the contract itself post token maturity when a holder redeems their VBT.
     function burn(address account, uint256 amount) public onlyOwner {
         //Burn From Zero Address: ERC20 - burn from the zero address
         require(account != address(0), "BFZA");

@@ -7,7 +7,7 @@ import "@openzeppelin/contracts/token/ERC20/extensions/draft-ERC20Permit.sol";
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
 
 /**
- * Implementation of openzepplin governance https://docs.openzeppelin.com/contracts/4.x/governance
+ * @notice Implementation of openzepplin governance https://docs.openzeppelin.com/contracts/4.x/governance
  * In order to have voting power, an account must hold TuffToken.
  * They must also delegate themselves (or another holder if they so choose) to be granted voting power.
  * Voting power is determined simply by token balance.
@@ -37,8 +37,6 @@ contract TuffToken is Context, ERC20, ERC20Permit, ERC20Votes {
     function decimals() public view override returns (uint8) {
         return _decimals;
     }
-
-    // The functions below are overrides required by Solidity.
 
     function _afterTokenTransfer(
         address from,

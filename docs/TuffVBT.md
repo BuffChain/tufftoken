@@ -3,7 +3,8 @@
 ## TuffVBT
 
 
-
+This contract is the implementation of a TuffVBT (volume bond token). It is an ERC20 token that takes fees
+upon transfer to help build up the treasury.
 
 
 
@@ -27,7 +28,8 @@ modifier onlyOwner()
 function initTuffVBT(address _initialOwner, string _name, string _symbol, uint8 _decimals, uint256 _farmFee, uint256 _devFee, address _devWalletAddress, uint256 _totalSupply) public
 ```
 
-
+Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
+constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
 
 
 
@@ -51,7 +53,7 @@ function isTuffVBTInit() public view returns (bool)
 function name() public view returns (string)
 ```
 
-
+returns the name of the token
 
 
 
@@ -63,7 +65,7 @@ function name() public view returns (string)
 function symbol() public view returns (string)
 ```
 
-
+returns the symbol of the token
 
 
 
@@ -75,7 +77,7 @@ function symbol() public view returns (string)
 function decimals() public view returns (uint8)
 ```
 
-
+returns the decimals of the token
 
 
 
@@ -87,9 +89,8 @@ function decimals() public view returns (uint8)
 function totalSupply() public view returns (uint256)
 ```
 
+returns the total supply of the token
 
-
-_Returns the amount of tokens in existence._
 
 
 
@@ -100,7 +101,7 @@ _Returns the amount of tokens in existence._
 function getFarmFee() public view returns (uint256)
 ```
 
-
+returns the farm fee (treasury fee) of the token
 
 
 
@@ -112,7 +113,7 @@ function getFarmFee() public view returns (uint256)
 function setFarmFee(uint256 _farmFee) public
 ```
 
-
+used by contract owner to set the farm fee
 
 
 
@@ -124,7 +125,7 @@ function setFarmFee(uint256 _farmFee) public
 function getDevFee() public view returns (uint256)
 ```
 
-
+returns the dev fee of the token
 
 
 
@@ -136,7 +137,7 @@ function getDevFee() public view returns (uint256)
 function setDevFee(uint256 _devFee) public
 ```
 
-
+used by contract owner to set the dev fee
 
 
 
@@ -148,7 +149,7 @@ function setDevFee(uint256 _devFee) public
 function getDevWalletAddress() public view returns (address)
 ```
 
-
+returns the dev wallet address of the token
 
 
 
@@ -160,7 +161,7 @@ function getDevWalletAddress() public view returns (address)
 function setDevWalletAddress(address _devWalletAddress) public
 ```
 
-
+used by contract owner to set the dev wallet address
 
 
 
@@ -172,9 +173,8 @@ function setDevWalletAddress(address _devWalletAddress) public
 function balanceOf(address account) public view returns (uint256)
 ```
 
+returns the balance of an address
 
-
-_Returns the amount of tokens owned by `account`._
 
 
 
@@ -185,7 +185,7 @@ _Returns the amount of tokens owned by `account`._
 function transfer(address recipient, uint256 amount) public returns (bool)
 ```
 
-
+transfer an amount of the TuffVBT to an account
 
 
 
@@ -197,13 +197,8 @@ function transfer(address recipient, uint256 amount) public returns (bool)
 function allowance(address owner, address spender) public view returns (uint256)
 ```
 
+set an allowance for a given holder and spender
 
-
-_Returns the remaining number of tokens that `spender` will be
-allowed to spend on behalf of `owner` through {transferFrom}. This is
-zero by default.
-
-This value changes when {approve} or {transferFrom} are called._
 
 
 
@@ -214,20 +209,8 @@ This value changes when {approve} or {transferFrom} are called._
 function approve(address spender, uint256 amount) public returns (bool)
 ```
 
+approve a holder to spend an amount
 
-
-_Sets `amount` as the allowance of `spender` over the caller's tokens.
-
-Returns a boolean value indicating whether the operation succeeded.
-
-IMPORTANT: Beware that changing an allowance with this method brings the risk
-that someone may use both the old and the new allowance by unfortunate
-transaction ordering. One possible solution to mitigate this race
-condition is to first reduce the spender's allowance to 0 and set the
-desired value afterwards:
-https://github.com/ethereum/EIPs/issues/20#issuecomment-263524729
-
-Emits an {Approval} event._
 
 
 
@@ -238,15 +221,8 @@ Emits an {Approval} event._
 function transferFrom(address from, address to, uint256 amount) public returns (bool)
 ```
 
+transfer from a an account to another
 
-
-_Moves `amount` tokens from `from` to `to` using the
-allowance mechanism. `amount` is then deducted from the caller's
-allowance.
-
-Returns a boolean value indicating whether the operation succeeded.
-
-Emits a {Transfer} event._
 
 
 
@@ -321,7 +297,7 @@ Requirements:
 function excludeFromFee(address account) public
 ```
 
-
+exclude an account from fees
 
 
 
@@ -333,7 +309,7 @@ function excludeFromFee(address account) public
 function includeInFee(address account) public
 ```
 
-
+include an account in fees
 
 
 
@@ -345,7 +321,7 @@ function includeInFee(address account) public
 function isExcludedFromFee(address account) public view returns (bool)
 ```
 
-
+checks if an address is excluded from fees
 
 
 
@@ -357,7 +333,7 @@ function isExcludedFromFee(address account) public view returns (bool)
 function calculateFee(uint256 _amount, uint256 feePercent, bool takeFee) public pure returns (uint256)
 ```
 
-
+helper to calculate fee
 
 
 
@@ -399,6 +375,8 @@ _Moves `amount` of tokens from `sender` to `recipient`.
 This internal function is equivalent to {transfer}, and can be used to
 e.g. implement automatic token fees, slashing mechanisms, etc.
 
+Fees will be taken unless the address is excluded or if the token has reached maturity.
+
 Emits a {Transfer} event.
 
 Requirements:
@@ -416,7 +394,7 @@ Requirements:
 function burn(address account, uint256 amount) public
 ```
 
-
+used by the contract itself post token maturity when a holder redeems their VBT.
 
 
 

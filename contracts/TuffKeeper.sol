@@ -9,6 +9,10 @@ import {TokenMaturity} from "./TokenMaturity.sol";
 import {IAaveLPManager} from "./IAaveLPManager.sol";
 import "./TuffOwner.sol";
 
+/// @notice This contract is responsible for running core functions are specified intervals. These functions track token
+/// maturity and keeping a balanced treasury.
+/// @dev Implementation of Chainlink Keeper  https://docs.chain.link/docs/chainlink-keepers/introduction/.
+
 /* solhint-disable not-rely-on-time */
 contract TuffKeeper is KeeperCompatibleInterface {
     modifier onlyOwner() {
@@ -21,8 +25,9 @@ contract TuffKeeper is KeeperCompatibleInterface {
         return ss.isInit;
     }
 
-    //Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
-    // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
+    /// @notice Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
+    /// constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
+    /// @dev token maturity interval is set to 1 day and balance treasury interval is set to 1 week
     function initTuffKeeper() public onlyOwner {
         //TuffKeeper Already Initialized
         require(!isTuffKeeperInit(), "TKAI");
@@ -37,6 +42,7 @@ contract TuffKeeper is KeeperCompatibleInterface {
         ss.isInit = true;
     }
 
+    /// @notice used by contract owner to set token maturity interval
     function setTokenMaturityInterval(uint256 _tokenMaturityInterval) public onlyOwner {
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
         ss.tokenMaturityInterval = _tokenMaturityInterval;
@@ -47,6 +53,7 @@ contract TuffKeeper is KeeperCompatibleInterface {
         return ss.tokenMaturityInterval;
     }
 
+    /// @notice used by contract owner to set balance treasury interval
     function setBalanceAssetsInterval(uint256 _balanceAssetsInterval) public onlyOwner {
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
         ss.balanceAssetsInterval = _balanceAssetsInterval;
@@ -57,6 +64,7 @@ contract TuffKeeper is KeeperCompatibleInterface {
         return ss.balanceAssetsInterval;
     }
 
+    /// @notice used by contract owner or the contract itself to set the last time the token maturity function was invoked.
     function setLastTokenMaturityTimestamp(uint256 _lastTimestamp) public onlyOwner {
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
         ss.lastTokenMaturityTimestamp = _lastTimestamp;
@@ -67,6 +75,7 @@ contract TuffKeeper is KeeperCompatibleInterface {
         return ss.lastTokenMaturityTimestamp;
     }
 
+    /// @notice used by contract owner or the contract itself to set the last time the balance assets function was invoked.
     function setLastBalanceAssetsTimestamp(uint256 _lastTimestamp) public onlyOwner {
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
         ss.lastBalanceAssetsTimestamp = _lastTimestamp;
@@ -77,6 +86,7 @@ contract TuffKeeper is KeeperCompatibleInterface {
         return ss.lastBalanceAssetsTimestamp;
     }
 
+    /// @notice checks if given timestamp completes an interval
     function isIntervalComplete(
         uint256 timestamp,
         uint256 lastTimestamp,
@@ -85,6 +95,8 @@ contract TuffKeeper is KeeperCompatibleInterface {
         return (timestamp - lastTimestamp) >= interval;
     }
 
+    /// @notice call made from Chainlink Keeper network to see if upkeep needs to be performed based on the current
+    /// timestamp and function intervals.
     function checkUpkeep(
         bytes calldata /* checkData */
     ) external view override returns (bool needed, bytes memory performData) {
@@ -94,6 +106,7 @@ contract TuffKeeper is KeeperCompatibleInterface {
         performData = bytes(Strings.toString(block.timestamp));
     }
 
+    /// @notice call made from Chainlink Keeper network to perform upkeep when checkUpkeep says so.
     function performUpkeep(
         bytes calldata /* performData */
     ) external override {

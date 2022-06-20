@@ -8,7 +8,7 @@ library TuffKeeperLib {
 
     struct StateStorage {
         bool isInit;
-        // Use an interval in seconds and a timestamp to slow execution of Upkeep between 85500 and 87300 seconds
+        /// @dev Use an interval in seconds
         uint256 tokenMaturityInterval;
         uint256 lastTokenMaturityTimestamp;
         uint256 balanceAssetsInterval;

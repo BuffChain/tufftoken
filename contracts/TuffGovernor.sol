@@ -23,7 +23,6 @@ contract TuffGovernor is
     uint256 private _votingPeriod;
     uint256 private _proposalThreshold;
 
-
     /// @notice The Governor implementation uses GovernorVotesQuorumFraction which works together with ERC20Votes to
     /// define quorum as a percentage of the total supply at the block a proposal's voting power is retrieved (4%).
     /// @dev Quorum Fraction is set to 4%.
@@ -50,7 +49,6 @@ contract TuffGovernor is
     function setVotingDelay(uint256 delay) public onlyOwner {
         _votingDelay = delay;
     }
-
 
     function votingPeriod() public view override returns (uint256) {
         return _votingPeriod;
@@ -186,5 +184,4 @@ contract TuffGovernor is
     ) public payable returns (uint256) {
         return super.execute(targets, values, calldatas, descriptionHash);
     }
-
 }
