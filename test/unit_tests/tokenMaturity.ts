@@ -1,52 +1,63 @@
 // SPDX-License-Identifier: agpl-3.0
 
-const {expect} = require("chai");
-const hre = require("hardhat");
+import hre from "hardhat";
+import { BigNumber } from "ethers";
+import { expect } from "chai";
+import { TuffVBT, TuffOwner, TokenMaturity, AaveLPManager } from "../../src/types";
 
-const {BN, expectRevert} = require("@openzeppelin/test-helpers");
-const {BigNumber} = require("ethers");
+type TuffVBTDiamond = TuffVBT & TuffOwner & TokenMaturity & AaveLPManager;
 
-const {consts, UNISWAP_POOL_BASE_FEE, TOKEN_DAYS_UNTIL_MATURITY, TOKEN_DECIMALS, TOKEN_TOTAL_SUPPLY} = require("../../utils/consts");
-const { getWETH9Contract, getADAIContract, getDAIContract, getUniswapPriceQuote } = require("../../utils/utils");
-const { sendTokensToAddr, assertDepositERC20ToAave } = require("../../utils/test_utils");
+import {
+    consts,
+    UNISWAP_POOL_BASE_FEE,
+    TOKEN_DAYS_UNTIL_MATURITY,
+    TOKEN_DECIMALS,
+    TOKEN_TOTAL_SUPPLY
+} from "../../utils/consts";
+import { getWETH9Contract, getADAIContract, getDAIContract, getUniswapPriceQuote } from "../../utils/utils";
+import { sendTokensToAddr, assertDepositERC20ToAave } from "../../utils/test_utils";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { Address } from "hardhat-deploy/dist/types";
 
-describe('TokenMaturity', function () {
+const { BN, expectRevert } = require("@openzeppelin/test-helpers");
+
+describe("TokenMaturity", function() {
 
     const nowTimeStamp = Math.floor(Date.now() / 1000);
 
-    let owner;
-    let accounts;
+    let owner: SignerWithAddress;
+    let accounts: SignerWithAddress[];
 
-    let tuffVBTDiamond;
+    let tuffVBTDiamond: TuffVBTDiamond;
 
-    before(async function () {
-        const {contractOwner} = await hre.getNamedAccounts();
+    before(async function() {
+        const { contractOwner } = await hre.getNamedAccounts();
         owner = await hre.ethers.getSigner(contractOwner);
 
         //Per `hardhat.config.ts`, the 0 and 1 index accounts are named accounts. They are reserved for deployment uses
         [, , ...accounts] = await hre.ethers.getSigners();
     });
 
-    beforeEach(async function () {
-        const {tDUU} = await hre.deployments.fixture();
-        tuffVBTDiamond = await hre.ethers.getContractAt(tDUU.abi, tDUU.address, owner);
+    beforeEach(async function() {
+        const { tDUU } = await hre.deployments.fixture();
+        tuffVBTDiamond = await hre.ethers.getContractAt(tDUU.abi, tDUU.address, owner) as TuffVBTDiamond;
     });
 
-    it('should get default token maturity', async () => {
-
-        const latestBlock = await hre.ethers.provider.getBlock("latest")
+    it("should get default token maturity", async () => {
+        const latestBlock = await hre.ethers.provider.getBlock("latest");
         const latestTimestamp = latestBlock.timestamp;
         const secondsPerDay = 86400;
 
-        const daysUntilMaturity = Math.ceil((parseInt(await tuffVBTDiamond.getContractMaturityTimestamp()) - latestTimestamp) / secondsPerDay);
+        const daysUntilMaturity =
+            ((await tuffVBTDiamond.getContractMaturityTimestamp()).sub(latestTimestamp)).div(secondsPerDay);
 
-        expect(daysUntilMaturity).to.equal(TOKEN_DAYS_UNTIL_MATURITY, "unexpected days until maturity");
-
+        //Allow a 1-day buffer for account for int division With BigNumber
+        const buffer = BigNumber.from(1);
+        expect(daysUntilMaturity).to.be.closeTo(BigNumber.from(TOKEN_DAYS_UNTIL_MATURITY), buffer);
     });
 
 
-    it('should set token maturity', async () => {
-
+    it("should set token maturity", async () => {
         await tuffVBTDiamond.setContractMaturityTimestamp(nowTimeStamp);
 
         let isMatured = await tuffVBTDiamond.isTokenMatured(nowTimeStamp - 1);
@@ -56,10 +67,9 @@ describe('TokenMaturity', function () {
         isMatured = await tuffVBTDiamond.isTokenMatured(nowTimeStamp);
 
         expect(isMatured).to.equal(true, "should have reached maturity");
-
     });
 
-    it('should get treasury liquidation status', async () => {
+    it("should get treasury liquidation status", async () => {
 
         let isLiquidated = await tuffVBTDiamond.getIsTreasuryLiquidated();
 
@@ -74,7 +84,7 @@ describe('TokenMaturity', function () {
     });
 
 
-    it('should get token supply', async () => {
+    it("should get token supply", async () => {
         let totalSupply = await tuffVBTDiamond.totalSupply();
         const expectedStartingSupply = (BigNumber.from(10).pow(TOKEN_DECIMALS)).mul(TOKEN_TOTAL_SUPPLY);
 
@@ -90,8 +100,7 @@ describe('TokenMaturity', function () {
         expect(totalSupplyForRedemption).to.equal(expectedTotalSupplyForRedemption, "incorrect totalSupply");
     });
 
-    it('should get token eth balance', async () => {
-
+    it("should get token eth balance", async () => {
         let startingEthBalance = await tuffVBTDiamond.getContractStartingEthBalance();
 
         expect(startingEthBalance).to.equal(0, "incorrect starting balance");
@@ -101,12 +110,10 @@ describe('TokenMaturity', function () {
         startingEthBalance = await tuffVBTDiamond.getContractStartingEthBalance();
 
         expect(startingEthBalance).to.equal(100, "incorrect starting balance");
-
     });
 
     async function assertTokenMaturity() {
-
-        const latestBlock = await hre.ethers.provider.getBlock("latest")
+        const latestBlock = await hre.ethers.provider.getBlock("latest");
         const latestTimestamp = latestBlock.timestamp;
 
         await tuffVBTDiamond.setContractMaturityTimestamp(latestTimestamp);
@@ -116,27 +123,27 @@ describe('TokenMaturity', function () {
         expect(isMatured).to.equal(true, "should have reached maturity");
     }
 
-    async function assertSenderTransferSuccess(startingTuffVBTTotalSupply, desiredTuffVBTAmountLeftOver) {
+    async function assertSenderTransferSuccess(startingTuffVBTTotalSupply: BigNumber, desiredTuffVBTAmountLeftOver: BigNumber) {
         // Make transaction from first account to second.
         const sender = owner.address;
         const holder = accounts[0].address;
 
         const amount = startingTuffVBTTotalSupply.sub(desiredTuffVBTAmountLeftOver);
-        await tuffVBTDiamond.transfer(holder, amount, {from: sender});
+        await tuffVBTDiamond.transfer(holder, amount, { from: sender });
 
         const senderTuffVBTBalanceAfterTransfer = await tuffVBTDiamond.balanceOf(sender);
         expect(senderTuffVBTBalanceAfterTransfer).to.equal(desiredTuffVBTAmountLeftOver,
             "Amount wasn't correctly sent to the receiver");
-        return {sender, holder, senderTuffVBTBalanceAfterTransfer};
+        return { sender, holder, senderTuffVBTBalanceAfterTransfer };
     }
 
     async function assertTokenRedemptionSuccess(
-        desiredTuffVBTAmountLeftOver,
-        startingTuffVBTTotalSupply,
-        contractStartingEthBalance,
-        sender,
-        holder,
-        senderTuffVBTBalanceAfterTransfer
+        desiredTuffVBTAmountLeftOver: BigNumber,
+        startingTuffVBTTotalSupply: BigNumber,
+        contractStartingEthBalance: BigNumber,
+        sender: Address,
+        holder: Address,
+        senderTuffVBTBalanceAfterTransfer: BigNumber
     ) {
         const holderTuffVBTBalanceToTotalSupplyRatio = desiredTuffVBTAmountLeftOver.div(startingTuffVBTTotalSupply);
         const expectedETHRedemptionAmount = contractStartingEthBalance.mul(holderTuffVBTBalanceToTotalSupplyRatio);
@@ -162,29 +169,29 @@ describe('TokenMaturity', function () {
         return expectedETHRedemptionAmount;
     }
 
-    async function assertRedemptionFunctionValues(startingTuffVBTTotalSupply, contractStartingEthBalance) {
+    async function assertRedemptionFunctionValues(startingTuffVBTTotalSupply: BigNumber, contractStartingEthBalance: BigNumber) {
         const endingTuffVBTTotalSupplyForRedemption = await tuffVBTDiamond.totalSupplyForRedemption();
         expect(endingTuffVBTTotalSupplyForRedemption).to.equal(startingTuffVBTTotalSupply,
             "total supply used for redemption calculation should not have been affected by " +
             "holder redeeming (and burning) tokens");
 
-        const currentContractStartingEthBalance = parseFloat(await tuffVBTDiamond.getContractStartingEthBalance());
-        expect(currentContractStartingEthBalance.toString()).to.equal(contractStartingEthBalance.toString(),
+        const currentContractStartingEthBalance = await tuffVBTDiamond.getContractStartingEthBalance();
+        expect(currentContractStartingEthBalance).to.equal(contractStartingEthBalance,
             "starting contract eth balance used for redemption calculation should not be affected by redemption");
     }
 
-    async function assertBalanceAndSupplyImpact(startingTuffVBTTotalSupply, desiredTuffVBTAmountLeftOver, contractStartingEthBalance, expectedETHRedemptionAmount) {
-        const totalSupplyAfterBurn = parseFloat(await tuffVBTDiamond.totalSupply());
+    async function assertBalanceAndSupplyImpact(startingTuffVBTTotalSupply: BigNumber, desiredTuffVBTAmountLeftOver: BigNumber, contractStartingEthBalance: BigNumber, expectedETHRedemptionAmount: BigNumber) {
+        const totalSupplyAfterBurn = await tuffVBTDiamond.totalSupply();
 
-        expect(totalSupplyAfterBurn).to.equal(startingTuffVBTTotalSupply - desiredTuffVBTAmountLeftOver,
+        expect(totalSupplyAfterBurn).to.equal(startingTuffVBTTotalSupply.sub(desiredTuffVBTAmountLeftOver),
             "incorrect total supply after burn");
 
-        const currentContractEthBalance = parseFloat(await tuffVBTDiamond.getCurrentContractEthBalance());
-        expect(currentContractEthBalance.toString()).to.equal((contractStartingEthBalance - expectedETHRedemptionAmount).toString(),
+        const currentContractEthBalance = await tuffVBTDiamond.getCurrentContractEthBalance();
+        expect(currentContractEthBalance).to.equal((contractStartingEthBalance.sub(expectedETHRedemptionAmount)),
             "actual eth balance should be lower than before redemption");
     }
 
-    it('should handle token reaching maturity and holders redeeming', async () => {
+    it("should handle token reaching maturity and holders redeeming", async () => {
         await assertTokenMaturity();
 
         let isLiquidated = await tuffVBTDiamond.getIsTreasuryLiquidated();
@@ -202,7 +209,7 @@ describe('TokenMaturity', function () {
         expect(isLiquidated).to.equal(true, "should have been liquidated");
 
         const desiredTuffVBTAmountLeftOver = (BigNumber.from(10).pow(TOKEN_DECIMALS)).mul(BigNumber.from(100000));
-        const {sender, holder, senderTuffVBTBalanceAfterTransfer} = await assertSenderTransferSuccess(
+        const { sender, holder, senderTuffVBTBalanceAfterTransfer } = await assertSenderTransferSuccess(
             startingOwnerTuffBal,
             desiredTuffVBTAmountLeftOver
         );
@@ -228,12 +235,12 @@ describe('TokenMaturity', function () {
         await tuffVBTDiamond.onTokenMaturity();
     });
 
-    it('should liquidate treasury', async () => {
+    it("should liquidate treasury", async () => {
         const daiContract = await getDAIContract();
         const adaiContract = await getADAIContract();
         const weth9Contract = await getWETH9Contract();
 
-        await sendTokensToAddr(accounts.at(-1), tuffVBTDiamond.address);
+        await sendTokensToAddr(accounts.slice(-1)[0], tuffVBTDiamond.address);
 
         // deposits DAI to Aave
         await assertDepositERC20ToAave(tuffVBTDiamond, daiContract.address);
@@ -273,12 +280,12 @@ describe('TokenMaturity', function () {
             BigInt(daiToWethConversion) +
             BigInt(aDaiToWethConversion) +
             BigInt(wethBalanceAfterDeposit) +
-            BigInt(ethBalanceAfterDeposit) -
-            BigInt(liquidationTxGasCost);
+            BigInt(ethBalanceAfterDeposit.toString()) -
+            BigInt(liquidationTxGasCost.toString());
 
         //TODO: This buffer is likely from the poolFee that uniswap charges, this test needs to be updated to account
         // for that
-        const buffer = hre.ethers.utils.parseEther('0.03');
+        const buffer = hre.ethers.utils.parseEther("0.03");
         const ethDiff = BigNumber.from(expectedEth).sub(ethBalanceAfterLiquidation);
         expect(ethDiff).to.be.lte(buffer, "eth difference exceeds allowed buffer");
 
@@ -288,7 +295,7 @@ describe('TokenMaturity', function () {
             console.log(`expected amount of WETH from DAI swap:          ${hre.ethers.utils.formatEther(daiToWethConversion.toString())}`);
             console.log(`expected amount of WETH from ADAI swap:         ${hre.ethers.utils.formatEther(aDaiToWethConversion.toString())}`);
 
-            console.log('--------------------------------------');
+            console.log("--------------------------------------");
 
             console.log(`expected amount of ETH after swaps and unwrapping WETH:   ${hre.ethers.utils.formatEther(expectedEth.toString())}`);
             console.log(`actual amount of ETH after swaps and unwrapping WETH:     ${hre.ethers.utils.formatEther(ethBalanceAfterLiquidation.toString())}`);
@@ -296,7 +303,7 @@ describe('TokenMaturity', function () {
         }
     });
 
-    it('should fail due to only owner check', async () => {
+    it("should fail due to only owner check", async () => {
 
         await tuffVBTDiamond.setContractMaturityTimestamp(1);
         let timestamp = await tuffVBTDiamond.getContractMaturityTimestamp();

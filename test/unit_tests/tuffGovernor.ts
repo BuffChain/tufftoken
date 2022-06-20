@@ -64,7 +64,7 @@ describe("TuffGovernor", function() {
         );
 
         const proposalReceipt = await proposalTx.wait();
-        expect(proposalReceipt.events).to.have.length(1);
+        expect(proposalReceipt.events).to.have.lengthOf.greaterThan(0);
 
         // @ts-ignore: length is asserted above
         const proposalCreatedEvent = proposalReceipt.events.find(event => event.event === "ProposalCreated");

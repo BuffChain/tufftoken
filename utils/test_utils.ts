@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: agpl-3.0
 
 import hre from "hardhat";
-import { BigNumber, Contract } from "ethers";
+import { BigNumber, BigNumberish, Contract } from "ethers";
 import { expect } from "chai";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Address } from "hardhat-deploy/dist/types";
@@ -161,15 +161,15 @@ export async function uniswapExactInputSingle(tokenInAddr: Address, tokenOutAddr
     });
 }
 
-export async function assertDepositERC20ToAave(tuffVBTDiamond: TuffVBTDiamond, erc20TokenAddr: Address, tokenQtyToDeposit = "2000", isEtherFormat = false) {
+export async function assertDepositERC20ToAave(tuffVBTDiamond: TuffVBTDiamond, erc20TokenAddr: Address, tokenQtyToDeposit: BigNumberish = "2000") {
     //Between depositing the ERC20 token and asserting its balance, a small amount of interest may be made
     const interestBuffer = hre.ethers.utils.parseEther("0.000005");
 
     let erc20Qty: BigNumber;
-    if (isEtherFormat) {
-        erc20Qty = BigNumber.from(tokenQtyToDeposit);
-    } else {
+    if (tokenQtyToDeposit === 'string') {
         erc20Qty = hre.ethers.utils.parseEther(tokenQtyToDeposit);
+    } else {
+        erc20Qty = BigNumber.from(tokenQtyToDeposit);
     }
 
     //Check that the account has enough ERC20

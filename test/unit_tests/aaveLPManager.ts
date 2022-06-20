@@ -1,18 +1,18 @@
 // SPDX-License-Identifier: agpl-3.0
 
-const { expect } = require("chai");
-const {
-    BN,           // Big Number support
-    constants,    // Common constants, like the zero address and largest integers
-    expectEvent,  // Assertions for emitted events
-    expectRevert // Assertions for transactions that should fail
-} = require("@openzeppelin/test-helpers");
-const hre = require("hardhat");
+import hre from "hardhat";
+import { BigNumber } from "ethers";
+import { expect } from "chai";
+import { TuffVBT, AaveLPManager, TuffOwner } from "../../src/types";
 
-const { consts } = require("../../utils/consts");
-const { BigNumber } = require("ethers");
-const { transferTuffDUU, getDAIContract, getADAIContract } = require("../../utils/utils");
-const { assertDepositERC20ToAave, sendTokensToAddr } = require("../../utils/test_utils");
+type TuffVBTDiamond = TuffVBT & AaveLPManager & TuffOwner;
+
+import { consts } from "../../utils/consts";
+import { transferTuffDUU, getDAIContract, getADAIContract } from "../../utils/utils";
+import { assertDepositERC20ToAave, sendTokensToAddr } from "../../utils/test_utils";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+
+const { expectRevert } = require("@openzeppelin/test-helpers");
 
 /**
  * Deposit all supported tokens to Aave per the percentages configured
@@ -20,26 +20,26 @@ const { assertDepositERC20ToAave, sendTokensToAddr } = require("../../utils/test
  * @param totalDepositAmt: total amount of tokens that will be deposited
  * @returns {Promise<void>}
  */
-async function depositTokensToAaveEvenly(tuffVBTDiamond, totalDepositAmt = 8000) {
+async function depositTokensToAaveEvenly(tuffVBTDiamond: TuffVBTDiamond, totalDepositAmt = 8000) {
     const daiDepositAmt = (totalDepositAmt / 2).toString();     //50%
     const usdcDepositAmt = (totalDepositAmt / 4).toString();    //25%
     const usdtDepositAmt = (totalDepositAmt / 4).toString();    //25%
 
     const { startERC20Qty: startDAIQty } = await assertDepositERC20ToAave(tuffVBTDiamond, consts("DAI_ADDR"),
-        hre.ethers.utils.parseEther(daiDepositAmt), true);
+        hre.ethers.utils.parseEther(daiDepositAmt));
     const { startERC20Qty: startUSDCQty } = await assertDepositERC20ToAave(tuffVBTDiamond, consts("USDC_ADDR"),
-        hre.ethers.utils.parseUnits(usdcDepositAmt, 6), true);
+        hre.ethers.utils.parseUnits(usdcDepositAmt, 6));
     const { startERC20Qty: startUSDTQty } = await assertDepositERC20ToAave(tuffVBTDiamond, consts("USDT_ADDR"),
-        hre.ethers.utils.parseUnits(usdtDepositAmt, 6), true);
+        hre.ethers.utils.parseUnits(usdtDepositAmt, 6));
 
     return { startDAIQty, startUSDCQty, startUSDTQty };
 }
 
 describe("AaveLPManager", function() {
-    let owner;
-    let accounts;
+    let owner: SignerWithAddress;
+    let accounts: SignerWithAddress[];
 
-    let tuffVBTDiamond;
+    let tuffVBTDiamond: TuffVBTDiamond;
 
     before(async function() {
         const { contractOwner } = await hre.getNamedAccounts();
@@ -51,9 +51,9 @@ describe("AaveLPManager", function() {
 
     beforeEach(async function() {
         const { tDUU } = await hre.deployments.fixture();
-        tuffVBTDiamond = await hre.ethers.getContractAt(tDUU.abi, tDUU.address, owner);
+        tuffVBTDiamond = await hre.ethers.getContractAt(tDUU.abi, tDUU.address, owner) as TuffVBTDiamond;
 
-        await sendTokensToAddr(accounts.at(-1), tuffVBTDiamond.address);
+        await sendTokensToAddr(accounts.slice(-1)[0], tuffVBTDiamond.address);
 
         //Increase the block time to prime the pool
         await hre.ethers.provider.send("evm_increaseTime", [3600]);
@@ -178,7 +178,7 @@ describe("AaveLPManager", function() {
         const qtyInDAI = hre.ethers.utils.parseEther("2000");
 
         //Deposit and assert token and aToken balances
-        await assertDepositERC20ToAave(tuffVBTDiamond, tokenAddr, qtyInDAI, true);
+        await assertDepositERC20ToAave(tuffVBTDiamond, tokenAddr, qtyInDAI);
     });
 
     it("should deposit and withdraw dai to/from aave and TuffVBT's wallet", async () => {
@@ -198,7 +198,7 @@ describe("AaveLPManager", function() {
 
         //Check that the account now has the same or more(if interest was gained) DAI than we started with
         const daiQtyAfterWithdraw = await daiContract.balanceOf(tuffVBTDiamond.address);
-        expect(daiQtyAfterWithdraw).to.gt(startDaiQty);
+        expect(daiQtyAfterWithdraw).to.gte(startDaiQty);
     });
 
     it("revert if token deposited is not supported", async () => {
@@ -226,13 +226,13 @@ describe("AaveLPManager", function() {
         // Total amount is 10000, s.t. percentage == weight for readability
         // DAI is under-balanced at 25% (target is 50%)
         await assertDepositERC20ToAave(tuffVBTDiamond, underBalanceTokenAddr,
-            hre.ethers.utils.parseEther("2500"), true);
+            hre.ethers.utils.parseEther("2500"));
         // USDC is balanced at 25% (target is 25%)
         await assertDepositERC20ToAave(tuffVBTDiamond, consts("USDC_ADDR"),
-            hre.ethers.utils.parseUnits("2500", 6), true);
+            hre.ethers.utils.parseUnits("2500", 6));
         // USDT is over-balanced at 50% (target is 25%)
         await assertDepositERC20ToAave(tuffVBTDiamond, consts("USDT_ADDR"),
-            hre.ethers.utils.parseUnits("5000", 6), true);
+            hre.ethers.utils.parseUnits("5000", 6));
 
         // Simulate the TuffVBT treasury capturing fees by directly transferring tVBT to TuffVBT's address
         const startingTreasuryAmount = await transferTuffDUU(tuffVBTDiamond.address, "400000");
@@ -247,9 +247,14 @@ describe("AaveLPManager", function() {
         const balancingTxReceipt = await balancingTxResponse.wait();
 
         //Then, confirm that we added to the under-balanced token
+        expect(balancingTxReceipt.events).to.have.lengthOf.greaterThan(0);
+        // @ts-ignore: length is asserted above
         const balanceSwapEvent = balancingTxReceipt.events.filter(event => event.event === "AaveLPManagerBalanceSwap");
         expect(balanceSwapEvent.length).to.equal(1);
-        const { tokenSwappedFor, amountIn, amountOut } = balanceSwapEvent[0].args;
+        const tokenSwappedFor = balanceSwapEvent[0]?.args?.tokenSwappedFor.toString();
+        const amountIn = balanceSwapEvent[0]?.args?.amountIn.toString();
+        const amountOut = balanceSwapEvent[0]?.args?.amountOut.toString();
+
         expect(tokenSwappedFor).to.equal(underBalanceTokenAddr);
         expect(amountIn).to.equal(startingTreasuryAmount.div(supportedTokens.length - 1));
 
@@ -273,13 +278,13 @@ describe("AaveLPManager", function() {
         // Total amount is 10000, s.t. percentage == weight for readability
         // DAI is under-balanced at 10% (target is 50%)
         await assertDepositERC20ToAave(tuffVBTDiamond, underBalanceTokenAddr1,
-            hre.ethers.utils.parseEther("1000"), true);
+            hre.ethers.utils.parseEther("1000"));
         // USDC is under-balanced at 10% (target is 25%)
         await assertDepositERC20ToAave(tuffVBTDiamond, underBalanceTokenAddr2,
-            hre.ethers.utils.parseUnits("1000", 6), true);
+            hre.ethers.utils.parseUnits("1000", 6));
         // USDT is over-balanced at 80% (target is 25%)
         await assertDepositERC20ToAave(tuffVBTDiamond, consts("USDT_ADDR"),
-            hre.ethers.utils.parseUnits("8000", 6), true);
+            hre.ethers.utils.parseUnits("8000", 6));
 
         // Simulate the TuffVBT treasury capturing fees by directly transferring tVBT to TuffVBT's address
         const startingTreasuryAmount = await transferTuffDUU(tuffVBTDiamond.address, "400000");
@@ -294,22 +299,20 @@ describe("AaveLPManager", function() {
         const balancingTxReceipt = await balancingTxResponse.wait();
 
         //Then, confirm that we added to the under-balanced token
+        expect(balancingTxReceipt.events).to.have.lengthOf.greaterThan(0);
+        // @ts-ignore: length is asserted above
         const balanceSwapEvent = balancingTxReceipt.events.filter(event => event.event === "AaveLPManagerBalanceSwap");
         expect(balanceSwapEvent.length).to.equal(2);
         // under-balance token 1
-        const {
-            tokenSwappedFor: tokenSwappedFor1,
-            amountIn: amountIn1,
-            amountOut: amountOut1
-        } = balanceSwapEvent[0].args;
+        const tokenSwappedFor1 = balanceSwapEvent[0]?.args?.tokenSwappedFor.toString();
+        const amountIn1 = balanceSwapEvent[0]?.args?.amountIn.toString();
+        const amountOut1 = balanceSwapEvent[0]?.args?.amountOut.toString();
         expect(tokenSwappedFor1).to.equal(underBalanceTokenAddr1);
         expect(amountIn1).to.equal(startingTreasuryAmount.div(supportedTokens.length - 1));
         // under-balance token 2
-        const {
-            tokenSwappedFor: tokenSwappedFor2,
-            amountIn: amountIn2,
-            amountOut: amountOut2
-        } = balanceSwapEvent[1].args;
+        const tokenSwappedFor2 = balanceSwapEvent[1]?.args?.tokenSwappedFor.toString();
+        const amountIn2 = balanceSwapEvent[1]?.args?.amountIn.toString();
+        const amountOut2 = balanceSwapEvent[1]?.args?.amountOut.toString();
         expect(tokenSwappedFor2).to.equal(underBalanceTokenAddr2);
         expect(amountIn2).to.equal(startingTreasuryAmount.div(supportedTokens.length - 1));
 
@@ -333,17 +336,17 @@ describe("AaveLPManager", function() {
         //Setup. Total amount is 10000, s.t. percentage == weight for readability
         // DAI is under-balanced at 25% (target is 50%)
         await assertDepositERC20ToAave(tuffVBTDiamond, consts("DAI_ADDR"),
-            hre.ethers.utils.parseEther("2500"), true);
+            hre.ethers.utils.parseEther("2500"));
         const targetDAIPercent = await tuffVBTDiamond.getAaveTokenTargetWeight(consts("DAI_ADDR"));
 
         // USDC is under-balanced at 15% (target is 25%)
         await assertDepositERC20ToAave(tuffVBTDiamond, consts("USDC_ADDR"),
-            hre.ethers.utils.parseUnits("1500", 6), true);
+            hre.ethers.utils.parseUnits("1500", 6));
         const targetUSDCPercent = await tuffVBTDiamond.getAaveTokenTargetWeight(consts("USDC_ADDR"));
 
         // USDT is over-balanced at 60% (target is 25%)
         await assertDepositERC20ToAave(tuffVBTDiamond, consts("USDT_ADDR"),
-            hre.ethers.utils.parseUnits("6000", 6), true);
+            hre.ethers.utils.parseUnits("6000", 6));
         const targetUSDTPercent = await tuffVBTDiamond.getAaveTokenTargetWeight(consts("USDT_ADDR"));
 
         //Get starting percentages
@@ -388,6 +391,7 @@ describe("AaveLPManager", function() {
         //Final run to ensure balancing is no longer needed and will not occur
         const balancingTxResponse = await tuffVBTDiamond.balanceAaveLendingPool();
         const balancingTxReceipt = await balancingTxResponse.wait();
+        // @ts-ignore: We expect not to find an event
         const balanceSwapEvent = balancingTxReceipt.events.filter(event => event.event === "AaveLPManagerBalanceSwap");
         expect(balanceSwapEvent).to.be.empty;
     });
@@ -408,6 +412,7 @@ describe("AaveLPManager", function() {
         const balancingTxReceipt = await balancingTxResponse.wait();
 
         //Assert that no balancing occurred
+        // @ts-ignore: We expect not to find an event
         const balanceSwapEvent = balancingTxReceipt.events.filter(event => event.event === "AaveLPManagerBalanceSwap");
         expect(balanceSwapEvent).to.be.empty;
 
