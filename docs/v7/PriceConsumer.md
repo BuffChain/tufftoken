@@ -2,11 +2,24 @@
 
 ## PriceConsumer
 
+
+
+
+
+
+
+
 ### isPriceConsumerInit
 
 ```solidity
 function isPriceConsumerInit() public view returns (bool)
 ```
+
+
+
+
+
+
 
 ### initPriceConsumer
 
@@ -14,11 +27,23 @@ function isPriceConsumerInit() public view returns (bool)
 function initPriceConsumer(address _factoryAddr) public
 ```
 
+
+
+
+
+
+
 ### getTvbtWethQuote
 
 ```solidity
 function getTvbtWethQuote(uint32 _period) external view returns (uint256, uint128)
 ```
+
+
+
+
+
+
 
 ### getLatestRoundData
 
@@ -28,15 +53,32 @@ function getLatestRoundData(address _aggregatorAddr) public view returns (uint80
 
 ChainLink price feed functions
 
+
+
+
+
 ### getDecimals
 
 ```solidity
 function getDecimals(address _aggregatorAddr) public view returns (uint8)
 ```
 
+
+
+
+
+
+
 ### getChainLinkPrice
 
 ```solidity
 function getChainLinkPrice(address _aggregatorAddr) external view returns (uint256)
 ```
+
+
+
+
+
+
+
 

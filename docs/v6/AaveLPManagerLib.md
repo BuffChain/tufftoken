@@ -2,11 +2,24 @@
 
 ## AaveLPManagerLib
 
+
+
+
+
+
+
+
 ### NAMESPACE
 
 ```solidity
 string NAMESPACE
 ```
+
+
+
+
+
+
 
 ### POSITION
 
@@ -14,7 +27,20 @@ string NAMESPACE
 bytes32 POSITION
 ```
 
+
+
+
+
+
+
 ### StateStorage
+
+
+
+
+
+
+
 
 ```solidity
 struct StateStorage {
@@ -32,6 +58,13 @@ struct StateStorage {
 
 ### TokenMetadata
 
+
+
+
+
+
+
+
 ```solidity
 struct TokenMetadata {
   address chainlinkEthTokenAggrAddr;
@@ -45,4 +78,11 @@ struct TokenMetadata {
 ```solidity
 function getState() internal pure returns (struct AaveLPManagerLib.StateStorage stateStorage)
 ```
+
+
+
+
+
+
+
 

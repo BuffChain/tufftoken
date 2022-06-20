@@ -2,11 +2,24 @@
 
 ## UniswapManager
 
+
+
+
+
+
+
+
 ### onlyOwner
 
 ```solidity
 modifier onlyOwner()
 ```
+
+
+
+
+
+
 
 ### isUniswapManagerInit
 
@@ -14,11 +27,23 @@ modifier onlyOwner()
 function isUniswapManagerInit() public view returns (bool)
 ```
 
+
+
+
+
+
+
 ### initUniswapManager
 
 ```solidity
 function initUniswapManager(contract ISwapRouter _swapRouter, address wethAddr, uint24 basePoolFee) public
 ```
+
+
+
+
+
+
 
 ### swapExactInputSingle
 
@@ -43,6 +68,7 @@ _The calling address must approve this contract to spend its DAI for this functi
 | ---- | ---- | ----------- |
 | amountOut | uint256 | The amount of DAI actually spent in the swap. |
 
+
 ### swapExactOutputSingle
 
 ```solidity
@@ -66,6 +92,7 @@ _The calling address must approve this contract to spend its DAI for this functi
 | ---- | ---- | ----------- |
 | amountIn | uint256 | The amount of DAI actually spent in the swap. |
 
+
 ### swapExactInputMultihop
 
 ```solidity
@@ -73,4 +100,9 @@ function swapExactInputMultihop(address inputToken, address outputToken, uint24 
 ```
 
 based on https://docs.uniswap.org/protocol/guides/swaps/multihop-swaps
+
+
+
+
+
 

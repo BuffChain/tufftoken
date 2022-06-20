@@ -2,13 +2,33 @@
 
 ## AaveLPManager
 
+
+
+
+
+
+
+
 ### onlyOwner
 
 ```solidity
 modifier onlyOwner()
 ```
 
+
+
+
+
+
+
 ### BalanceMetadata
+
+
+
+
+
+
+
 
 ```solidity
 struct BalanceMetadata {
@@ -29,11 +49,23 @@ struct BalanceMetadata {
 function initAaveLPManager(address _lendingPoolProviderAddr, address _protocolDataProviderAddr, address _wethAddr, uint24 _balanceBufferPercent) public
 ```
 
+
+
+
+
+
+
 ### isAaveInit
 
 ```solidity
 function isAaveInit() public view returns (bool)
 ```
+
+
+
+
+
+
 
 ### getAaveLPAddr
 
@@ -41,11 +73,23 @@ function isAaveInit() public view returns (bool)
 function getAaveLPAddr() public view returns (address)
 ```
 
+
+
+
+
+
+
 ### getProtocolDataProviderAddr
 
 ```solidity
 function getProtocolDataProviderAddr() public view returns (address)
 ```
+
+
+
+
+
+
 
 ### getBalanceBufferPercent
 
@@ -53,11 +97,23 @@ function getProtocolDataProviderAddr() public view returns (address)
 function getBalanceBufferPercent() public view returns (uint24)
 ```
 
+
+
+
+
+
+
 ### setBalanceBufferPercent
 
 ```solidity
 function setBalanceBufferPercent(uint24 _balanceBufferPercent) public
 ```
+
+
+
+
+
+
 
 ### getAllAaveSupportedTokens
 
@@ -65,11 +121,23 @@ function setBalanceBufferPercent(uint24 _balanceBufferPercent) public
 function getAllAaveSupportedTokens() public view returns (address[])
 ```
 
+
+
+
+
+
+
 ### setAaveTokenTargetWeight
 
 ```solidity
 function setAaveTokenTargetWeight(address tokenAddr, uint24 targetWeight) public
 ```
+
+
+
+
+
+
 
 ### getAaveTokenTargetWeight
 
@@ -77,11 +145,23 @@ function setAaveTokenTargetWeight(address tokenAddr, uint24 targetWeight) public
 function getAaveTokenTargetWeight(address tokenAddr) public view returns (uint256)
 ```
 
+
+
+
+
+
+
 ### getAaveTokenCurrentPercentage
 
 ```solidity
 function getAaveTokenCurrentPercentage(address tokenAddr) public view returns (uint256)
 ```
+
+
+
+
+
+
 
 ### getBalanceMetadata
 
@@ -89,11 +169,23 @@ function getAaveTokenCurrentPercentage(address tokenAddr) public view returns (u
 function getBalanceMetadata() private view returns (struct AaveLPManager.BalanceMetadata)
 ```
 
+
+
+
+
+
+
 ### getAaveTotalTargetWeight
 
 ```solidity
 function getAaveTotalTargetWeight() public view returns (uint256)
 ```
+
+
+
+
+
+
 
 ### getAaveIncome
 
@@ -101,11 +193,23 @@ function getAaveTotalTargetWeight() public view returns (uint256)
 function getAaveIncome(address tokenAddr) public view returns (uint256)
 ```
 
+
+
+
+
+
+
 ### getATokenBalance
 
 ```solidity
 function getATokenBalance(address asset) public view returns (uint256)
 ```
+
+
+
+
+
+
 
 ### getATokenAddress
 
@@ -113,11 +217,23 @@ function getATokenBalance(address asset) public view returns (uint256)
 function getATokenAddress(address asset) public view returns (address)
 ```
 
+
+
+
+
+
+
 ### depositToAave
 
 ```solidity
 function depositToAave(address erc20TokenAddr, uint256 amount) public
 ```
+
+
+
+
+
+
 
 ### isAaveSupportedToken
 
@@ -125,11 +241,23 @@ function depositToAave(address erc20TokenAddr, uint256 amount) public
 function isAaveSupportedToken(address tokenAddr) public view returns (bool, uint256)
 ```
 
+
+
+
+
+
+
 ### addAaveSupportedToken
 
 ```solidity
 function addAaveSupportedToken(address tokenAddr, address chainlinkEthTokenAggrAddr, uint24 targetWeight) public
 ```
+
+
+
+
+
+
 
 ### removeAaveSupportedToken
 
@@ -137,11 +265,23 @@ function addAaveSupportedToken(address tokenAddr, address chainlinkEthTokenAggrA
 function removeAaveSupportedToken(address tokenAddr) public
 ```
 
+
+
+
+
+
+
 ### liquidateAaveTreasury
 
 ```solidity
 function liquidateAaveTreasury() public returns (bool)
 ```
+
+
+
+
+
+
 
 ### withdrawFromAave
 
@@ -149,11 +289,23 @@ function liquidateAaveTreasury() public returns (bool)
 function withdrawFromAave(address erc20TokenAddr, uint256 amount) public returns (uint256)
 ```
 
+
+
+
+
+
+
 ### withdrawAllFromAave
 
 ```solidity
 function withdrawAllFromAave(address asset) public
 ```
+
+
+
+
+
+
 
 ### AaveLPManagerBalanceSwap
 
@@ -161,11 +313,23 @@ function withdrawAllFromAave(address asset) public
 event AaveLPManagerBalanceSwap(address tokenSwappedFor, uint256 amountIn, uint256 amountOut)
 ```
 
+
+
 _Emitted when a swap occurs to balance an under-balanced token_
+
+
+
 
 ### balanceAaveLendingPool
 
 ```solidity
 function balanceAaveLendingPool() public
 ```
+
+
+
+
+
+
+
 

@@ -2,9 +2,15 @@
 
 ## TuffOwner
 
+
+
+
 _inspired by https://github.com/OpenZeppelin/openzeppelin-contracts/blob/master/contracts/access/Ownable.sol
 owner() is already defined in the TuffTokenDiamond, we cannot import openzepplin's Ownable contract as it shadows
 the existing definition and we need to allow calls coming from other facets on the diamond contract._
+
+
+
 
 ### isTuffOwnerInit
 
@@ -12,11 +18,23 @@ the existing definition and we need to allow calls coming from other facets on t
 function isTuffOwnerInit() public view returns (bool)
 ```
 
+
+
+
+
+
+
 ### initTuffOwner
 
 ```solidity
 function initTuffOwner(address initialOwner) public
 ```
+
+
+
+
+
+
 
 ### OwnershipTransferred
 
@@ -24,13 +42,24 @@ function initTuffOwner(address initialOwner) public
 event OwnershipTransferred(address previousOwner, address newOwner)
 ```
 
+
+
+
+
+
+
 ### getTuffOwner
 
 ```solidity
 function getTuffOwner() public view virtual returns (address)
 ```
 
+
+
 _Returns the address of the current owner._
+
+
+
 
 ### onlyOwner
 
@@ -38,13 +67,24 @@ _Returns the address of the current owner._
 modifier onlyOwner()
 ```
 
+
+
+
+
+
+
 ### requireOnlyOwner
 
 ```solidity
 function requireOnlyOwner(address sender) public view
 ```
 
+
+
 _Throws if called by any account other than the owner._
+
+
+
 
 ### renounceOwnership
 
@@ -52,11 +92,16 @@ _Throws if called by any account other than the owner._
 function renounceOwnership() public virtual
 ```
 
+
+
 _Leaves the contract without owner. It will not be possible to call
 `onlyOwner` functions anymore. Can only be called by the current owner.
 
 NOTE: Renouncing ownership will leave the contract without an owner,
 thereby removing any functionality that is only available to the owner._
+
+
+
 
 ### transferTuffOwnership
 
@@ -64,8 +109,13 @@ thereby removing any functionality that is only available to the owner._
 function transferTuffOwnership(address newOwner) public virtual
 ```
 
+
+
 _Transfers ownership of the contract to a new account (`newOwner`).
 Can only be called by the current owner._
+
+
+
 
 ### _transferOwnership
 
@@ -73,6 +123,12 @@ Can only be called by the current owner._
 function _transferOwnership(address newOwner) internal virtual
 ```
 
+
+
 _Transfers ownership of the contract to a new account (`newOwner`).
 Internal function without access restriction._
+
+
+
+
 

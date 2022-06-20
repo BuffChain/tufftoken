@@ -25,7 +25,7 @@ contract TuffGovernor is
 
 
     /// @notice The Governor implementation uses GovernorVotesQuorumFraction which works together with ERC20Votes to
-    /// define quorum as a percentage of the total supply at the block a proposal’s voting power is retrieved (4%).
+    /// define quorum as a percentage of the total supply at the block a proposal's voting power is retrieved (4%).
     /// @dev Quorum Fraction is set to 4%.
     /// @param _token The underlying ERC20 token with voting capabilities.
     /// @param _timelock Allows users to exit the system if they disagree with a decision before it is executed.
@@ -74,7 +74,7 @@ contract TuffGovernor is
         _proposalThreshold = threshold;
     }
 
-    /// Minimum number of cast voted required for a proposal to be successful.
+    /// @notice Minimum number of cast voted required for a proposal to be successful.
     /// @inheritdoc GovernorVotesQuorumFraction
     function quorum(uint256 blockNumber)
         public
@@ -96,7 +96,7 @@ contract TuffGovernor is
         return super.getVotes(account, blockNumber);
     }
 
-    /// Current state of a proposal, following Compound's convention
+    /// @notice Current state of a proposal, following Compound's convention
     /// @inheritdoc GovernorTimelockControl
     function state(uint256 proposalId)
         public
@@ -107,7 +107,7 @@ contract TuffGovernor is
         return super.state(proposalId);
     }
 
-    /// Create a proposal
+    /// @notice Create a proposal
     /// @inheritdoc IGovernor
     function propose(
         address[] memory targets,
@@ -118,7 +118,7 @@ contract TuffGovernor is
         return super.propose(targets, values, calldatas, description);
     }
 
-    /// Overridden execute function that run the already queued proposal through the timelock.
+    /// @notice Overridden execute function that run the already queued proposal through the timelock.
     /// @inheritdoc Governor
     function _execute(
         uint256 proposalId,
@@ -130,7 +130,7 @@ contract TuffGovernor is
         super._execute(proposalId, targets, values, calldatas, descriptionHash);
     }
 
-    /// Overridden version of the {Governor-_cancel} function to cancel the timelocked proposal if it as already been queued.
+    /// @notice Overridden version of the {Governor-_cancel} function to cancel the timelocked proposal if it as already been queued.
     /// @inheritdoc Governor
     function _cancel(
         address[] memory targets,
@@ -180,4 +180,5 @@ contract TuffGovernor is
     ) public payable returns (uint256) {
         return super.execute(targets, values, calldatas, descriptionHash);
     }
+
 }
