@@ -170,7 +170,7 @@ describe("AaveLPManager", function() {
     it("reverts if adding an unsupported aave token", async () => {
         await expectRevert(tuffVBTDiamond.addAaveSupportedToken(
                 consts("UNISWAP_V3_ROUTER_ADDR"), consts("UNISWAP_V3_ROUTER_ADDR"), 2500),
-            "UT");
+            "UAT");
     });
 
     it("should get correct aToken balance", async () => {
@@ -202,8 +202,15 @@ describe("AaveLPManager", function() {
     });
 
     it("revert if token deposited is not supported", async () => {
-        await expectRevert(tuffVBTDiamond.depositToAave(consts("WETH9_ADDR"), 0),
-            "This token is currently not supported");
+        await expectRevert(tuffVBTDiamond.depositToAave(consts("WETH9_ADDR"), 0), "DUT");
+    });
+
+    it("revert if token withdraw is not supported", async () => {
+        await expectRevert(tuffVBTDiamond.withdrawFromAave(consts("WETH9_ADDR"), 0), "WUT");
+    });
+
+    it("revert if token get current percentage is not supported", async () => {
+        await expectRevert(tuffVBTDiamond.getAaveTokenCurrentPercentage(consts("WETH9_ADDR")), "UT");
     });
 
     it("should liquidate Aave treasury", async () => {

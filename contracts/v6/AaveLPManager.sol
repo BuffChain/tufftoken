@@ -119,8 +119,8 @@ contract AaveLPManager is Context {
             }
         }
 
-        //TODO: should be a revert
-        return 0;
+        //Unsupported Token: The tokenAddress provided is not a supported token
+        revert("UT");
     }
 
     function getBalanceMetadata() private view returns (BalanceMetadata memory) {
@@ -186,10 +186,8 @@ contract AaveLPManager is Context {
 
     function depositToAave(address erc20TokenAddr, uint256 amount) public onlyOwner {
         (bool _isSupportedToken, ) = isAaveSupportedToken(erc20TokenAddr);
-        require(
-            _isSupportedToken,
-            string(abi.encodePacked(AaveLPManagerLib.NAMESPACE, ": ", "This token is currently not supported"))
-        );
+        //Deposit Unsupported Token: This token is currently not supported
+        require(_isSupportedToken, "DUT");
 
         SafeERC20.safeApprove(IERC20(erc20TokenAddr), getAaveLPAddr(), amount);
         LendingPool(getAaveLPAddr()).deposit(erc20TokenAddr, amount, address(this), 0);
@@ -219,8 +217,8 @@ contract AaveLPManager is Context {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
 
         address aTokenAddr = getATokenAddress(tokenAddr);
-        //Unsupported Token: The tokenAddress provided is not supported by Aave
-        require(aTokenAddr != address(0), "UT");
+        //Unsupported Aave Token: The tokenAddress provided is not supported by Aave
+        require(aTokenAddr != address(0), "UAT");
 
         ss.supportedTokens.push(tokenAddr);
         ss.tokenMetadata[tokenAddr].chainlinkEthTokenAggrAddr = chainlinkEthTokenAggrAddr;
@@ -257,10 +255,8 @@ contract AaveLPManager is Context {
 
     function withdrawFromAave(address erc20TokenAddr, uint256 amount) public onlyOwner returns (uint256) {
         (bool _isSupportedToken, ) = isAaveSupportedToken(erc20TokenAddr);
-        require(
-            _isSupportedToken,
-            string(abi.encodePacked(AaveLPManagerLib.NAMESPACE, ": ", "This token is not currently supported"))
-        );
+        //Withdraw Unsupported Token: This token is currently not supported
+        require(_isSupportedToken, "WUT");
 
         if (getATokenBalance(erc20TokenAddr) == 0) {
             return 0;
