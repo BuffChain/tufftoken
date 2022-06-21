@@ -8,18 +8,20 @@ import { TuffVBT, TuffOwner, TokenMaturity, AaveLPManager } from "../../src/type
 type TuffVBTDiamond = TuffVBT & TuffOwner & TokenMaturity & AaveLPManager;
 
 import {
-    consts,
-    UNISWAP_POOL_BASE_FEE,
     TOKEN_DAYS_UNTIL_MATURITY,
     TOKEN_DECIMALS,
     TOKEN_TOTAL_SUPPLY
 } from "../../utils/consts";
-import { getWETH9Contract, getADAIContract, getDAIContract, getUniswapPriceQuote } from "../../utils/utils";
+import {
+    getWETH9Contract,
+    getDAIContract, getUSDCContract, getUSDTContract, getATokenContract,
+    getDaiWethQuote, getUsdcWethQuote, getUsdtWethQuote
+} from "../../utils/utils";
 import { sendTokensToAddr, assertDepositERC20ToAave } from "../../utils/test_utils";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Address } from "hardhat-deploy/dist/types";
 
-const { BN, expectRevert } = require("@openzeppelin/test-helpers");
+const { expectRevert } = require("@openzeppelin/test-helpers");
 
 describe("TokenMaturity", function() {
 
@@ -123,10 +125,9 @@ describe("TokenMaturity", function() {
         expect(isMatured).to.equal(true, "should have reached maturity");
     }
 
-    async function assertSenderTransferSuccess(startingTuffVBTTotalSupply: BigNumber, desiredTuffVBTAmountLeftOver: BigNumber) {
+    async function assertSenderTransferSuccess(holder: Address, startingTuffVBTTotalSupply: BigNumber, desiredTuffVBTAmountLeftOver: BigNumber) {
         // Make transaction from first account to second.
         const sender = owner.address;
-        const holder = accounts[0].address;
 
         const amount = startingTuffVBTTotalSupply.sub(desiredTuffVBTAmountLeftOver);
         await tuffVBTDiamond.transfer(holder, amount, { from: sender });
@@ -134,7 +135,7 @@ describe("TokenMaturity", function() {
         const senderTuffVBTBalanceAfterTransfer = await tuffVBTDiamond.balanceOf(sender);
         expect(senderTuffVBTBalanceAfterTransfer).to.equal(desiredTuffVBTAmountLeftOver,
             "Amount wasn't correctly sent to the receiver");
-        return { sender, holder, senderTuffVBTBalanceAfterTransfer };
+        return { sender, senderTuffVBTBalanceAfterTransfer };
     }
 
     async function assertTokenRedemptionSuccess(
@@ -142,23 +143,40 @@ describe("TokenMaturity", function() {
         startingTuffVBTTotalSupply: BigNumber,
         contractStartingEthBalance: BigNumber,
         sender: Address,
-        holder: Address,
+        holderAddr: Address,
         senderTuffVBTBalanceAfterTransfer: BigNumber
     ) {
         const holderTuffVBTBalanceToTotalSupplyRatio = desiredTuffVBTAmountLeftOver.div(startingTuffVBTTotalSupply);
         const expectedETHRedemptionAmount = contractStartingEthBalance.mul(holderTuffVBTBalanceToTotalSupplyRatio);
 
+        //TODO: @Ian, contractStartingEthBalance, holderTuffVBTBalanceToTotalSupplyRatio, expectedETHRedemptionAmount
+        // are 0, which doesn't make sense to me. The test passes, but I don't think it should given they're all 0
+
+        // console.log(`desiredTuffVBTAmountLeftOver: ${desiredTuffVBTAmountLeftOver}`);
+        // console.log(`startingTuffVBTTotalSupply: ${startingTuffVBTTotalSupply}`);
+        // console.log(`holderTuffVBTBalanceToTotalSupplyRatio: ${holderTuffVBTBalanceToTotalSupplyPercentage}`);
+        // console.log(`contractStartingEthBalance: ${contractStartingEthBalance}`);
+        // console.log(`expectedETHRedemptionAmount: ${expectedETHRedemptionAmount}`);
+        // console.log(`-----------------------------`);
+
         let senderStartingEthBalance = await hre.ethers.provider.getBalance(sender);
 
-        await expect(tuffVBTDiamond.redeem())
-            .to.emit(tuffVBTDiamond, "Redeemed")
-            .withArgs(sender, senderTuffVBTBalanceAfterTransfer, expectedETHRedemptionAmount);
+        const redeemTxResponse = await tuffVBTDiamond.redeem();
+        const redeemTxReceipt = await redeemTxResponse.wait();
+
+        expect(redeemTxReceipt.events).to.have.lengthOf.greaterThan(0);
+        // @ts-ignore: length is asserted above
+        const redeemEvent = redeemTxReceipt.events.filter(event => event.event === "Redeemed");
+        expect(redeemEvent.length).to.equal(1);
+        expect(redeemEvent[0]?.args?.holder).to.equal(sender);
+        expect(redeemEvent[0]?.args?.tuffBalance).to.equal(senderTuffVBTBalanceAfterTransfer);
+        expect(redeemEvent[0]?.args?.ethAmount).to.equal(expectedETHRedemptionAmount);
 
         const senderEndingEthBalance = await hre.ethers.provider.getBalance(sender);
-
-        //TODO: To be more precise, this test should assert that senderStartingEthBalance == senderEndingEthBalance + expectedETHRedemptionAmount
-        // however, that is currently not the case
-        expect(senderEndingEthBalance).to.be.lt(senderStartingEthBalance, "Sender did not successfully receive ETH");
+        const redeemTxGasCost = redeemTxReceipt.gasUsed.mul(redeemTxReceipt.effectiveGasPrice);
+        expect(senderEndingEthBalance).to.equal(
+            senderStartingEthBalance.add(expectedETHRedemptionAmount).sub(redeemTxGasCost),
+            "Sender did not successfully receive ETH");
 
         const senderTuffVBTBalanceAfterRedemption = await tuffVBTDiamond.balanceOf(sender);
         expect(senderTuffVBTBalanceAfterRedemption).to.equal(0,
@@ -192,6 +210,7 @@ describe("TokenMaturity", function() {
     }
 
     it("should handle token reaching maturity and holders redeeming", async () => {
+        const holderAddr = accounts.slice(-1)[0].address;
         await assertTokenMaturity();
 
         let isLiquidated = await tuffVBTDiamond.getIsTreasuryLiquidated();
@@ -203,13 +222,14 @@ describe("TokenMaturity", function() {
 
         await expect(tuffVBTDiamond.onTokenMaturity())
             .to.emit(tuffVBTDiamond, "TokenMatured")
-            .withArgs(new BN(contractStartingEthBalance.toString()), new BN(tuffVBTTotalSupply.toString()));
+            .withArgs(contractStartingEthBalance, tuffVBTTotalSupply);
 
         isLiquidated = await tuffVBTDiamond.getIsTreasuryLiquidated();
         expect(isLiquidated).to.equal(true, "should have been liquidated");
 
         const desiredTuffVBTAmountLeftOver = (BigNumber.from(10).pow(TOKEN_DECIMALS)).mul(BigNumber.from(100000));
-        const { sender, holder, senderTuffVBTBalanceAfterTransfer } = await assertSenderTransferSuccess(
+        const { sender, senderTuffVBTBalanceAfterTransfer } = await assertSenderTransferSuccess(
+            holderAddr,
             startingOwnerTuffBal,
             desiredTuffVBTAmountLeftOver
         );
@@ -218,7 +238,7 @@ describe("TokenMaturity", function() {
             tuffVBTTotalSupply,
             contractStartingEthBalance,
             sender,
-            holder,
+            holderAddr,
             senderTuffVBTBalanceAfterTransfer
         );
 
@@ -237,74 +257,87 @@ describe("TokenMaturity", function() {
 
     it("should liquidate treasury", async () => {
         const daiContract = await getDAIContract();
-        const adaiContract = await getADAIContract();
+        const adaiContract = await getATokenContract(daiContract.address);
+        const usdcContract = await getUSDCContract();
+        const ausdcContract = await getATokenContract(usdcContract.address);
+        const usdtContract = await getUSDTContract();
+        const ausdtContract = await getATokenContract(usdtContract.address);
         const weth9Contract = await getWETH9Contract();
 
-        await sendTokensToAddr(accounts.slice(-1)[0], tuffVBTDiamond.address);
+        await sendTokensToAddr(accounts.slice(-1)[0], tuffVBTDiamond.address)
 
-        // deposits DAI to Aave
+        //Deposits supported tokens to Aave
         await assertDepositERC20ToAave(tuffVBTDiamond, daiContract.address);
+        await assertDepositERC20ToAave(tuffVBTDiamond, usdcContract.address);
+        await assertDepositERC20ToAave(tuffVBTDiamond, usdtContract.address);
 
+        //Get starting balances
         const ethBalanceAfterDeposit = await hre.ethers.provider.getBalance(tuffVBTDiamond.address);
         const wethBalanceAfterDeposit = await weth9Contract.balanceOf(tuffVBTDiamond.address);
         const daiBalanceAfterDeposit = await daiContract.balanceOf(tuffVBTDiamond.address);
         const aDaiBalanceAfterDeposit = await adaiContract.balanceOf(tuffVBTDiamond.address);
+        const usdcBalanceAfterDeposit = BigNumber.from(hre.ethers.utils.parseUnits(
+            (await usdcContract.balanceOf(tuffVBTDiamond.address)).toString(), 18 - await usdcContract.decimals()));
+        const ausdcBalanceAfterDeposit = BigNumber.from(hre.ethers.utils.parseUnits(
+            (await ausdcContract.balanceOf(tuffVBTDiamond.address)).toString(), 18 - await ausdcContract.decimals()));
+        const usdtBalanceAfterDeposit = BigNumber.from(hre.ethers.utils.parseUnits(
+            (await usdtContract.balanceOf(tuffVBTDiamond.address)).toString(), 18 - await usdtContract.decimals()));
+        const ausdtBalanceAfterDeposit = BigNumber.from(hre.ethers.utils.parseUnits(
+            (await ausdtContract.balanceOf(tuffVBTDiamond.address)).toString(), 18 - await ausdtContract.decimals()));
 
+        const daiWethQuote = await getDaiWethQuote();
+        const daiToWethConversion = daiBalanceAfterDeposit.div(Math.floor(daiWethQuote));
+        const aDaiToWethConversion = aDaiBalanceAfterDeposit.div(Math.floor(daiWethQuote));
+
+        const usdcWethQuote = await getUsdcWethQuote();
+        const usdcToWethConversion = usdcBalanceAfterDeposit.div(Math.floor(usdcWethQuote));
+        const ausdcToWethConversion = ausdcBalanceAfterDeposit.div(Math.floor(usdcWethQuote));
+
+        const usdtWethQuote = await getUsdtWethQuote();
+        const usdtToWethConversion = usdtBalanceAfterDeposit.div(Math.floor(usdtWethQuote));
+        const ausdtToWethConversion = ausdtBalanceAfterDeposit.div(Math.floor(usdtWethQuote));
+
+        //Liquidate treasury
         const liquidationTxResponse = await tuffVBTDiamond.liquidateTreasury();
         const liquidationTxReceipt = await liquidationTxResponse.wait();
         const liquidationTxGasCost = liquidationTxReceipt.gasUsed.mul(liquidationTxReceipt.effectiveGasPrice);
 
-        const daiWethQuote = await getUniswapPriceQuote(
-            consts("DAI_ADDR"),
-            consts("WETH9_ADDR"),
-            UNISWAP_POOL_BASE_FEE,
-            60
-        );
-
-        //Note that we lose some precision here, but need this to be an int
-        const daiToWethConversion = BigInt(daiBalanceAfterDeposit / Math.floor(daiWethQuote));
-        const aDaiToWethConversion = BigInt(aDaiBalanceAfterDeposit / Math.floor(daiWethQuote));
-
+        //Verify that all holding were sold
         const ethBalanceAfterLiquidation = await hre.ethers.provider.getBalance(tuffVBTDiamond.address);
         const wethBalanceAfterLiquidation = await weth9Contract.balanceOf(tuffVBTDiamond.address);
         const daiBalanceAfterLiquidation = await daiContract.balanceOf(tuffVBTDiamond.address);
         const adaiBalanceAfterLiquidation = await adaiContract.balanceOf(tuffVBTDiamond.address);
+        const usdcBalanceAfterLiquidation = await usdcContract.balanceOf(tuffVBTDiamond.address);
+        const ausdcBalanceAfterLiquidation = await ausdcContract.balanceOf(tuffVBTDiamond.address);
+        const usdtBalanceAfterLiquidation = await usdtContract.balanceOf(tuffVBTDiamond.address);
+        const ausdtBalanceAfterLiquidation = await ausdtContract.balanceOf(tuffVBTDiamond.address);
 
-        expect(daiBalanceAfterLiquidation).to.equal(0, "DAI should have been liquidated");
-        expect(adaiBalanceAfterLiquidation).to.equal(0, "ADAI should have been liquidated");
-        expect(wethBalanceAfterLiquidation).to.equal(0, "WETH should have been unwrapped");
-        expect(ethBalanceAfterLiquidation).to.be.gt(ethBalanceAfterDeposit.add(wethBalanceAfterDeposit),
-            "unexpected ETH balance");
+        expect(daiBalanceAfterLiquidation).to.equal(0);
+        expect(adaiBalanceAfterLiquidation).to.equal(0);
+        expect(usdcBalanceAfterLiquidation).to.equal(0);
+        expect(ausdcBalanceAfterLiquidation).to.equal(0);
+        expect(usdtBalanceAfterLiquidation).to.equal(0);
+        expect(ausdtBalanceAfterLiquidation).to.equal(0);
+        expect(wethBalanceAfterLiquidation).to.equal(0);
+        expect(ethBalanceAfterLiquidation).to.be.gt(ethBalanceAfterDeposit.add(wethBalanceAfterDeposit));
 
-        const expectedEth =
-            BigInt(daiToWethConversion) +
-            BigInt(aDaiToWethConversion) +
-            BigInt(wethBalanceAfterDeposit) +
-            BigInt(ethBalanceAfterDeposit.toString()) -
-            BigInt(liquidationTxGasCost.toString());
-
-        //TODO: This buffer is likely from the poolFee that uniswap charges, this test needs to be updated to account
-        // for that
-        const buffer = hre.ethers.utils.parseEther("0.03");
-        const ethDiff = BigNumber.from(expectedEth).sub(ethBalanceAfterLiquidation);
-        expect(ethDiff).to.be.lte(buffer, "eth difference exceeds allowed buffer");
-
-        if (hre.hardhatArguments.verbose) {
-            console.log(`starting amount of ETH:                       ${hre.ethers.utils.formatEther(ethBalanceAfterDeposit.toString())}`);
-            console.log(`starting amount of WETH:                       ${hre.ethers.utils.formatEther(wethBalanceAfterDeposit.toString())}`);
-            console.log(`expected amount of WETH from DAI swap:          ${hre.ethers.utils.formatEther(daiToWethConversion.toString())}`);
-            console.log(`expected amount of WETH from ADAI swap:         ${hre.ethers.utils.formatEther(aDaiToWethConversion.toString())}`);
-
-            console.log("--------------------------------------");
-
-            console.log(`expected amount of ETH after swaps and unwrapping WETH:   ${hre.ethers.utils.formatEther(expectedEth.toString())}`);
-            console.log(`actual amount of ETH after swaps and unwrapping WETH:     ${hre.ethers.utils.formatEther(ethBalanceAfterLiquidation.toString())}`);
-            console.log(`difference from expected to actual:                         ${hre.ethers.utils.formatEther(ethDiff.toString())}`);
-        }
+        //Add up holdings to find expected amount and compare to actual amount
+        // This buffer includes unknowns like Uniswap's pool and swap fees, the price impact of selling those tokens,
+        // and differences between different oracle's quotes
+        const buffer = hre.ethers.utils.parseEther("0.3");
+        const expectedEth = ethBalanceAfterDeposit
+                .add(wethBalanceAfterDeposit)
+                .add(daiToWethConversion)
+                .add(aDaiToWethConversion)
+                .add(usdcToWethConversion)
+                .add(ausdcToWethConversion)
+                .add(usdtToWethConversion)
+                .add(ausdtToWethConversion)
+                .sub(liquidationTxGasCost);
+        expect(ethBalanceAfterLiquidation).to.be.closeTo(expectedEth, buffer);
     });
 
     it("should fail due to only owner check", async () => {
-
         await tuffVBTDiamond.setContractMaturityTimestamp(1);
         let timestamp = await tuffVBTDiamond.getContractMaturityTimestamp();
         expect(timestamp).to.equal(1, "unexpected timestamp");
@@ -312,8 +345,7 @@ describe("TokenMaturity", function() {
         const nonOwnerAccountAddress = accounts[1].address;
         await tuffVBTDiamond.transferTuffOwnership(nonOwnerAccountAddress);
 
-        await expectRevert(tuffVBTDiamond.setContractMaturityTimestamp(2),
-            "NO");
+        await expectRevert(tuffVBTDiamond.setContractMaturityTimestamp(2), "NO");
 
         timestamp = await tuffVBTDiamond.getContractMaturityTimestamp();
         expect(timestamp).to.equal(1, "timestamp should be left unchanged");

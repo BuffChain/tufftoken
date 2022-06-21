@@ -16,8 +16,7 @@ module.exports = async () => {
         consts("DAI_ADDR"),
         consts("WETH9_ADDR"),
         UNISWAP_POOL_BASE_FEE,
-        3600,
-        false
+        3600
     );
     log(`Current ETH price: $${daiWethQuote}`);
 

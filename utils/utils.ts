@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: agpl-3.0
 
 import hre from "hardhat";
-import { BigNumber, Contract } from "ethers";
+import { BigNumber } from "ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Address } from "hardhat-deploy/dist/types";
-import { TuffVBT } from "../src/types";
+import { AggregatorV3Interface, TuffVBT } from "../src/types";
 
-const SwapRouterABI = require("@uniswap/v3-periphery/artifacts/contracts/SwapRouter.sol/SwapRouter.json").abi;
+const AggregatorV3InterfaceABI = require("@chainlink/contracts/abi/v0.7/AggregatorV3Interface.json");
 const WETH9ABI = require("@uniswap/v3-periphery/artifacts/contracts/interfaces/external/IWETH9.sol/IWETH9.json").abi;
 const IERC20ABI = require("@openzeppelin/contracts/build/contracts/ERC20.json").abi;
 const AaveProtocolDataProviderABI = require("@aave/protocol-v2/artifacts/contracts/misc/AaveProtocolDataProvider.sol/AaveProtocolDataProvider.json").abi;
@@ -14,7 +14,6 @@ const IUniswapV3FactoryABI = require("@uniswap/v3-core/artifacts/contracts/inter
 const IUniswapV3PoolABI = require("@uniswap/v3-core/artifacts/contracts/interfaces/IUniswapV3Pool.sol/IUniswapV3Pool.json").abi;
 
 import { consts, TOKEN_DECIMALS, TOKEN_SYMBOL } from "./consts";
-import { runCallbackImpersonatingAcct } from "./test_utils";
 
 export async function getWETH9Contract() {
     return await hre.ethers.getContractAt(WETH9ABI, consts("WETH9_ADDR"));
@@ -137,7 +136,28 @@ export async function getUniswapPriceQuote(tokenA: Address, tokenB: Address, poo
     const decimalFactor = Math.pow(10, decimalDiff);
 
     //Return normalized quote
-    return inverse ? 1 / (quote * decimalFactor) : quote * decimalFactor;
+    return inverse ? 1 / (quote * decimalFactor) : quote / decimalFactor;
+}
+
+async function getChainlinkQuote(aggr_addr: Address) {
+    const aggregator = await hre.ethers.getContractAt(
+        AggregatorV3InterfaceABI,
+        aggr_addr
+    ) as AggregatorV3Interface;
+    const { answer } = await aggregator.latestRoundData();
+    const decimals = await aggregator.decimals();
+    const quote = (1 / answer.toNumber()) * Math.pow(10, decimals);
+    return quote;
+}
+
+export async function getDaiWethQuote() {
+    return getChainlinkQuote(consts("CHAINLINK_ETH_DAI_AGGR_ADDR"));
+}
+export async function getUsdcWethQuote() {
+    return getChainlinkQuote(consts("CHAINLINK_ETH_USDC_AGGR_ADDR"));
+}
+export async function getUsdtWethQuote() {
+    return getChainlinkQuote(consts("CHAINLINK_ETH_USDT_AGGR_ADDR"));
 }
 
 export async function getAcctBal(tuffVBTDiamond: TuffVBT, acctAddr: Address, logPrefix = "") {

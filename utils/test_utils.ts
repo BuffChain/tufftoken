@@ -162,18 +162,17 @@ export async function uniswapExactInputSingle(tokenInAddr: Address, tokenOutAddr
 }
 
 export async function assertDepositERC20ToAave(tuffVBTDiamond: TuffVBTDiamond, erc20TokenAddr: Address, tokenQtyToDeposit: BigNumberish = "2000") {
-    //Between depositing the ERC20 token and asserting its balance, a small amount of interest may be made
-    const interestBuffer = hre.ethers.utils.parseEther("0.000005");
+    const erc20Contract = await getERC20Contract(erc20TokenAddr);
+    const erc20Decimals = await erc20Contract.decimals();
 
     let erc20Qty: BigNumber;
-    if (tokenQtyToDeposit === 'string') {
-        erc20Qty = hre.ethers.utils.parseEther(tokenQtyToDeposit);
+    if (typeof tokenQtyToDeposit === 'string') {
+        erc20Qty = hre.ethers.utils.parseUnits(tokenQtyToDeposit, erc20Decimals);
     } else {
         erc20Qty = BigNumber.from(tokenQtyToDeposit);
     }
 
     //Check that the account has enough ERC20
-    const erc20Contract = await getERC20Contract(erc20TokenAddr);
     const startERC20Qty = await erc20Contract.balanceOf(tuffVBTDiamond.address);
     expect(startERC20Qty).to.be.gt(erc20Qty);
 
@@ -195,6 +194,8 @@ export async function assertDepositERC20ToAave(tuffVBTDiamond: TuffVBTDiamond, e
     //Check that the account now has aToken equal to the erc20Token we deposited
     const aTokenQtyAfterDeposit = await aTokenContract.balanceOf(tuffVBTDiamond.address);
     expect(aTokenQtyAfterDeposit).to.be.gte(erc20Qty);
+    // Between depositing the ERC20 token and asserting its balance, a small amount of interest may be made
+    const interestBuffer = hre.ethers.utils.parseEther("0.000005");
     expect(aTokenQtyAfterDeposit).to.be.lte(erc20Qty.add(interestBuffer));
 
     return { startERC20Qty };
