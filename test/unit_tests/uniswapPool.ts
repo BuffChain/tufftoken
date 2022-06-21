@@ -59,7 +59,7 @@ describe("UniswapPool Deployment", function() {
         const tick = slot[1];
 
         expect(fee).to.equal(UNISWAP_POOL_BASE_FEE);
-        expect(parseInt(liquidity)).to.be.greaterThan(0);
+        expect(liquidity).to.be.gt(0);
         expect(sqrtPriceX96).to.equal(getSqrtPriceX96(consts("TUFF_STARTING_PRICE")));
     });
 

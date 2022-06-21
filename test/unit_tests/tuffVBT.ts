@@ -1,21 +1,30 @@
 // SPDX-License-Identifier: agpl-3.0
 
-const {expect} = require("chai");
-const hre = require("hardhat");
-const {TOKEN_TOTAL_SUPPLY, TOKEN_DECIMALS, TOKEN_SYMBOL, TOKEN_NAME, TOKEN_DEV_FEE} = require("../../utils/consts");
-const {BigNumber} = require("ethers");
-const {expectRevert} = require("@openzeppelin/test-helpers");
+import hre from "hardhat";
+import { expect } from "chai";
+import { BigNumber } from "ethers";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { Address } from "hardhat-deploy/dist/types";
+import { TuffVBT, TokenMaturity, TuffOwner } from "../../src/types";
 
-describe("TuffVBT", function () {
+type TuffVBTDiamond = TuffVBT & TokenMaturity & TuffOwner;
 
-    let owner;
-    let buffChainAddr;
-    let accounts;
+import {
+    TOKEN_TOTAL_SUPPLY, TOKEN_DECIMALS, TOKEN_SYMBOL, TOKEN_NAME, TOKEN_DEV_FEE
+} from "../../utils/consts";
 
-    let tuffVBTDiamond;
+const { expectRevert } = require("@openzeppelin/test-helpers");
 
-    before(async function () {
-        const {contractOwner, buffChain} = await hre.getNamedAccounts();
+describe("TuffVBT", function() {
+
+    let owner: SignerWithAddress;
+    let buffChainAddr: Address;
+    let accounts: SignerWithAddress[];
+
+    let tuffVBTDiamond: TuffVBTDiamond;
+
+    before(async function() {
+        const { contractOwner, buffChain } = await hre.getNamedAccounts();
         owner = await hre.ethers.getSigner(contractOwner);
         buffChainAddr = buffChain;
 
@@ -23,104 +32,104 @@ describe("TuffVBT", function () {
         [, , ...accounts] = await hre.ethers.getSigners();
     });
 
-    beforeEach(async function () {
-        const {tDUU} = await hre.deployments.fixture();
-        tuffVBTDiamond = await hre.ethers.getContractAt(tDUU.abi, tDUU.address, owner);
+    beforeEach(async function() {
+        const { tDUU } = await hre.deployments.fixture();
+        tuffVBTDiamond = await hre.ethers.getContractAt(tDUU.abi, tDUU.address, owner) as TuffVBTDiamond;
     });
 
-    it('should calculate farm fee amount with take fee true', async () => {
+    it("should calculate farm fee amount with take fee true", async () => {
         const farmFee = await tuffVBTDiamond.getFarmFee();
         const feeAmount = await tuffVBTDiamond.calculateFee(100, farmFee, true);
         expect(feeAmount).to.equal(10, "incorrect farm fee amount");
     });
 
-    it('should calculate farm fee amount with take fee false', async () => {
+    it("should calculate farm fee amount with take fee false", async () => {
         const farmFee = await tuffVBTDiamond.getFarmFee();
         const feeAmount = await tuffVBTDiamond.calculateFee(100, farmFee, false);
         expect(feeAmount).to.equal(0, "incorrect farm fee amount");
     });
 
-    it('should calculate dev fee amount with take fee true', async () => {
+    it("should calculate dev fee amount with take fee true", async () => {
         const devFee = await tuffVBTDiamond.getDevFee();
         const feeAmount = await tuffVBTDiamond.calculateFee(100, devFee, true);
         expect(feeAmount).to.equal(1, "incorrect dev fee amount");
     });
 
-    it('should calculate dev fee amount with take fee false', async () => {
+    it("should calculate dev fee amount with take fee false", async () => {
         const devFee = await tuffVBTDiamond.getDevFee();
         const feeAmount = await tuffVBTDiamond.calculateFee(100, devFee, false);
         expect(feeAmount).to.equal(0, "incorrect dev fee amount");
     });
 
-    it('should exclude from fees', async () => {
+    it("should exclude from fees", async () => {
         await tuffVBTDiamond.excludeFromFee(accounts[0].address);
         expect(await tuffVBTDiamond.isExcludedFromFee(accounts[0].address)).to.equal(true, "account should be excluded from fee");
     });
 
-    it('should include in fees', async () => {
+    it("should include in fees", async () => {
         await tuffVBTDiamond.includeInFee(accounts[0].address);
         expect(await tuffVBTDiamond.isExcludedFromFee(accounts[0].address)).to.equal(false, "account should be included in fee");
     });
 
-    it('should get name', async () => {
+    it("should get name", async () => {
         const name = await tuffVBTDiamond.name();
         expect(name).to.equal(TOKEN_NAME, "incorrect name");
     });
 
-    it('should get symbol', async () => {
+    it("should get symbol", async () => {
         const symbol = await tuffVBTDiamond.symbol();
         expect(symbol).to.equal(TOKEN_SYMBOL, "incorrect symbol");
     });
 
-    it('should get decimals', async () => {
+    it("should get decimals", async () => {
         const decimals = await tuffVBTDiamond.decimals();
         expect(decimals).to.equal(TOKEN_DECIMALS, "incorrect decimals");
     });
 
-    it('should get totalSupply', async () => {
+    it("should get totalSupply", async () => {
         const totalSupply = await tuffVBTDiamond.totalSupply();
         const expectedTotalTokens = (BigNumber.from(10).pow(TOKEN_DECIMALS)).mul(TOKEN_TOTAL_SUPPLY);
         expect(totalSupply).to.equal(expectedTotalTokens, "incorrect totalSupply");
     });
 
-    it('should have TuffVBT in the owner account', async () => {
+    it("should have TuffVBT in the owner account", async () => {
         const balance = await tuffVBTDiamond.balanceOf(owner.address);
         expect(balance).to.be.gt(0, "tokens weren't in the owner account");
     });
 
-    it('should initialize and get allowance', async () => {
-        const startingAllowance = parseFloat(await tuffVBTDiamond.allowance(owner.address, accounts[0].address));
+    it("should initialize and get allowance", async () => {
+        const startingAllowance = await tuffVBTDiamond.allowance(owner.address, accounts[0].address);
         expect(startingAllowance).to.equal(0, "incorrect starting allowance");
 
         const approved = Boolean(await tuffVBTDiamond.approve(accounts[0].address, 100));
         expect(approved).to.equal(true, "should be approved");
 
-        const endingAllowance = parseFloat(await tuffVBTDiamond.allowance(owner.address, accounts[0].address));
-        expect(endingAllowance).to.equal(100, "incorrect ending allowance");
+        const endingAllowance = await tuffVBTDiamond.allowance(owner.address, accounts[0].address);
+        expect(endingAllowance).to.equal(BigNumber.from(100), "incorrect ending allowance");
     });
 
-    it('should change allowance', async () => {
-        const startingAllowance = parseFloat(await tuffVBTDiamond.allowance(owner.address, accounts[1].address));
+    it("should change allowance", async () => {
+        const startingAllowance = await tuffVBTDiamond.allowance(owner.address, accounts[1].address);
         expect(startingAllowance).to.equal(0, "incorrect starting allowance");
 
         let approved = Boolean(await tuffVBTDiamond.increaseAllowance(accounts[1].address, 100));
         expect(approved).to.equal(true, "should be approved");
 
-        const allowance = parseFloat(await tuffVBTDiamond.allowance(owner.address, accounts[1].address));
+        const allowance = await tuffVBTDiamond.allowance(owner.address, accounts[1].address);
         expect(allowance).to.equal(100, "incorrect allowance");
 
         approved = Boolean(await tuffVBTDiamond.decreaseAllowance(accounts[1].address, 100));
         expect(approved).to.equal(true, "should be approved");
 
-        const endingAllowance = parseFloat(await tuffVBTDiamond.allowance(owner.address, accounts[1].address));
+        const endingAllowance = await tuffVBTDiamond.allowance(owner.address, accounts[1].address);
         expect(endingAllowance).to.equal(0, "incorrect allowance");
     });
 
-    it('should get fee exclusion', async () => {
+    it("should get fee exclusion", async () => {
         let isExcluded = await tuffVBTDiamond.isExcludedFromFee(accounts[2].address);
         expect(isExcluded).to.equal(false, "should be included");
 
-        await tuffVBTDiamond.excludeFromFee(accounts[2].address)
+        await tuffVBTDiamond.excludeFromFee(accounts[2].address);
 
         isExcluded = await tuffVBTDiamond.isExcludedFromFee(accounts[2].address);
         expect(isExcluded).to.equal(true, "should be excluded");
@@ -131,7 +140,7 @@ describe("TuffVBT", function () {
         expect(isExcluded).to.equal(false, "should be included");
     });
 
-    it('should send token correctly - both excluded from fees', async () => {
+    it("should send token correctly - both excluded from fees", async () => {
         // Setup 2 accounts.
         const sender = owner.address;
         const receiver = accounts[0].address;
@@ -151,22 +160,22 @@ describe("TuffVBT", function () {
         expect(isReceiverExcludedFromFees).to.equal(true, "account should be excluded from fee");
 
         // Get initial balances of first and second account.
-        const senderStartingBalance = parseFloat(await tuffVBTDiamond.balanceOf(sender));
-        const receiverStartingBalance = parseFloat(await tuffVBTDiamond.balanceOf(receiver));
+        const senderStartingBalance = await tuffVBTDiamond.balanceOf(sender);
+        const receiverStartingBalance = await tuffVBTDiamond.balanceOf(receiver);
 
         // Make transaction from first account to second.
         const amount = 10000000;
-        await tuffVBTDiamond.transfer(receiver, amount, {from: sender});
+        await tuffVBTDiamond.transfer(receiver, amount, { from: sender });
 
         // Get balances of first and second account after the transactions.
-        const senderEndingBalance = parseFloat(await tuffVBTDiamond.balanceOf(sender));
-        const receiverEndingBalance = parseFloat(await tuffVBTDiamond.balanceOf(receiver));
+        const senderEndingBalance = await tuffVBTDiamond.balanceOf(sender);
+        const receiverEndingBalance = await tuffVBTDiamond.balanceOf(receiver);
 
-        expect(senderEndingBalance).to.equal(senderStartingBalance - amount, "Amount wasn't correctly taken from the sender");
-        expect(receiverEndingBalance).to.equal(receiverStartingBalance + amount, "Amount wasn't correctly sent to the receiver");
+        expect(senderEndingBalance).to.equal(senderStartingBalance.sub(amount), "Amount wasn't correctly taken from the sender");
+        expect(receiverEndingBalance).to.equal(receiverStartingBalance.add(amount), "Amount wasn't correctly sent to the receiver");
     });
 
-    it('should send token correctly - sender excluded from fees', async () => {
+    it("should send token correctly - sender excluded from fees", async () => {
         // Setup 2 accounts.
         const sender = owner.address;
         const receiver = accounts[0].address;
@@ -186,22 +195,22 @@ describe("TuffVBT", function () {
         expect(isReceiverExcludedFromFees).to.equal(false, "account should not be excluded from fee");
 
         // Get initial balances of first and second account.
-        const senderStartingBalance = parseFloat(await tuffVBTDiamond.balanceOf(sender));
-        const receiverStartingBalance = parseFloat(await tuffVBTDiamond.balanceOf(receiver));
+        const senderStartingBalance = await tuffVBTDiamond.balanceOf(sender);
+        const receiverStartingBalance = await tuffVBTDiamond.balanceOf(receiver);
 
         // Make transaction from first account to second.
         const amount = 10000000;
-        await tuffVBTDiamond.transfer(receiver, amount, {from: sender});
+        await tuffVBTDiamond.transfer(receiver, amount, { from: sender });
 
         // Get balances of first and second account after the transactions.
-        const senderEndingBalance = parseFloat(await tuffVBTDiamond.balanceOf(sender));
-        const receiverEndingBalance = parseFloat(await tuffVBTDiamond.balanceOf(receiver));
+        const senderEndingBalance = await tuffVBTDiamond.balanceOf(sender);
+        const receiverEndingBalance = await tuffVBTDiamond.balanceOf(receiver);
 
-        expect(senderEndingBalance).to.equal(senderStartingBalance - amount, "Amount wasn't correctly taken from the sender");
-        expect(receiverEndingBalance).to.equal(receiverStartingBalance + amount, "Amount wasn't correctly sent to the receiver");
+        expect(senderEndingBalance).to.equal(senderStartingBalance.sub(amount), "Amount wasn't correctly taken from the sender");
+        expect(receiverEndingBalance).to.equal(receiverStartingBalance.add(amount), "Amount wasn't correctly sent to the receiver");
     });
 
-    it('should send token correctly - receiver excluded from fees', async () => {
+    it("should send token correctly - receiver excluded from fees", async () => {
         // Setup 2 accounts.
         const sender = owner.address;
         const receiver = accounts[0].address;
@@ -221,23 +230,22 @@ describe("TuffVBT", function () {
         expect(isReceiverExcludedFromFees).to.equal(true, "account should be excluded from fee");
 
         // Get initial balances of first and second account.
-        const senderStartingBalance = parseFloat(await tuffVBTDiamond.balanceOf(sender));
-        const receiverStartingBalance = parseFloat(await tuffVBTDiamond.balanceOf(receiver));
+        const senderStartingBalance = await tuffVBTDiamond.balanceOf(sender);
+        const receiverStartingBalance = await tuffVBTDiamond.balanceOf(receiver);
 
         // Make transaction from first account to second.
         const amount = 10000000;
-        await tuffVBTDiamond.transfer(receiver, amount, {from: sender});
+        await tuffVBTDiamond.transfer(receiver, amount, { from: sender });
 
         // Get balances of first and second account after the transactions.
-        const senderEndingBalance = parseFloat(await tuffVBTDiamond.balanceOf(sender));
-        const receiverEndingBalance = parseFloat(await tuffVBTDiamond.balanceOf(receiver));
+        const senderEndingBalance = await tuffVBTDiamond.balanceOf(sender);
+        const receiverEndingBalance = await tuffVBTDiamond.balanceOf(receiver);
 
-
-        expect(senderEndingBalance).to.equal(senderStartingBalance - amount, "Amount wasn't correctly taken from the sender");
-        expect(receiverEndingBalance).to.equal(receiverStartingBalance + amount, "Amount wasn't correctly sent to the receiver");
+        expect(senderEndingBalance).to.equal(senderStartingBalance.sub(amount), "Amount wasn't correctly taken from the sender");
+        expect(receiverEndingBalance).to.equal(receiverStartingBalance.add(amount), "Amount wasn't correctly sent to the receiver");
     });
 
-    async function getFees(amount, takeFee) {
+    async function getFees(amount: number, takeFee: boolean) {
         const farmFee = await tuffVBTDiamond.getFarmFee();
         const devFee = await tuffVBTDiamond.getDevFee();
         const farmFeeAmount = await tuffVBTDiamond.calculateFee(amount, farmFee, takeFee);
@@ -246,10 +254,11 @@ describe("TuffVBT", function () {
             totalFeeAmount: farmFeeAmount.add(devFeeAmount),
             farmFeeAmount,
             devFeeAmount
-        }
+        };
     }
 
-    async function assetTransferBothIncludedInFee(sender, receiver, amount, isTokenMatured) {
+    async function assetTransferBothIncludedInFee(sender: SignerWithAddress, receiver: SignerWithAddress,
+                                                  amount: number, isTokenMatured: boolean) {
         const contractStartingBalance = await tuffVBTDiamond.balanceOf(tuffVBTDiamond.address);
         const devWalletStartingBal = await tuffVBTDiamond.balanceOf(buffChainAddr);
 
@@ -276,7 +285,7 @@ describe("TuffVBT", function () {
 
         // Get fees
         const takeFee = !isTokenMatured;
-        const {totalFeeAmount, farmFeeAmount, devFeeAmount} = await getFees(amount, takeFee);
+        const { totalFeeAmount, farmFeeAmount, devFeeAmount } = await getFees(amount, takeFee);
 
         // Then determine if fees were properly taken
         expect(senderEndingBalance).to.equal(senderStartingBalance.sub(amount), "Amount wasn't correctly taken from the sender");
@@ -289,7 +298,7 @@ describe("TuffVBT", function () {
         expect(contractEndingBalance).to.equal(contractStartingBalance.add(farmFeeAmount), "Fee wasn't correctly sent to contract wallet");
     }
 
-    it('should send token correctly - both included in fees - token has not matured', async () => {
+    it("should send token correctly - both included in fees - token has not matured", async () => {
         const sender = accounts[0];
         const receiver = accounts[1];
         const amount = 1000000;
@@ -297,13 +306,13 @@ describe("TuffVBT", function () {
         await assetTransferBothIncludedInFee(sender, receiver, amount, isTokenMatured);
     });
 
-    it('should send token correctly - both included in fees - token has matured', async () => {
+    it("should send token correctly - both included in fees - token has matured", async () => {
         const sender = accounts[0];
         const receiver = accounts[1];
         const amount = 1000000;
 
         // assert no fees taken after token maturity
-        const latestBlock = await hre.ethers.provider.getBlock("latest")
+        const latestBlock = await hre.ethers.provider.getBlock("latest");
         let latestTimestamp = latestBlock.timestamp;
         await tuffVBTDiamond.setContractMaturityTimestamp(latestTimestamp);
 
@@ -314,20 +323,20 @@ describe("TuffVBT", function () {
         await assetTransferBothIncludedInFee(sender, receiver, amount, isTokenMatured);
     });
 
-    it('should send token correctly on behalf of other account', async () => {
+    it("should send token correctly on behalf of other account", async () => {
         const amount = 100;
 
         // Setup sender account
         const sender = owner.address;
         await tuffVBTDiamond.includeInFee(sender);
         expect(await tuffVBTDiamond.isExcludedFromFee(sender)).to.equal(false, "account should not be excluded from fee");
-        const senderStartingBalance = parseFloat(await tuffVBTDiamond.balanceOf(sender));
+        const senderStartingBalance = await tuffVBTDiamond.balanceOf(sender);
 
         // Setup receiver account
         const receiver = accounts[0].address;
         await tuffVBTDiamond.includeInFee(receiver);
         expect(await tuffVBTDiamond.isExcludedFromFee(receiver)).to.equal(false, "account should not be excluded from fee");
-        const receiverStartingBalance = parseFloat(await tuffVBTDiamond.balanceOf(receiver));
+        const receiverStartingBalance = await tuffVBTDiamond.balanceOf(receiver);
         expect(receiverStartingBalance).to.equal(0);
 
         // Send tokens on behalf of the sender
@@ -335,18 +344,18 @@ describe("TuffVBT", function () {
         await tuffVBTDiamond.transferFrom(sender, receiver, amount);
 
         // Get ending balances after transaction
-        const senderEndingBalance = parseFloat(await tuffVBTDiamond.balanceOf(sender));
-        const receiverEndingBalance = parseFloat(await tuffVBTDiamond.balanceOf(receiver));
+        const senderEndingBalance = await tuffVBTDiamond.balanceOf(sender);
+        const receiverEndingBalance = await tuffVBTDiamond.balanceOf(receiver);
 
         // Get fees
-        const {totalFeeAmount} = await getFees(amount, true);
+        const { totalFeeAmount } = await getFees(amount, true);
 
         // Then determine if fees were properly taken
-        expect(senderEndingBalance).to.equal(senderStartingBalance - amount, "Amount wasn't correctly taken from the sender");
-        expect(receiverEndingBalance).to.equal(receiverStartingBalance + amount - totalFeeAmount, "Amount wasn't correctly sent to the receiver");
+        expect(senderEndingBalance).to.equal(senderStartingBalance.sub(amount), "Amount wasn't correctly taken from the sender");
+        expect(receiverEndingBalance).to.equal(receiverStartingBalance.add(amount).sub(totalFeeAmount), "Amount wasn't correctly sent to the receiver");
     });
 
-    it('should fail due to only owner check', async () => {
+    it("should fail due to only owner check", async () => {
 
         let devFee = await tuffVBTDiamond.getDevFee();
         expect(devFee).to.equal(TOKEN_DEV_FEE, "unexpected starting dev fee");
