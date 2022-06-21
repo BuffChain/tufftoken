@@ -21,7 +21,6 @@ library AaveLPManagerLib {
     struct TokenMetadata {
         address chainlinkEthTokenAggrAddr;
         uint256 targetWeight;
-        address aToken;
     }
 
     function getState() internal pure returns (StateStorage storage stateStorage) {

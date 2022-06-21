@@ -223,8 +223,6 @@ contract AaveLPManager is Context {
         ss.supportedTokens.push(tokenAddr);
         ss.tokenMetadata[tokenAddr].chainlinkEthTokenAggrAddr = chainlinkEthTokenAggrAddr;
         setAaveTokenTargetWeight(tokenAddr, targetWeight);
-        //TODO: Remove this to save gas? This cost gas to save, while reading it is a view function, so gas free
-        ss.tokenMetadata[tokenAddr].aToken = aTokenAddr;
     }
 
     function removeAaveSupportedToken(address tokenAddr) public onlyOwner {
