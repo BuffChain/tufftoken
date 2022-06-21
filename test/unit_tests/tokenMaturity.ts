@@ -8,6 +8,7 @@ import { TuffVBT, TuffOwner, TokenMaturity, AaveLPManager } from "../../src/type
 type TuffVBTDiamond = TuffVBT & TuffOwner & TokenMaturity & AaveLPManager;
 
 import {
+    consts,
     TOKEN_DAYS_UNTIL_MATURITY,
     TOKEN_DECIMALS,
     TOKEN_TOTAL_SUPPLY
@@ -15,11 +16,12 @@ import {
 import {
     getWETH9Contract,
     getDAIContract, getUSDCContract, getUSDTContract, getATokenContract,
-    getDaiWethQuote, getUsdcWethQuote, getUsdtWethQuote
+    getDaiWethQuote, getUsdcWethQuote, getUsdtWethQuote, getAcctBal
 } from "../../utils/utils";
 import { sendTokensToAddr, assertDepositERC20ToAave } from "../../utils/test_utils";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 import { Address } from "hardhat-deploy/dist/types";
+import { formatUnits } from "@ethersproject/units/src.ts";
 
 const { expectRevert } = require("@openzeppelin/test-helpers");
 
@@ -141,23 +143,17 @@ describe("TokenMaturity", function() {
     async function assertTokenRedemptionSuccess(
         desiredTuffVBTAmountLeftOver: BigNumber,
         startingTuffVBTTotalSupply: BigNumber,
-        contractStartingEthBalance: BigNumber,
+        tVBTBalAfterLiquidation: BigNumber,
         sender: Address,
         holderAddr: Address,
         senderTuffVBTBalanceAfterTransfer: BigNumber
     ) {
-        const holderTuffVBTBalanceToTotalSupplyRatio = desiredTuffVBTAmountLeftOver.div(startingTuffVBTTotalSupply);
-        const expectedETHRedemptionAmount = contractStartingEthBalance.mul(holderTuffVBTBalanceToTotalSupplyRatio);
-
-        //TODO: @Ian, contractStartingEthBalance, holderTuffVBTBalanceToTotalSupplyRatio, expectedETHRedemptionAmount
-        // are 0, which doesn't make sense to me. The test passes, but I don't think it should given they're all 0
-
-        // console.log(`desiredTuffVBTAmountLeftOver: ${desiredTuffVBTAmountLeftOver}`);
-        // console.log(`startingTuffVBTTotalSupply: ${startingTuffVBTTotalSupply}`);
-        // console.log(`holderTuffVBTBalanceToTotalSupplyRatio: ${holderTuffVBTBalanceToTotalSupplyPercentage}`);
-        // console.log(`contractStartingEthBalance: ${contractStartingEthBalance}`);
-        // console.log(`expectedETHRedemptionAmount: ${expectedETHRedemptionAmount}`);
-        // console.log(`-----------------------------`);
+        //Add and then remove decimalPrecision
+        const decimalPrecision = hre.ethers.utils.parseUnits("1", "gwei");
+        const holderTuffVBTBalanceToTotalSupplyRatio =
+            (desiredTuffVBTAmountLeftOver.mul(decimalPrecision)).div(startingTuffVBTTotalSupply);
+        const expectedETHRedemptionAmount =
+            (tVBTBalAfterLiquidation.mul(holderTuffVBTBalanceToTotalSupplyRatio)).div(decimalPrecision);
 
         let senderStartingEthBalance = await hre.ethers.provider.getBalance(sender);
 
@@ -187,67 +183,77 @@ describe("TokenMaturity", function() {
         return expectedETHRedemptionAmount;
     }
 
-    async function assertRedemptionFunctionValues(startingTuffVBTTotalSupply: BigNumber, contractStartingEthBalance: BigNumber) {
+    async function assertRedemptionFunctionValues(startingTuffVBTTotalSupply: BigNumber,
+                                                  tVBTBalAfterLiquidation: BigNumber) {
         const endingTuffVBTTotalSupplyForRedemption = await tuffVBTDiamond.totalSupplyForRedemption();
         expect(endingTuffVBTTotalSupplyForRedemption).to.equal(startingTuffVBTTotalSupply,
             "total supply used for redemption calculation should not have been affected by " +
             "holder redeeming (and burning) tokens");
 
         const currentContractStartingEthBalance = await tuffVBTDiamond.getContractStartingEthBalance();
-        expect(currentContractStartingEthBalance).to.equal(contractStartingEthBalance,
-            "starting contract eth balance used for redemption calculation should not be affected by redemption");
+        expect(currentContractStartingEthBalance).to.equal(tVBTBalAfterLiquidation,
+            "contract eth balance used for redemption calculation should not be affected by redemption");
     }
 
-    async function assertBalanceAndSupplyImpact(startingTuffVBTTotalSupply: BigNumber, desiredTuffVBTAmountLeftOver: BigNumber, contractStartingEthBalance: BigNumber, expectedETHRedemptionAmount: BigNumber) {
+    async function assertBalanceAndSupplyImpact(startingTuffVBTTotalSupply: BigNumber,
+                                                desiredTuffVBTAmountLeftOver: BigNumber,
+                                                tVBTBalAfterLiquidation: BigNumber,
+                                                expectedETHRedemptionAmount: BigNumber) {
         const totalSupplyAfterBurn = await tuffVBTDiamond.totalSupply();
 
         expect(totalSupplyAfterBurn).to.equal(startingTuffVBTTotalSupply.sub(desiredTuffVBTAmountLeftOver),
             "incorrect total supply after burn");
 
         const currentContractEthBalance = await tuffVBTDiamond.getCurrentContractEthBalance();
-        expect(currentContractEthBalance).to.equal((contractStartingEthBalance.sub(expectedETHRedemptionAmount)),
+        expect(currentContractEthBalance).to.equal((tVBTBalAfterLiquidation.sub(expectedETHRedemptionAmount)),
             "actual eth balance should be lower than before redemption");
     }
 
     it("should handle token reaching maturity and holders redeeming", async () => {
-        const holderAddr = accounts.slice(-1)[0].address;
-        await assertTokenMaturity();
-
-        let isLiquidated = await tuffVBTDiamond.getIsTreasuryLiquidated();
-        expect(isLiquidated).to.equal(false, "should not have been liquidated");
+        //Setup
+        const holder = accounts.slice(-1)[0];
+        await sendTokensToAddr(holder, tuffVBTDiamond.address);
+        // Deposits supported tokens to Aave
+        await assertDepositERC20ToAave(tuffVBTDiamond, consts("DAI_ADDR"));
+        await assertDepositERC20ToAave(tuffVBTDiamond, consts("USDC_ADDR"));
+        await assertDepositERC20ToAave(tuffVBTDiamond, consts("USDT_ADDR"));
 
         const tuffVBTTotalSupply = await tuffVBTDiamond.totalSupply();
         const startingOwnerTuffBal = await tuffVBTDiamond.balanceOf(owner.address);
-        const contractStartingEthBalance = await tuffVBTDiamond.getCurrentContractEthBalance();
 
+        await assertTokenMaturity();
+        let isLiquidated = await tuffVBTDiamond.getIsTreasuryLiquidated();
+        expect(isLiquidated).to.equal(false, "should not have been liquidated");
+
+        //Trigger token maturity and liquidation
         await expect(tuffVBTDiamond.onTokenMaturity())
-            .to.emit(tuffVBTDiamond, "TokenMatured")
-            .withArgs(contractStartingEthBalance, tuffVBTTotalSupply);
-
+            .to.emit(tuffVBTDiamond, "TokenMatured");
         isLiquidated = await tuffVBTDiamond.getIsTreasuryLiquidated();
         expect(isLiquidated).to.equal(true, "should have been liquidated");
 
+        const tVBTBalAfterLiquidation = await tuffVBTDiamond.getCurrentContractEthBalance();
         const desiredTuffVBTAmountLeftOver = (BigNumber.from(10).pow(TOKEN_DECIMALS)).mul(BigNumber.from(100000));
+
         const { sender, senderTuffVBTBalanceAfterTransfer } = await assertSenderTransferSuccess(
-            holderAddr,
+            holder.address,
             startingOwnerTuffBal,
             desiredTuffVBTAmountLeftOver
         );
         const expectedETHRedemptionAmount = await assertTokenRedemptionSuccess(
             desiredTuffVBTAmountLeftOver,
             tuffVBTTotalSupply,
-            contractStartingEthBalance,
+            tVBTBalAfterLiquidation,
             sender,
-            holderAddr,
+            holder.address,
             senderTuffVBTBalanceAfterTransfer
         );
 
-        await assertRedemptionFunctionValues(tuffVBTTotalSupply, contractStartingEthBalance);
+        await assertRedemptionFunctionValues(tuffVBTTotalSupply, tVBTBalAfterLiquidation);
 
         await assertBalanceAndSupplyImpact(
             tuffVBTTotalSupply,
             desiredTuffVBTAmountLeftOver,
-            contractStartingEthBalance,
+            tVBTBalAfterLiquidation,
             expectedETHRedemptionAmount
         );
 
@@ -264,7 +270,7 @@ describe("TokenMaturity", function() {
         const ausdtContract = await getATokenContract(usdtContract.address);
         const weth9Contract = await getWETH9Contract();
 
-        await sendTokensToAddr(accounts.slice(-1)[0], tuffVBTDiamond.address)
+        await sendTokensToAddr(accounts.slice(-1)[0], tuffVBTDiamond.address);
 
         //Deposits supported tokens to Aave
         await assertDepositERC20ToAave(tuffVBTDiamond, daiContract.address);
@@ -326,14 +332,14 @@ describe("TokenMaturity", function() {
         // and differences between different oracle's quotes
         const buffer = hre.ethers.utils.parseEther("0.3");
         const expectedEth = ethBalanceAfterDeposit
-                .add(wethBalanceAfterDeposit)
-                .add(daiToWethConversion)
-                .add(aDaiToWethConversion)
-                .add(usdcToWethConversion)
-                .add(ausdcToWethConversion)
-                .add(usdtToWethConversion)
-                .add(ausdtToWethConversion)
-                .sub(liquidationTxGasCost);
+            .add(wethBalanceAfterDeposit)
+            .add(daiToWethConversion)
+            .add(aDaiToWethConversion)
+            .add(usdcToWethConversion)
+            .add(ausdcToWethConversion)
+            .add(usdtToWethConversion)
+            .add(ausdtToWethConversion)
+            .sub(liquidationTxGasCost);
         expect(ethBalanceAfterLiquidation).to.be.closeTo(expectedEth, buffer);
     });
 
