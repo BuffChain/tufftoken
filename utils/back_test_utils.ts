@@ -1,14 +1,13 @@
 // SPDX-License-Identifier: agpl-3.0
 
-const hre = require("hardhat");
+import hre from "hardhat";
+import path from "path";
+import fs from "fs/promises";
+import { BigNumber } from "ethers";
 
-const path = require("path");
-// const fs = require("fs");
-const fs = require("fs/promises");
-
-const {consts} = require("./consts");
-const testUtils = require("./test_utils");
-const {BigNumber} = require("ethers");
+import { mineBlock, runCallbackImpersonatingAcct } from "./test_utils";
+import { TransactionRequest } from "@ethersproject/abstract-provider/src.ts";
+import { HardhatNetworkConfig } from "hardhat/src/types/config";
 
 // /**
 //  * Deserialize the block data for a range of blocks and send all txs from them
@@ -83,12 +82,12 @@ const {BigNumber} = require("ethers");
  * @param blockNumber: The block number to get the list of txs from
  * @returns {Promise<void>}
  */
-async function sendTxsFromBlock(blockNumber) {
+async function sendTxsFromBlock(blockNumber: number) {
     const blockDataPath = path.join(process.cwd(), "block_data", `${blockNumber}.json`);
 
-    let txs = []
+    let txs: { [key: string]: any }[] = [];
     await fs.readFile(blockDataPath)
-        .then(function (buffer) {
+        .then(function(buffer) {
             txs = JSON.parse(buffer.toString());
         });
 
@@ -97,7 +96,7 @@ async function sendTxsFromBlock(blockNumber) {
     for (let row of txs) {
         const fromAcct = await hre.ethers.getSigner(row["from"]);
 
-        let tx = {
+        let tx: TransactionRequest = {
             type: row["type"],
             accessList: row["accessList"],
             from: row["from"],
@@ -107,16 +106,16 @@ async function sendTxsFromBlock(blockNumber) {
             nonce: row["nonce"],
             chainId: row["chainId"],
             data: row["data"]
-        }
+        };
 
         if (row["type"] === "2") {
             tx["maxFeePerGas"] = row["maxFeePerGas"]["hex"];
             tx["maxPriorityFeePerGas"] = row["maxPriorityFeePerGas"]["hex"];
         } else {
-            tx["gasPrice"] = row["gasPrice"]['hex'];
+            tx["gasPrice"] = row["gasPrice"]["hex"];
         }
 
-        await testUtils.runCallbackImpersonatingAcct(fromAcct, async (acct) => {
+        await runCallbackImpersonatingAcct(fromAcct, async (acct) => {
             await acct.sendTransaction(tx)
                 .then((tx) => {
                     successfulTxCount++;
@@ -127,7 +126,7 @@ async function sendTxsFromBlock(blockNumber) {
                     // console.dir(tx);
                     // throw err;
                     failedTxCount++;
-                })
+                });
         });
     }
 
@@ -141,7 +140,7 @@ async function sendTxsFromBlock(blockNumber) {
  * @param endBlockNumber: End of the block range you want to process
  * @returns {Promise<void>}
  */
-async function sendTxsFromBlocks(startBlockNumber, endBlockNumber) {
+async function sendTxsFromBlocks(startBlockNumber: number, endBlockNumber: number) {
     if (startBlockNumber >= endBlockNumber) {
         throw `startBlockNumber: [${startBlockNumber}] is lge than endBlockNumber: [${endBlockNumber}]`;
     }
@@ -156,16 +155,7 @@ async function sendTxsFromBlocks(startBlockNumber, endBlockNumber) {
     console.log(`Finished writing block data`);
 }
 
-/**
- * Force hardhat to mine a block
- * @returns {Promise<void>}
- */
-async function mineBlock() {
-    await hre.ethers.provider.send("evm_increaseTime", [consts("BLOCKTIME")]);
-    await hre.ethers.provider.send("evm_mine");
-}
-
-function convertToHexString(str) {
+function convertToHexString(str: string) {
     if (str) {
         return BigNumber.from(str).toHexString();
     } else {
@@ -177,9 +167,9 @@ function convertToHexString(str) {
  * Force hardhat to mine a block
  * @returns {Promise<void>}
  */
-async function simulateBlockChainActivity(startBlockNumber=hre.config.startBlockNumber, endBlockNumber=hre.config.endBlockNumber) {
-    const priorAutomine = hre.network.config.mining.auto;
-    const priorInterval = hre.network.config.mining.interval;
+export async function simulateBlockChainActivity(startBlockNumber = hre.config.backTest.startBlockNumber, endBlockNumber = hre.config.backTest.endBlockNumber) {
+    const priorAutomine = (hre.network.config as HardhatNetworkConfig).mining.auto;
+    const priorInterval = (hre.network.config as HardhatNetworkConfig).mining.interval;
     await hre.network.provider.send("evm_setAutomine", [false]);
     await hre.network.provider.send("evm_setIntervalMining", [0]);
 
@@ -188,10 +178,4 @@ async function simulateBlockChainActivity(startBlockNumber=hre.config.startBlock
 
     await hre.network.provider.send("evm_setAutomine", [priorAutomine]);
     await hre.network.provider.send("evm_setIntervalMining", [priorInterval]);
-}
-
-module.exports = {
-    sendTxsFromBlocks,
-    mineBlock,
-    simulateBlockChainActivity
 }

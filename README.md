@@ -20,7 +20,7 @@ Now you are ready to start running some commands. `./package.json` contains help
 commands:
 ```
 npm run test
-npm run test test/aaveLPManager.js
+npm run test test/aaveLPManager.ts
 npm run compile
 
 npx hardhat accounts

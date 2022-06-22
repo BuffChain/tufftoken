@@ -1,53 +1,53 @@
 // SPDX-License-Identifier: agpl-3.0
 
-const {expect} = require("chai");
-const hre = require("hardhat");
-const {mineBlock} = require("../../utils/back_test_utils");
-const {
-    expectRevert, // Assertions for transactions that should fail
-} = require('@openzeppelin/test-helpers');
-const utils = require("../../utils/test_utils");
-const {getERC20Contract} = require("../../utils/test_utils");
-const {TOKEN_TOTAL_SUPPLY, TOKEN_DEV_FEE} = require("../../utils/consts");
+import hre from "hardhat";
+import { BigNumber } from "ethers";
+import { expect } from "chai";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
+import { TuffToken, TuffGovernor, TimelockController } from "../../src/types";
 
-describe("TuffGovernor", function () {
+import {
+    getERC20Contract
+} from "../../utils/utils";
+import {
+    mineBlock
+} from "../../utils/test_utils";
 
-    let owner;
-    let accounts;
+const { expectRevert } = require("@openzeppelin/test-helpers");
 
-    let tuffToken;
-    let tuffGovernor;
-    let timelockController;
+describe("TuffGovernor", function() {
 
-    let startingOwnerTuffDAOBal;
+    let owner: SignerWithAddress;
+    let accounts: SignerWithAddress[];
 
-    before(async function () {
+    let tuffToken: TuffToken;
+    let tuffGovernor: TuffGovernor;
+    let timelockController: TimelockController;
 
-        const {contractOwner} = await hre.getNamedAccounts();
+    let startingOwnerTuffDAOBal: BigNumber;
+
+    before(async function() {
+
+        const { contractOwner } = await hre.getNamedAccounts();
         owner = await hre.ethers.getSigner(contractOwner);
 
         //Per `hardhat.config.ts`, the 0 and 1 index accounts are named accounts. They are reserved for deployment uses
         [, , ...accounts] = await hre.ethers.getSigners();
 
-        const {TuffToken, TimelockController, TuffGovernor} = await hre.deployments.fixture();
-
-        tuffToken = await hre.ethers.getContractAt(TuffToken.abi, TuffToken.address, owner);
-
-        timelockController = await hre.ethers.getContractAt(TimelockController.abi, TimelockController.address, owner);
-
-        tuffGovernor = await hre.ethers.getContractAt(TuffGovernor.abi, TuffGovernor.address, owner);
+        const { TuffToken, TimelockController, TuffGovernor } = await hre.deployments.fixture();
+        tuffToken = await hre.ethers.getContractAt(TuffToken.abi, TuffToken.address, owner) as TuffToken;
+        timelockController = await hre.ethers.getContractAt(TimelockController.abi, TimelockController.address, owner) as TimelockController;
+        tuffGovernor = await hre.ethers.getContractAt(TuffGovernor.abi, TuffGovernor.address, owner) as TuffGovernor;
 
         await tuffToken.delegate(owner.address);
 
         startingOwnerTuffDAOBal = await tuffToken.balanceOf(owner.address);
-
-
     });
 
-    async function assertProposalCreated(description) {
-        const tokenAddress = tuffToken.address
+    async function assertProposalCreated(description: string) {
+        const tokenAddress = tuffToken.address;
         const token = await getERC20Contract(tokenAddress);
-        const calldata = token.interface.encodeFunctionData('name', []);
+        const calldata = token.interface.encodeFunctionData("name", []);
 
         const targets = [tokenAddress];
         const values = [0];
@@ -60,32 +60,33 @@ describe("TuffGovernor", function () {
             [tokenAddress],
             [0],
             calldatas,
-            description,
+            description
         );
 
         const proposalReceipt = await proposalTx.wait();
-        const proposalCreatedEvent = proposalReceipt.events.find(event => event.event === 'ProposalCreated');
+        expect(proposalReceipt.events).to.have.lengthOf.greaterThan(0);
 
-        const emittedProposalId = proposalCreatedEvent.args[0].toString()
+        // @ts-ignore: length is asserted above
+        const proposalCreatedEvent = proposalReceipt.events.find(event => event.event === "ProposalCreated");
+        const emittedProposalId = proposalCreatedEvent?.args?.proposalId.toString();
 
         const descriptionHash = hre.ethers.utils.id(description);
         const proposalId = await tuffGovernor.hashProposal(targets, values, calldatas, descriptionHash);
 
         expect(emittedProposalId).to.equal(proposalId, "Unexpected proposal id");
-        return {proposalId, targets, values, calldatas, descriptionHash};
+        return { proposalId, targets, values, calldatas, descriptionHash };
     }
 
     it("should create proposal", async () => {
-        const {proposalId} = await assertProposalCreated("Proposal #1: Give grant to receiver");
+        const { proposalId } = await assertProposalCreated("Proposal #1: Give grant to receiver");
     });
 
-    async function assertVoteCast(proposalId) {
-
-        let state = await tuffGovernor.state(proposalId)
+    async function assertVoteCast(proposalId: BigNumber) {
+        let state = await tuffGovernor.state(proposalId);
         const pendingState = 0;
         expect(state).to.equal(pendingState, "Proposal should be in pending state");
 
-        await mineBlock()
+        await mineBlock();
 
         state = await tuffGovernor.state(proposalId);
         const activeState = 1;
@@ -94,11 +95,10 @@ describe("TuffGovernor", function () {
         await tuffGovernor.castVote(proposalId, 0);
 
         await expectRevert(tuffGovernor.castVote(proposalId, 1), "GovernorCompatibilityBravo: vote already cast");
-
     }
 
     it("should cast vote on proposal", async () => {
-        const {proposalId} = await assertProposalCreated("Proposal #2: Give grant to receiver some more");
+        const { proposalId } = await assertProposalCreated("Proposal #2: Give grant to receiver some more");
 
         await assertVoteCast(proposalId);
 
@@ -106,16 +106,16 @@ describe("TuffGovernor", function () {
 
     it("should execute proposal", async () => {
 
-        await tuffGovernor.setVotingPeriod(3)
+        await tuffGovernor.setVotingPeriod(3);
 
-        const {proposalId, targets, values, calldatas, descriptionHash} =
+        const { proposalId, targets, values, calldatas, descriptionHash } =
             await assertProposalCreated("Proposal #3: Give grant to receiver again");
 
-        let state = await tuffGovernor.state(proposalId)
+        let state = await tuffGovernor.state(proposalId);
         const pendingState = 0;
         expect(state).to.equal(pendingState, "Proposal should be in pending state");
 
-        await mineBlock()
+        await mineBlock();
 
         state = await tuffGovernor.state(proposalId);
         const activeState = 1;
@@ -159,7 +159,7 @@ describe("TuffGovernor", function () {
 
     });
 
-    async function expireVotingPeriod(proposalId) {
+    async function expireVotingPeriod(proposalId: BigNumber) {
         let state = await tuffGovernor.state(proposalId);
         while (state === 1) {
             await mineBlock();
@@ -168,8 +168,7 @@ describe("TuffGovernor", function () {
         return state;
     }
 
-    it('should fail due to only owner check', async () => {
-
+    it("should fail due to only owner check", async () => {
         await tuffGovernor.setVotingPeriod(1);
         let votingPeriod = await tuffGovernor.votingPeriod();
         expect(votingPeriod).to.equal(1, "unexpected voting period");

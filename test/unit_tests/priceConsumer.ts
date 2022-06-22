@@ -1,26 +1,23 @@
 // SPDX-License-Identifier: agpl-3.0
 
 import hre from "hardhat";
-import {BigNumber, Signer} from "ethers";
-import {expect} from "chai";
+import { BigNumber, Signer } from "ethers";
+import { expect } from "chai";
 
 const {
-    expectRevert, // Assertions for transactions that should fail
-} = require('@openzeppelin/test-helpers');
+    expectRevert // Assertions for transactions that should fail
+} = require("@openzeppelin/test-helpers");
 
-import {TuffVBT, PriceConsumer} from "../../src/types";
+import { TuffVBT, PriceConsumer } from "../../src/types";
 
 type TuffVBTDiamond = TuffVBT & PriceConsumer;
 
-import {consts, UNISWAP_POOL_BASE_FEE} from '../../utils/consts';
+import { consts, UNISWAP_POOL_BASE_FEE } from "../../utils/consts";
 import {
-    getDAIContract,
-    getUniswapPriceQuote,
-    getUSDCContract,
-    getUSDTContract,
-} from '../../utils/test_utils';
+    getUniswapPriceQuote
+} from "../../utils/utils";
 
-describe("PriceConsumer", function () {
+describe("PriceConsumer", function() {
 
     const poolPeriod = 3600;
     let owner: Signer;
@@ -28,16 +25,16 @@ describe("PriceConsumer", function () {
 
     let tuffVBTDiamond: TuffVBTDiamond;
 
-    before(async function () {
-        const {contractOwner} = await hre.getNamedAccounts();
+    before(async function() {
+        const { contractOwner } = await hre.getNamedAccounts();
         owner = await hre.ethers.getSigner(contractOwner);
 
         //Per `hardhat.config.ts`, the 0 and 1 index accounts are named accounts. They are reserved for deployment uses
         [, , ...accounts] = await hre.ethers.getSigners();
     });
 
-    beforeEach(async function () {
-        const {tDUU} = await hre.deployments.fixture();
+    beforeEach(async function() {
+        const { tDUU } = await hre.deployments.fixture();
         tuffVBTDiamond = await hre.ethers.getContractAt(tDUU.abi, tDUU.address, owner) as TuffVBTDiamond;
 
         //Increase the block time to prime the pool
@@ -45,7 +42,7 @@ describe("PriceConsumer", function () {
         await hre.ethers.provider.send("evm_mine", []);
     });
 
-    it('should have accurate and precise quote from Uniswap', async () => {
+    it("should have accurate and precise quote from Uniswap", async () => {
         //Get on-chain quote
         const [tuffVBTWethQuote, totalDecimalPrecision] = await tuffVBTDiamond.getTvbtWethQuote(poolPeriod);
         const expectedTuffVBTWethQuote = tuffVBTWethQuote.toNumber() /
@@ -66,12 +63,12 @@ describe("PriceConsumer", function () {
         expect(actualTuffVBTWethQuote).to.be.approximately(expectedTuffVBTWethQuote, buffer);
     });
 
-    it('should have an accurate quote from ChainLink (ETH to DAI)', async () => {
+    it("should have an accurate quote from ChainLink (ETH to DAI)", async () => {
         //Get on-chain quote
         const ethDaiDecimals = await tuffVBTDiamond.getDecimals(
             consts("CHAINLINK_ETH_DAI_AGGR_ADDR"));
         const ethDaiQuote = await tuffVBTDiamond.getChainLinkPrice(
-            consts("CHAINLINK_ETH_DAI_AGGR_ADDR"),
+            consts("CHAINLINK_ETH_DAI_AGGR_ADDR")
         );
         const expectedEthDaiQuote = (1 / ethDaiQuote.toNumber()) * Math.pow(10, ethDaiDecimals);
 
@@ -89,26 +86,26 @@ describe("PriceConsumer", function () {
         expect(actualEthDaiQuote).to.be.approximately(expectedEthDaiQuote, buffer);
     });
 
-    it('should have similar quotes from ChainLink between stablecoins', async () => {
+    it("should have similar quotes from ChainLink between stablecoins", async () => {
         //DAI
         const ethDAIDecimals = await tuffVBTDiamond.getDecimals(
             consts("CHAINLINK_ETH_DAI_AGGR_ADDR"));
         const ethDAIQuote = await tuffVBTDiamond.getChainLinkPrice(
-            consts("CHAINLINK_ETH_DAI_AGGR_ADDR"),
+            consts("CHAINLINK_ETH_DAI_AGGR_ADDR")
         );
 
         //USDC
         const ethUSDCDecimals = await tuffVBTDiamond.getDecimals(
             consts("CHAINLINK_ETH_USDC_AGGR_ADDR"));
         const ethUSDCQuote = await tuffVBTDiamond.getChainLinkPrice(
-            consts("CHAINLINK_ETH_USDC_AGGR_ADDR"),
+            consts("CHAINLINK_ETH_USDC_AGGR_ADDR")
         );
 
         //USDT
         const ethUSDTDecimals = await tuffVBTDiamond.getDecimals(
             consts("CHAINLINK_ETH_USDT_AGGR_ADDR"));
         const ethUSDTQuote = await tuffVBTDiamond.getChainLinkPrice(
-            consts("CHAINLINK_ETH_USDT_AGGR_ADDR"),
+            consts("CHAINLINK_ETH_USDT_AGGR_ADDR")
         );
 
         //Compare decimals and quotes (while keeping everything in BigNumber format)
