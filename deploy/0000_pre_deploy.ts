@@ -1,28 +1,25 @@
 // SPDX-License-Identifier: agpl-3.0
 
-import {getUniswapPriceQuote} from "../utils/test_utils";
 import hre from "hardhat";
 
-const {
+import {
     consts, UNISWAP_POOL_BASE_FEE
-} = require("../utils/consts");
+} from "../utils/consts";
+import { getUniswapPriceQuote } from "../utils/utils";
+import { log } from "../utils/deployment_helpers";
 
-const {logDeploymentTx} = require("../utils/deployment_helpers");
-
+module.exports.tags = ["v0000"];
 module.exports = async () => {
-    console.log("[DEPLOY][v0000] - Pre-deploy checks");
+    log("Pre-deploy checks");
 
     const daiWethQuote = await getUniswapPriceQuote(
         consts("DAI_ADDR"),
         consts("WETH9_ADDR"),
         UNISWAP_POOL_BASE_FEE,
-        3600,
-        false
+        3600
     );
-    console.log(`Current ETH price: $${daiWethQuote}`);
+    log(`Current ETH price: $${daiWethQuote}`);
 
     let latestBlock = await hre.ethers.provider.getBlock("latest");
-    console.log(`Current Block: ${latestBlock.number}`);
+    log(`Current Block: ${latestBlock.number}`);
 };
-
-module.exports.tags = ['v0000'];
