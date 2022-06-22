@@ -31,6 +31,7 @@ function initTuffVBT(address _initialOwner, string _name, string _symbol, uint8 
 Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
 constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
 
+_modifier onlyOwner can only be called by the contract itself or the contract owner_
 
 
 
@@ -115,6 +116,7 @@ function setFarmFee(uint256 _farmFee) public
 
 used by contract owner to set the farm fee
 
+_modifier onlyOwner can only be called by the contract itself or the contract owner_
 
 
 
@@ -139,6 +141,7 @@ function setDevFee(uint256 _devFee) public
 
 used by contract owner to set the dev fee
 
+_modifier onlyOwner can only be called by the contract itself or the contract owner_
 
 
 
@@ -163,6 +166,7 @@ function setDevWalletAddress(address _devWalletAddress) public
 
 used by contract owner to set the dev wallet address
 
+_modifier onlyOwner can only be called by the contract itself or the contract owner_
 
 
 
@@ -173,10 +177,16 @@ used by contract owner to set the dev wallet address
 function balanceOf(address account) public view returns (uint256)
 ```
 
-returns the balance of an address
+get the balance of an address
 
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| account | address | account to get the balance of |
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | uint256 | returns the balance |
 
 
 ### transfer
@@ -188,7 +198,14 @@ function transfer(address recipient, uint256 amount) public returns (bool)
 transfer an amount of the TuffVBT to an account
 
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| recipient | address | recipient of the tokens from the msg sender |
+| amount | uint256 | amount of tokens the recipient will get |
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | bool | returns true if transfer is successful |
 
 
 ### allowance
@@ -197,10 +214,17 @@ transfer an amount of the TuffVBT to an account
 function allowance(address owner, address spender) public view returns (uint256)
 ```
 
-set an allowance for a given holder and spender
+get the allowance spender for a specified owner
 
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| owner | address | owner of the tokens |
+| spender | address | spender of the owners tokens |
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | uint256 | returns allowance |
 
 
 ### approve
@@ -212,7 +236,14 @@ function approve(address spender, uint256 amount) public returns (bool)
 approve a holder to spend an amount
 
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| spender | address | address that will be granted to spend the specified amount |
+| amount | uint256 | amount granted to the spender to spend |
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | bool | returns true if approval is successful |
 
 
 ### transferFrom
@@ -221,10 +252,18 @@ approve a holder to spend an amount
 function transferFrom(address from, address to, uint256 amount) public returns (bool)
 ```
 
-transfer from a an account to another
+transfer from an account to another
 
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| from | address | from address |
+| to | address | to address |
+| amount | uint256 | amount to send |
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | bool | returns true if transfer is successful |
 
 
 ### _spendAllowance
@@ -299,7 +338,11 @@ function excludeFromFee(address account) public
 
 exclude an account from fees
 
+_modifier onlyOwner can only be called by the contract itself or the contract owner_
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| account | address | the account to exclude |
 
 
 
@@ -311,7 +354,11 @@ function includeInFee(address account) public
 
 include an account in fees
 
+_modifier onlyOwner can only be called by the contract itself or the contract owner_
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| account | address | the account to include |
 
 
 
@@ -323,7 +370,11 @@ function isExcludedFromFee(address account) public view returns (bool)
 
 checks if an address is excluded from fees
 
+_modifier onlyOwner can only be called by the contract itself or the contract owner_
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| account | address | the account to check if it is excluded |
 
 
 
@@ -336,7 +387,15 @@ function calculateFee(uint256 _amount, uint256 feePercent, bool takeFee) public 
 helper to calculate fee
 
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _amount | uint256 | the base amount to calculate the fee amount from |
+| feePercent | uint256 | the fee percent to multiply by the base amount |
+| takeFee | bool | boolean override to have calculated fee be 0. Ex: account is excluded from fees |
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | uint256 | calculated fee amount |
 
 
 ### _approve
@@ -385,6 +444,11 @@ Requirements:
 - `to` cannot be the zero address.
 - `from` must have a balance of at least `amount`._
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| from | address | from address |
+| to | address | to address |
+| amount | uint256 | amount to send |
 
 
 
@@ -396,7 +460,19 @@ function burn(address account, uint256 amount) public
 
 used by the contract itself post token maturity when a holder redeems their VBT.
 
+_modifier onlyOwner can only be called by the contract itself or the contract owner
 
+Emits a {Transfer} event.
+
+Requirements:
+
+- `account` cannot be the zero address.
+- balance of `account` must have a sufficient amount for the burn._
+
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| account | address | the account that will have the amount burned. |
+| amount | uint256 | the amount of the asset to be burned. |
 
 
 
