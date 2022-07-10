@@ -13,8 +13,13 @@ import {IWETH9} from "./IWETH9.sol";
 import {IAaveLPManager} from "./IAaveLPManager.sol";
 import "./TuffOwner.sol";
 
+/// @notice TokenMaturity contract is responsible for keeping track of the tokens life cycle and maturity.
+/// The TuffKeeper contract makes calls to the isTokenMatured function regularly to determine if maturity has been
+/// reached.  If it has, TuffKeeper will then make another call to onTokenMaturity which handles liquidating the TuffVBT
+/// treasury into a redeemable asset
 /* solhint-disable not-rely-on-time */
 contract TokenMaturity {
+    /// @dev functions with the onlyOwner modifier can only be called by the contract itself or the contract owner
     modifier onlyOwner() {
         TuffOwner(address(this)).requireOnlyOwner(msg.sender);
         _;
@@ -22,6 +27,10 @@ contract TokenMaturity {
 
     using SafeMath for uint256;
 
+    /// Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
+    /// constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
+    /// @dev modifier onlyOwner can only be called by the contract itself or the contract owner
+    /// @param daysUntilMaturity amount of days until the TuffVBT token instance reaches maturity and can be redeemed
     function initTokenMaturity(uint256 daysUntilMaturity) public onlyOwner {
         //TokenMaturity Already Initialized
         require(!isTokenMaturityInit(), "TMAI");

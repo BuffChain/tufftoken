@@ -3,7 +3,10 @@
 ## TokenMaturity
 
 
-
+TokenMaturity contract is responsible for keeping track of the tokens life cycle and maturity.
+The TuffKeeper contract makes calls to the isTokenMatured function regularly to determine if maturity has been
+reached.  If it has, TuffKeeper will then make another call to onTokenMaturity which handles liquidating the TuffVBT
+treasury into a redeemable asset
 
 
 
@@ -17,6 +20,7 @@ modifier onlyOwner()
 
 
 
+_functions with the onlyOwner modifier can only be called by the contract itself or the contract owner_
 
 
 
@@ -27,9 +31,14 @@ modifier onlyOwner()
 function initTokenMaturity(uint256 daysUntilMaturity) public
 ```
 
+Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
+constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
 
+_modifier onlyOwner can only be called by the contract itself or the contract owner_
 
-
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| daysUntilMaturity | uint256 | amount of days until the TuffVBT token instance reaches maturity and can be redeemed |
 
 
 

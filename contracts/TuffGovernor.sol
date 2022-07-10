@@ -39,6 +39,7 @@ contract TuffGovernor is
         _proposalThreshold = 1;
     }
 
+    /// @inheritdoc IGovernor
     function votingDelay() public view override returns (uint256) {
         return _votingDelay;
     }
@@ -50,6 +51,7 @@ contract TuffGovernor is
         _votingDelay = delay;
     }
 
+    /// @inheritdoc IGovernor
     function votingPeriod() public view override returns (uint256) {
         return _votingPeriod;
     }
@@ -61,6 +63,7 @@ contract TuffGovernor is
         _votingPeriod = period;
     }
 
+    /// @inheritdoc Governor
     function proposalThreshold() public view override returns (uint256) {
         return _proposalThreshold;
     }
@@ -155,7 +158,7 @@ contract TuffGovernor is
         return super.supportsInterface(interfaceId);
     }
 
-    /// @notice propose wrapper
+    /// @notice propose wrapper call
     function doPropose(
         address[] memory targets,
         uint256[] memory values,
@@ -165,7 +168,7 @@ contract TuffGovernor is
         return propose(targets, values, calldatas, description);
     }
 
-    /// @notice queue wrapper
+    /// @notice queue wrapper call
     function doQueue(
         address[] memory targets,
         uint256[] memory values,
@@ -175,7 +178,7 @@ contract TuffGovernor is
         return super.queue(targets, values, calldatas, descriptionHash);
     }
 
-    /// @notice execute wrapper
+    /// @notice execute wrapper call
     function doExecute(
         address[] memory targets,
         uint256[] memory values,

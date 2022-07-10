@@ -277,7 +277,7 @@ _See {IERC165-supportsInterface}._
 function doPropose(address[] targets, uint256[] values, bytes[] calldatas, string description) public returns (uint256)
 ```
 
-propose wrapper
+propose wrapper call
 
 
 
@@ -289,7 +289,7 @@ propose wrapper
 function doQueue(address[] targets, uint256[] values, bytes[] calldatas, bytes32 descriptionHash) public returns (uint256)
 ```
 
-queue wrapper
+queue wrapper call
 
 
 
@@ -301,7 +301,7 @@ queue wrapper
 function doExecute(address[] targets, uint256[] values, bytes[] calldatas, bytes32 descriptionHash) public payable returns (uint256)
 ```
 
-execute wrapper
+execute wrapper call
 
 
 

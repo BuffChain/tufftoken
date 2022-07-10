@@ -18,6 +18,7 @@ modifier onlyOwner()
 
 
 
+_functions with the onlyOwner modifier can only be called by the contract itself or the contract owner_
 
 
 
@@ -33,6 +34,16 @@ constructors. We imitate a constructor with a one-time only function. This is ca
 
 _modifier onlyOwner can only be called by the contract itself or the contract owner_
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _initialOwner | address | the initial owner of the contract |
+| _name | string | name of the token |
+| _symbol | string | symbol of the token |
+| _decimals | uint8 | decimals of the token |
+| _farmFee | uint256 | fee amount taken to build the treasury |
+| _devFee | uint256 | fee amount sent to dev team for continued development work |
+| _devWalletAddress | address | address to send the dev fees |
+| _totalSupply | uint256 | total supply of the token |
 
 
 
@@ -201,7 +212,7 @@ transfer an amount of the TuffVBT to an account
 | Name | Type | Description |
 | ---- | ---- | ----------- |
 | recipient | address | recipient of the tokens from the msg sender |
-| amount | uint256 | amount of tokens the recipient will get |
+| amount | uint256 | amount of tokens being sent (before fees are taken) |
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |

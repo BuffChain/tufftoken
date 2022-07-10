@@ -14,6 +14,7 @@ import "./TuffOwner.sol";
 /// upon transfer to help build up the treasury.
 
 contract TuffVBT is Context, IERC20 {
+    /// @dev functions with the onlyOwner modifier can only be called by the contract itself or the contract owner
     modifier onlyOwner() {
         TuffOwner(address(this)).requireOnlyOwner(msg.sender);
         _;
@@ -25,6 +26,14 @@ contract TuffVBT is Context, IERC20 {
     /// Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
     /// constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
     /// @dev modifier onlyOwner can only be called by the contract itself or the contract owner
+    /// @param _initialOwner the initial owner of the contract
+    /// @param _name name of the token
+    /// @param _symbol symbol of the token
+    /// @param _decimals decimals of the token
+    /// @param _farmFee fee amount taken to build the treasury
+    /// @param _devFee fee amount sent to dev team for continued development work
+    /// @param _devWalletAddress address to send the dev fees
+    /// @param _totalSupply total supply of the token
     function initTuffVBT(
         address _initialOwner,
         string memory _name,
@@ -133,7 +142,7 @@ contract TuffVBT is Context, IERC20 {
 
     /// @notice transfer an amount of the TuffVBT to an account
     /// @param recipient recipient of the tokens from the msg sender
-    /// @param amount amount of tokens the recipient will get
+    /// @param amount amount of tokens being sent (before fees are taken)
     /// @return returns true if transfer is successful
     function transfer(address recipient, uint256 amount) public override returns (bool) {
         _transfer(_msgSender(), recipient, amount);
@@ -159,12 +168,12 @@ contract TuffVBT is Context, IERC20 {
     }
 
     /**
-    * @notice transfer from an account to another
-    * @param from from address
-    * @param to to address
-    * @param amount amount to send
-    * @return returns true if transfer is successful
-    */
+     * @notice transfer from an account to another
+     * @param from from address
+     * @param to to address
+     * @param amount amount to send
+     * @return returns true if transfer is successful
+     */
     function transferFrom(
         address from,
         address to,
@@ -391,23 +400,22 @@ contract TuffVBT is Context, IERC20 {
         }
     }
 
-
     /**
-    * @notice used by the contract itself post token maturity when a holder redeems their VBT.
-    *
-    * @dev modifier onlyOwner can only be called by the contract itself or the contract owner
-    *
-    * Emits a {Transfer} event.
-    *
-    * Requirements:
-    *
-    * - `account` cannot be the zero address.
-    * - balance of `account` must have a sufficient amount for the burn.
-    *
-    * @param account the account that will have the amount burned.
-    * @param amount the amount of the asset to be burned.
-    *
-    */
+     * @notice used by the contract itself post token maturity when a holder redeems their VBT.
+     *
+     * @dev modifier onlyOwner can only be called by the contract itself or the contract owner
+     *
+     * Emits a {Transfer} event.
+     *
+     * Requirements:
+     *
+     * - `account` cannot be the zero address.
+     * - balance of `account` must have a sufficient amount for the burn.
+     *
+     * @param account the account that will have the amount burned.
+     * @param amount the amount of the asset to be burned.
+     *
+     */
 
     function burn(address account, uint256 amount) public onlyOwner {
         //Burn From Zero Address: ERC20 - burn from the zero address

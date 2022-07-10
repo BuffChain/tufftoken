@@ -69,7 +69,6 @@ struct StateStorage {
 struct TokenMetadata {
   address chainlinkEthTokenAggrAddr;
   uint256 targetWeight;
-  address aToken;
 }
 ```
 
