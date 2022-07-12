@@ -3,7 +3,8 @@
 ## UniswapManager
 
 
-
+Uniswap utility contract to help with token swaps. Based on these docs
+https://docs.uniswap.org/protocol/guides/swaps
 
 
 
@@ -17,6 +18,7 @@ modifier onlyOwner()
 
 
 
+_functions with the onlyOwner modifier can only be called by the contract itself or the contract owner_
 
 
 
@@ -39,9 +41,16 @@ function isUniswapManagerInit() public view returns (bool)
 function initUniswapManager(contract ISwapRouter _swapRouter, address wethAddr, uint24 basePoolFee) public
 ```
 
+Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
+constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
 
+_modifier onlyOwner can only be called by the contract itself or the contract owner_
 
-
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _swapRouter | contract ISwapRouter | swap router address |
+| wethAddr | address | WETH address |
+| basePoolFee | uint24 | uniswap base pool fee |
 
 
 
@@ -54,7 +63,8 @@ function swapExactInputSingle(address inputToken, address outputToken, uint24 po
 swapExactOutputSingle swaps a minimum possible amount of DAI for a fixed amount of WETH.
 
 _The calling address must approve this contract to spend its DAI for this function to succeed. As the amount of input DAI is variable,
- the calling address will need to approve for a slightly higher amount, anticipating some variance._
+ the calling address will need to approve for a slightly higher amount, anticipating some variance.
+modifier onlyOwner can only be called by the contract itself or the contract owner_
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
@@ -78,7 +88,8 @@ function swapExactOutputSingle(address inputToken, address outputToken, uint24 p
 swapExactOutputSingle swaps a minimum possible amount of DAI for a fixed amount of WETH.
 
 _The calling address must approve this contract to spend its DAI for this function to succeed. As the amount of input DAI is variable,
- the calling address will need to approve for a slightly higher amount, anticipating some variance._
+ the calling address will need to approve for a slightly higher amount, anticipating some variance.
+modifier onlyOwner can only be called by the contract itself or the contract owner_
 
 | Name | Type | Description |
 | ---- | ---- | ----------- |
@@ -101,6 +112,7 @@ function swapExactInputMultihop(address inputToken, address outputToken, uint24 
 
 based on https://docs.uniswap.org/protocol/guides/swaps/multihop-swaps
 
+_modifier onlyOwner can only be called by the contract itself or the contract owner_
 
 
 

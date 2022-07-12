@@ -3,7 +3,7 @@
 ## UniswapManagerLib
 
 
-
+storage lib for the UniswapManager contract.
 
 
 

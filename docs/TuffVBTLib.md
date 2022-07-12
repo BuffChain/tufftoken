@@ -3,7 +3,7 @@
 ## TuffVBTLib
 
 
-
+storage lib for the TuffVBT contract.
 
 
 

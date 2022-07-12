@@ -30,9 +30,12 @@ function isTuffOwnerInit() public view returns (bool)
 function initTuffOwner(address initialOwner) public
 ```
 
+psuedo constructor
 
 
-
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| initialOwner | address | contract initial owner |
 
 
 
@@ -42,7 +45,7 @@ function initTuffOwner(address initialOwner) public
 event OwnershipTransferred(address previousOwner, address newOwner)
 ```
 
-
+Emitted when ownership is transferred
 
 
 

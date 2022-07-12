@@ -3,7 +3,7 @@
 ## TuffOwnerLib
 
 
-
+storage lib for the TuffOwner contract.
 
 
 

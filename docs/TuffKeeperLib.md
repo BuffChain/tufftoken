@@ -3,7 +3,7 @@
 ## TuffKeeperLib
 
 
-
+storage lib for the TuffKeeper contract.
 
 
 

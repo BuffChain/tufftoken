@@ -3,6 +3,7 @@ pragma solidity >=0.7.0;
 
 import {ISwapRouter} from "@uniswap/v3-periphery/contracts/interfaces/ISwapRouter.sol";
 
+/// @notice storage lib for the UniswapManager contract.
 library UniswapManagerLib {
     //IMPORTANT: You must increment this string if you add a new variable to StateStorage that is not at the end
     string public constant NAMESPACE = "io.BuffChain.TuffToken.UniswapManagerLib.1";
