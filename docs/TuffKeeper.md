@@ -19,6 +19,7 @@ modifier onlyOwner()
 
 
 
+_functions with the onlyOwner modifier can only be called by the contract itself or the contract owner_
 
 
 
@@ -57,7 +58,11 @@ function setTokenMaturityInterval(uint256 _tokenMaturityInterval) public
 
 used by contract owner to set token maturity interval
 
+_modifier onlyOwner can only be called by the contract itself or the contract owner_
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _tokenMaturityInterval | uint256 | interval for checking if VBT has matured |
 
 
 
@@ -67,10 +72,13 @@ used by contract owner to set token maturity interval
 function getTokenMaturityInterval() public view returns (uint256)
 ```
 
+gets the token maturity interval
 
 
 
-
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | uint256 | tokenMaturityInterval |
 
 
 ### setBalanceAssetsInterval
@@ -81,7 +89,11 @@ function setBalanceAssetsInterval(uint256 _balanceAssetsInterval) public
 
 used by contract owner to set balance treasury interval
 
+_modifier onlyOwner can only be called by the contract itself or the contract owner_
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _balanceAssetsInterval | uint256 | interval for balancing treasury |
 
 
 
@@ -91,10 +103,13 @@ used by contract owner to set balance treasury interval
 function getBalanceAssetsInterval() public view returns (uint256)
 ```
 
+gets the balance assets interval
 
 
 
-
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | uint256 | balanceAssetsInterval |
 
 
 ### setLastTokenMaturityTimestamp
@@ -105,7 +120,11 @@ function setLastTokenMaturityTimestamp(uint256 _lastTimestamp) public
 
 used by contract owner or the contract itself to set the last time the token maturity function was invoked.
 
+_modifier onlyOwner can only be called by the contract itself or the contract owner_
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _lastTimestamp | uint256 | last time the token maturity check was performed |
 
 
 
@@ -115,10 +134,13 @@ used by contract owner or the contract itself to set the last time the token mat
 function getLastTokenMaturityTimestamp() public view returns (uint256)
 ```
 
+gets the timestamp of the last time the token maturity check was performed
 
 
 
-
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | uint256 | lastTokenMaturityTimestamp |
 
 
 ### setLastBalanceAssetsTimestamp
@@ -129,7 +151,11 @@ function setLastBalanceAssetsTimestamp(uint256 _lastTimestamp) public
 
 used by contract owner or the contract itself to set the last time the balance assets function was invoked.
 
+_modifier onlyOwner can only be called by the contract itself or the contract owner_
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _lastTimestamp | uint256 | last time the balance assets function was performed |
 
 
 
@@ -139,10 +165,13 @@ used by contract owner or the contract itself to set the last time the balance a
 function getLastBalanceAssetsTimestamp() public view returns (uint256)
 ```
 
+gets the timestamp of the last time the balance assets function was performed
 
 
 
-
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | uint256 | lastBalanceAssetsTimestamp |
 
 
 ### isIntervalComplete
@@ -154,6 +183,11 @@ function isIntervalComplete(uint256 timestamp, uint256 lastTimestamp, uint256 in
 checks if given timestamp completes an interval
 
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| timestamp | uint256 | timestamp to check against the last execution and interval |
+| lastTimestamp | uint256 | the previous timestamp |
+| interval | uint256 | desired time between executions |
 
 
 
@@ -176,7 +210,8 @@ timestamp and function intervals.
 function performUpkeep(bytes) external
 ```
 
-call made from Chainlink Keeper network to perform upkeep when checkUpkeep says so.
+call made from Chainlink Keeper network to perform upkeep. If intervals are complete, checks to token
+maturity and balancing of assets will be performed.
 
 
 

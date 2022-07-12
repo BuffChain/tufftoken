@@ -15,6 +15,7 @@ import "./TuffOwner.sol";
 
 /* solhint-disable not-rely-on-time */
 contract TuffKeeper is KeeperCompatibleInterface {
+    /// @dev functions with the onlyOwner modifier can only be called by the contract itself or the contract owner
     modifier onlyOwner() {
         TuffOwner(address(this)).requireOnlyOwner(msg.sender);
         _;
@@ -43,50 +44,69 @@ contract TuffKeeper is KeeperCompatibleInterface {
     }
 
     /// @notice used by contract owner to set token maturity interval
+    /// @dev modifier onlyOwner can only be called by the contract itself or the contract owner
+    /// @param _tokenMaturityInterval interval for checking if VBT has matured
     function setTokenMaturityInterval(uint256 _tokenMaturityInterval) public onlyOwner {
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
         ss.tokenMaturityInterval = _tokenMaturityInterval;
     }
 
+    /// @notice gets the token maturity interval
+    /// @return tokenMaturityInterval
     function getTokenMaturityInterval() public view returns (uint256) {
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
         return ss.tokenMaturityInterval;
     }
 
     /// @notice used by contract owner to set balance treasury interval
+    /// @dev modifier onlyOwner can only be called by the contract itself or the contract owner
+    /// @param _balanceAssetsInterval interval for balancing treasury
     function setBalanceAssetsInterval(uint256 _balanceAssetsInterval) public onlyOwner {
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
         ss.balanceAssetsInterval = _balanceAssetsInterval;
     }
 
+    /// @notice gets the balance assets interval
+    /// @return balanceAssetsInterval
     function getBalanceAssetsInterval() public view returns (uint256) {
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
         return ss.balanceAssetsInterval;
     }
 
     /// @notice used by contract owner or the contract itself to set the last time the token maturity function was invoked.
+    /// @dev modifier onlyOwner can only be called by the contract itself or the contract owner
+    /// @param _lastTimestamp last time the token maturity check was performed
     function setLastTokenMaturityTimestamp(uint256 _lastTimestamp) public onlyOwner {
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
         ss.lastTokenMaturityTimestamp = _lastTimestamp;
     }
 
+    /// @notice gets the timestamp of the last time the token maturity check was performed
+    /// @return lastTokenMaturityTimestamp
     function getLastTokenMaturityTimestamp() public view returns (uint256) {
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
         return ss.lastTokenMaturityTimestamp;
     }
 
     /// @notice used by contract owner or the contract itself to set the last time the balance assets function was invoked.
+    /// @dev modifier onlyOwner can only be called by the contract itself or the contract owner
+    /// @param _lastTimestamp last time the balance assets function was performed
     function setLastBalanceAssetsTimestamp(uint256 _lastTimestamp) public onlyOwner {
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
         ss.lastBalanceAssetsTimestamp = _lastTimestamp;
     }
 
+    /// @notice gets the timestamp of the last time the balance assets function was performed
+    /// @return lastBalanceAssetsTimestamp
     function getLastBalanceAssetsTimestamp() public view returns (uint256) {
         TuffKeeperLib.StateStorage storage ss = TuffKeeperLib.getState();
         return ss.lastBalanceAssetsTimestamp;
     }
 
     /// @notice checks if given timestamp completes an interval
+    /// @param timestamp timestamp to check against the last execution and interval
+    /// @param lastTimestamp the previous timestamp
+    /// @param interval desired time between executions
     function isIntervalComplete(
         uint256 timestamp,
         uint256 lastTimestamp,
@@ -106,7 +126,8 @@ contract TuffKeeper is KeeperCompatibleInterface {
         performData = bytes(Strings.toString(block.timestamp));
     }
 
-    /// @notice call made from Chainlink Keeper network to perform upkeep when checkUpkeep says so.
+    /// @notice call made from Chainlink Keeper network to perform upkeep. If intervals are complete, checks to token
+    /// maturity and balancing of assets will be performed.
     function performUpkeep(
         bytes calldata /* performData */
     ) external override {
