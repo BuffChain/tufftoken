@@ -2,6 +2,7 @@
 
 pragma solidity ^0.8.0;
 
+/// @notice WETH9 interface used for cross solidity versions
 interface IWETH9 {
     function deposit() external payable;
 

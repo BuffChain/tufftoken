@@ -3,7 +3,7 @@
 ## IAaveLPManager
 
 
-
+AaveLPManager interface used for cross solidity versions (v7 - v8)
 
 
 

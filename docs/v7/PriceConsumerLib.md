@@ -3,7 +3,7 @@
 ## PriceConsumerLib
 
 
-
+storage lib for the PriceConsumer contract.
 
 
 
@@ -65,7 +65,7 @@ function getState() internal pure returns (struct PriceConsumerLib.StateStorage 
 ## PriceConsumerLib
 
 
-
+storage lib for the PriceConsumer contract.
 
 
 
