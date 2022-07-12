@@ -3,7 +3,7 @@
 ## AaveLPManagerLib
 
 
-
+storage lib for the AaveLPManager contract.
 
 
 

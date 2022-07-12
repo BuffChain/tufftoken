@@ -18,9 +18,17 @@ import {IUniswapManager} from "./IUniswapManager.sol";
 import {IPriceConsumer} from "./IPriceConsumer.sol";
 import "./ITuffOwnerV6.sol";
 
-//Within this contract is a purposeful difference between percentage and weight. Percentage is a token value out of
-// 100% of the total, weight decides how much influence a token should have on the total
+/**
+ * @notice The purpose of the AaveLPManager contract is to manage all deposit and withdraw functions to Aave as well
+ * as keeping a balanced treasury based on targeted weights of the VBT supported tokens.
+ *
+ * @dev Within this contract is a purposeful difference between percentage and weight. Percentage is a token value out of
+ * 100% of the total, weight decides how much influence a token should have on the total
+ *
+ */
+
 contract AaveLPManager is Context {
+    /// @dev functions with the onlyOwner modifier can only be called by the contract itself or the contract owner
     modifier onlyOwner() {
         ITuffOwnerV6(address(this)).requireOnlyOwner(msg.sender);
         _;
@@ -39,8 +47,14 @@ contract AaveLPManager is Context {
         uint24 decimalPrecision;
     }
 
-    //Basically a constructor, but Diamonds use their own state which the constructor of a contract is not a part of.
-    // We imitate a constructor with a one-time only function. This is called immediately after deployment
+    /// @notice Basically a constructor, but Diamonds use their own state which the constructor of a contract is not a part of.
+    /// We imitate a constructor with a one-time only function. This is called immediately after deployment
+    /// @dev modifier onlyOwner can only be called by the contract itself or the contract owner
+    /// @param _lendingPoolProviderAddr address of lending pool provider
+    /// @param _protocolDataProviderAddr address of protocol data provider
+    /// @param _wethAddr WETH address
+    /// @param _balanceBufferPercent amount of tolerable difference between target weights and actual held percentages
+    /// of tokens with regards to total treasury balance
     function initAaveLPManager(
         address _lendingPoolProviderAddr,
         address _protocolDataProviderAddr,
@@ -67,31 +81,46 @@ contract AaveLPManager is Context {
         return ss.isInit;
     }
 
+    /// @notice gets address of lending pool
+    /// @return pool address
     function getAaveLPAddr() public view returns (address) {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
         return LendingPoolAddressesProvider(ss.lpProviderAddr).getLendingPool();
     }
 
+    /// @notice gets protocol data provider address
+    /// @return protocol data provider address
     function getProtocolDataProviderAddr() public view returns (address) {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
         return ss.protocolDataProviderAddr;
     }
 
+    /// @notice gets tolerable difference between target weights and actual held percentages
+    /// @return balanceBufferPercent
     function getBalanceBufferPercent() public view returns (uint24) {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
         return ss.balanceBufferPercent;
     }
 
+    /// @notice sets tolerable difference between target weights and actual held percentages
+    /// @dev modifier onlyOwner can only be called by the contract itself or the contract owner
+    /// @param _balanceBufferPercent balance buffer
     function setBalanceBufferPercent(uint24 _balanceBufferPercent) public onlyOwner {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
         ss.balanceBufferPercent = _balanceBufferPercent;
     }
 
+    /// @notice gets all supported tokens used in Aave lending
+    /// @return array of supported token addresses
     function getAllAaveSupportedTokens() public view returns (address[] memory) {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
         return ss.supportedTokens;
     }
 
+    /// @notice sets a target weight of a aave supported token
+    /// @dev modifier onlyOwner can only be called by the contract itself or the contract owner
+    /// @param tokenAddr token address to set the weight for
+    /// @param targetWeight token's target weight
     function setAaveTokenTargetWeight(address tokenAddr, uint24 targetWeight) public onlyOwner {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
 
@@ -101,11 +130,17 @@ contract AaveLPManager is Context {
         ss.tokenMetadata[tokenAddr].targetWeight = targetWeight;
     }
 
+    /// @notice gets the target weight of a token
+    /// @param tokenAddr token address to get the weight of
+    /// @return token target weight
     function getAaveTokenTargetWeight(address tokenAddr) public view returns (uint256) {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
         return ss.tokenMetadata[tokenAddr].targetWeight;
     }
 
+    /// @notice gets the token's actual held value as percentage of the contracts total portfolio in WETH
+    /// @param tokenAddr token address to calculate
+    /// @return token's portfolio percentage
     function getAaveTokenCurrentPercentage(address tokenAddr) public view returns (uint256) {
         BalanceMetadata memory bm = getBalanceMetadata();
 
@@ -123,6 +158,8 @@ contract AaveLPManager is Context {
         revert("UT");
     }
 
+    /// @notice gets the contracts balance metadata
+    /// @return contract balance metadata enriched with supported token balances and their value in WETH
     function getBalanceMetadata() private view returns (BalanceMetadata memory) {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
         BalanceMetadata memory bm;
@@ -161,11 +198,14 @@ contract AaveLPManager is Context {
         return bm;
     }
 
+    /// @notice get total token weights
+    /// @return total target weight
     function getAaveTotalTargetWeight() public view returns (uint256) {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
         return ss.totalTargetWeight;
     }
 
+    /// @notice gets Aave income in the form of aTokens
     function getAaveIncome(address tokenAddr) public view returns (uint256) {
         return LendingPool(getAaveLPAddr()).getReserveNormalizedIncome(tokenAddr);
     }

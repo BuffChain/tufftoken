@@ -3,8 +3,11 @@
 ## AaveLPManager
 
 
+The purpose of the AaveLPManager contract is to manage all deposit and withdraw functions to Aave as well
+as keeping a balanced treasury based on targeted weights of the VBT supported tokens.
 
-
+_Within this contract is a purposeful difference between percentage and weight. Percentage is a token value out of
+100% of the total, weight decides how much influence a token should have on the total_
 
 
 
@@ -17,6 +20,7 @@ modifier onlyOwner()
 
 
 
+_functions with the onlyOwner modifier can only be called by the contract itself or the contract owner_
 
 
 
@@ -49,9 +53,17 @@ struct BalanceMetadata {
 function initAaveLPManager(address _lendingPoolProviderAddr, address _protocolDataProviderAddr, address _wethAddr, uint24 _balanceBufferPercent) public
 ```
 
+Basically a constructor, but Diamonds use their own state which the constructor of a contract is not a part of.
+We imitate a constructor with a one-time only function. This is called immediately after deployment
 
+_modifier onlyOwner can only be called by the contract itself or the contract owner_
 
-
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _lendingPoolProviderAddr | address | address of lending pool provider |
+| _protocolDataProviderAddr | address | address of protocol data provider |
+| _wethAddr | address | WETH address |
+| _balanceBufferPercent | uint24 | amount of tolerable difference between target weights and actual held percentages of tokens with regards to total treasury balance |
 
 
 
@@ -73,10 +85,13 @@ function isAaveInit() public view returns (bool)
 function getAaveLPAddr() public view returns (address)
 ```
 
+gets address of lending pool
 
 
 
-
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | address | pool address |
 
 
 ### getProtocolDataProviderAddr
@@ -85,10 +100,13 @@ function getAaveLPAddr() public view returns (address)
 function getProtocolDataProviderAddr() public view returns (address)
 ```
 
+gets protocol data provider address
 
 
 
-
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | address | protocol data provider address |
 
 
 ### getBalanceBufferPercent
@@ -97,10 +115,13 @@ function getProtocolDataProviderAddr() public view returns (address)
 function getBalanceBufferPercent() public view returns (uint24)
 ```
 
+gets tolerable difference between target weights and actual held percentages
 
 
 
-
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | uint24 | balanceBufferPercent |
 
 
 ### setBalanceBufferPercent
@@ -109,9 +130,13 @@ function getBalanceBufferPercent() public view returns (uint24)
 function setBalanceBufferPercent(uint24 _balanceBufferPercent) public
 ```
 
+sets tolerable difference between target weights and actual held percentages
 
+_modifier onlyOwner can only be called by the contract itself or the contract owner_
 
-
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| _balanceBufferPercent | uint24 | balance buffer |
 
 
 
@@ -121,10 +146,13 @@ function setBalanceBufferPercent(uint24 _balanceBufferPercent) public
 function getAllAaveSupportedTokens() public view returns (address[])
 ```
 
+gets all supported tokens used in Aave lending
 
 
 
-
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | address[] | array of supported token addresses |
 
 
 ### setAaveTokenTargetWeight
@@ -133,9 +161,14 @@ function getAllAaveSupportedTokens() public view returns (address[])
 function setAaveTokenTargetWeight(address tokenAddr, uint24 targetWeight) public
 ```
 
+sets a target weight of a aave supported token
 
+_modifier onlyOwner can only be called by the contract itself or the contract owner_
 
-
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| tokenAddr | address | token address to set the weight for |
+| targetWeight | uint24 | token's target weight |
 
 
 
@@ -145,10 +178,16 @@ function setAaveTokenTargetWeight(address tokenAddr, uint24 targetWeight) public
 function getAaveTokenTargetWeight(address tokenAddr) public view returns (uint256)
 ```
 
+gets the target weight of a token
 
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| tokenAddr | address | token address to get the weight of |
 
-
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | uint256 | token target weight |
 
 
 ### getAaveTokenCurrentPercentage
@@ -157,10 +196,16 @@ function getAaveTokenTargetWeight(address tokenAddr) public view returns (uint25
 function getAaveTokenCurrentPercentage(address tokenAddr) public view returns (uint256)
 ```
 
+gets the token's actual held value as percentage of the contracts total portfolio in WETH
 
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| tokenAddr | address | token address to calculate |
 
-
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | uint256 | token's portfolio percentage |
 
 
 ### getBalanceMetadata
@@ -169,10 +214,13 @@ function getAaveTokenCurrentPercentage(address tokenAddr) public view returns (u
 function getBalanceMetadata() private view returns (struct AaveLPManager.BalanceMetadata)
 ```
 
+gets the contracts balance metadata
 
 
 
-
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | struct AaveLPManager.BalanceMetadata | contract balance metadata enriched with supported token balances and their value in WETH |
 
 
 ### getAaveTotalTargetWeight
@@ -181,10 +229,13 @@ function getBalanceMetadata() private view returns (struct AaveLPManager.Balance
 function getAaveTotalTargetWeight() public view returns (uint256)
 ```
 
+get total token weights
 
 
 
-
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | uint256 | total target weight |
 
 
 ### getAaveIncome
@@ -193,7 +244,7 @@ function getAaveTotalTargetWeight() public view returns (uint256)
 function getAaveIncome(address tokenAddr) public view returns (uint256)
 ```
 
-
+gets Aave income in the form of aTokens
 
 
 

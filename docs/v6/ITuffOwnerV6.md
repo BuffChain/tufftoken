@@ -3,7 +3,7 @@
 ## ITuffOwnerV6
 
 
-
+TuffOwner interface used for cross solidity versions (v6 - v8)
 
 
 

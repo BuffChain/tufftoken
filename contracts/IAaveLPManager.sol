@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.0;
 
-/// @notice AaveLPManager interface used for cross solidity versions (v7 - v8)
+/// @notice AaveLPManager interface used for cross solidity versions (v6 - v8)
 interface IAaveLPManager {
     function getAllAaveSupportedTokens() external view returns (address[] memory);
 

@@ -3,7 +3,7 @@
 ## IPriceConsumer
 
 
-
+UniswapManager interface used for cross solidity versions (v6 - v7)
 
 
 
