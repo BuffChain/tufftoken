@@ -1,0 +1,26 @@
+name: Publish to NPM
+
+on:
+  pull_request:
+    branches: [ main ]
+#    types: [ closed ] comment out for testing
+
+jobs:
+  publish:
+    if: github.event.pull_request.merged == true
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+      - name: Install dependencies
+        run: npm install
+      - name: Compile Solidity and Typescript
+        run: |
+          npm run clean
+          npm run compile
+      - uses: JS-DevTools/npm-publish@v1
+        with:
+          token: ${{ secrets.NPM_ACCESS_TOKEN }}

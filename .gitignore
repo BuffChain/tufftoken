@@ -3,6 +3,7 @@ cache/
 artifacts/
 coverage.json
 coverage/
+deployments/localhost/
 
 # Hardhat task files
 block_data/

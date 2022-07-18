@@ -163,6 +163,4 @@ describe("UniswapManager", function() {
         // Since this is exact input, we do not know precisely the exact output will be
         expect(endingDaiBalance).to.be.gte(startingDaiBalance.add(daiAmtOutMin));
     });
-
-    //TODO: add negative tests for all possible reverts
 });

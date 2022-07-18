@@ -126,7 +126,6 @@ async function addLiquidityToPool(poolContract: IUniswapV3Pool, tuffDUU: TuffVBT
     const weth9Contract = await getWETH9Contract();
 
     //Use a portion of BuffChain's TUFF tokens as liquidity
-    //TODO: do we also want to use TuffDAO treasury? That would _likely_ be another deployment script
     log("-----STARTING BALANCES-----");
     const { tuffBal } = await getAcctBal(tuffDUU, buffChain, "[DEPLOY][v0005] - ");
     const buffChainsTuffLiquidity = tuffBal.mul(BUFFCHAIN_INIT_TUFF_LIQUIDITY_PERCENTAGE).div(100);
