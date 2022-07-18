@@ -247,7 +247,13 @@ function getAaveIncome(address tokenAddr) public view returns (uint256)
 gets Aave income in the form of aTokens
 
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| tokenAddr | address | token address |
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | uint256 | the normalized income per unit of asset |
 
 
 ### getATokenBalance
@@ -256,10 +262,17 @@ gets Aave income in the form of aTokens
 function getATokenBalance(address asset) public view returns (uint256)
 ```
 
+gets the aToken balance generated from lending the underlying token on Aave
 
+_`asset` is the token address, not aToken address_
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| asset | address | token address |
 
-
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | uint256 | balance of aTokens |
 
 
 ### getATokenAddress
@@ -268,10 +281,17 @@ function getATokenBalance(address asset) public view returns (uint256)
 function getATokenAddress(address asset) public view returns (address)
 ```
 
+gets the aToken address given the underlying token address
 
+_`asset` is the token address, not aToken address_
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| asset | address | token address |
 
-
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | address | address of aToken |
 
 
 ### depositToAave
@@ -280,9 +300,14 @@ function getATokenAddress(address asset) public view returns (address)
 function depositToAave(address erc20TokenAddr, uint256 amount) public
 ```
 
+deposits specified amount of Aave supported tokens to Aave lending pool
 
+_modifier onlyOwner can only be called by the contract itself or the contract owner_
 
-
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| erc20TokenAddr | address | token address |
+| amount | uint256 | amount to deposit |
 
 
 
@@ -292,10 +317,17 @@ function depositToAave(address erc20TokenAddr, uint256 amount) public
 function isAaveSupportedToken(address tokenAddr) public view returns (bool, uint256)
 ```
 
+check to see if a token supported
 
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| tokenAddr | address | token address |
 
-
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | bool | bool is token supported |
+| [1] | uint256 | token index in supported tokens array |
 
 
 ### addAaveSupportedToken
@@ -304,9 +336,15 @@ function isAaveSupportedToken(address tokenAddr) public view returns (bool, uint
 function addAaveSupportedToken(address tokenAddr, address chainlinkEthTokenAggrAddr, uint24 targetWeight) public
 ```
 
+add a new token to list of supported tokens
 
+_modifier onlyOwner can only be called by the contract itself or the contract owner_
 
-
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| tokenAddr | address | token address |
+| chainlinkEthTokenAggrAddr | address | price feed aggregator used to get current on chain price data |
+| targetWeight | uint24 | target weight of the asset in the Aave portfolio |
 
 
 
@@ -316,9 +354,13 @@ function addAaveSupportedToken(address tokenAddr, address chainlinkEthTokenAggrA
 function removeAaveSupportedToken(address tokenAddr) public
 ```
 
+remove an existing supported token from the list of supported tokens
 
+_modifier onlyOwner can only be called by the contract itself or the contract owner_
 
-
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| tokenAddr | address | token address |
 
 
 
@@ -328,10 +370,15 @@ function removeAaveSupportedToken(address tokenAddr) public
 function liquidateAaveTreasury() public returns (bool)
 ```
 
+liquidates entire Aave treasury (all assets deposited on the Lending Pool). This is done when the VBT
+instance reaches maturity in order for the holders VBT to redeem their balance in the form of ETH.
+
+_modifier onlyOwner can only be called by the contract itself or the contract owner_
 
 
-
-
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | bool | bool indicates if ALL deposited assets were successfully withdrawn |
 
 
 ### withdrawFromAave
@@ -340,10 +387,18 @@ function liquidateAaveTreasury() public returns (bool)
 function withdrawFromAave(address erc20TokenAddr, uint256 amount) public returns (uint256)
 ```
 
+withdraws deposited tokens from Aave Lending Pool
 
+_modifier onlyOwner can only be called by the contract itself or the contract owner_
 
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| erc20TokenAddr | address | underlying token address (not aToken) |
+| amount | uint256 | amount to withdraw |
 
-
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| [0] | uint256 | total amount withdrawn |
 
 
 ### withdrawAllFromAave
@@ -352,9 +407,13 @@ function withdrawFromAave(address erc20TokenAddr, uint256 amount) public returns
 function withdrawAllFromAave(address asset) public
 ```
 
+withdraw all of an asset from Aave
 
+_modifier onlyOwner can only be called by the contract itself or the contract owner_
 
-
+| Name | Type | Description |
+| ---- | ---- | ----------- |
+| asset | address | underlying token address (not aToken) |
 
 
 
@@ -377,8 +436,14 @@ _Emitted when a swap occurs to balance an under-balanced token_
 function balanceAaveLendingPool() public
 ```
 
+Responsible for balancing Aave treasury. This is done on an interval managed by the TuffKeeper contract.
+We will first need to calculate current/actual percentages, then determine which tokens are under-invested, and
+finally swap and deposit to balance the tokens based on their targetedPercentages
 
+Note: Only buy tokens to balance instead of trying to balance by selling first then buying. This means
+we do not have to sort, which helps saves on gas.
 
+_modifier onlyOwner can only be called by the contract itself or the contract owner_
 
 
 

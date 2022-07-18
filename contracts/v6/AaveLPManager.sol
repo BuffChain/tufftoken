@@ -206,17 +206,26 @@ contract AaveLPManager is Context {
     }
 
     /// @notice gets Aave income in the form of aTokens
+    /// @param tokenAddr token address
+    /// @return the normalized income per unit of asset
     function getAaveIncome(address tokenAddr) public view returns (uint256) {
         return LendingPool(getAaveLPAddr()).getReserveNormalizedIncome(tokenAddr);
     }
 
-    //`asset` is the token address, not aToken address
+    /// @notice gets the aToken balance generated from lending the underlying token on Aave
+    /// @dev `asset` is the token address, not aToken address
+    /// @param asset token address
+    /// @return balance of aTokens
     function getATokenBalance(address asset) public view returns (uint256) {
         (uint256 currentATokenBalance, , , , , , , , ) = AaveProtocolDataProvider(getProtocolDataProviderAddr())
             .getUserReserveData(asset, address(this));
         return currentATokenBalance;
     }
 
+    /// @notice gets the aToken address given the underlying token address
+    /// @dev `asset` is the token address, not aToken address
+    /// @param asset token address
+    /// @return address of aToken
     function getATokenAddress(address asset) public view returns (address) {
         (address aTokenAddress, , ) = AaveProtocolDataProvider(getProtocolDataProviderAddr()).getReserveTokensAddresses(
             asset
@@ -224,6 +233,10 @@ contract AaveLPManager is Context {
         return aTokenAddress;
     }
 
+    /// @notice deposits specified amount of Aave supported tokens to Aave lending pool
+    /// @dev modifier onlyOwner can only be called by the contract itself or the contract owner
+    /// @param erc20TokenAddr token address
+    /// @param amount amount to deposit
     function depositToAave(address erc20TokenAddr, uint256 amount) public onlyOwner {
         (bool _isSupportedToken, ) = isAaveSupportedToken(erc20TokenAddr);
         //Deposit Unsupported Token: This token is currently not supported
@@ -233,6 +246,10 @@ contract AaveLPManager is Context {
         LendingPool(getAaveLPAddr()).deposit(erc20TokenAddr, amount, address(this), 0);
     }
 
+    /// @notice check to see if a token supported
+    /// @param tokenAddr token address
+    /// @return bool is token supported
+    /// @return token index in supported tokens array
     function isAaveSupportedToken(address tokenAddr) public view returns (bool, uint256) {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
 
@@ -249,6 +266,11 @@ contract AaveLPManager is Context {
         return (_isSupportedToken, _tokenIndex);
     }
 
+    /// @notice add a new token to list of supported tokens
+    /// @dev modifier onlyOwner can only be called by the contract itself or the contract owner
+    /// @param tokenAddr token address
+    /// @param chainlinkEthTokenAggrAddr price feed aggregator used to get current on chain price data
+    /// @param targetWeight target weight of the asset in the Aave portfolio
     function addAaveSupportedToken(
         address tokenAddr,
         address chainlinkEthTokenAggrAddr,
@@ -265,6 +287,9 @@ contract AaveLPManager is Context {
         setAaveTokenTargetWeight(tokenAddr, targetWeight);
     }
 
+    /// @notice remove an existing supported token from the list of supported tokens
+    /// @dev modifier onlyOwner can only be called by the contract itself or the contract owner
+    /// @param tokenAddr token address
     function removeAaveSupportedToken(address tokenAddr) public onlyOwner {
         AaveLPManagerLib.StateStorage storage ss = AaveLPManagerLib.getState();
 
@@ -278,6 +303,10 @@ contract AaveLPManager is Context {
         }
     }
 
+    /// @notice liquidates entire Aave treasury (all assets deposited on the Lending Pool). This is done when the VBT
+    /// instance reaches maturity in order for the holders VBT to redeem their balance in the form of ETH.
+    /// @dev modifier onlyOwner can only be called by the contract itself or the contract owner
+    /// @return bool indicates if ALL deposited assets were successfully withdrawn
     function liquidateAaveTreasury() public onlyOwner returns (bool) {
         address[] memory supportedTokens = getAllAaveSupportedTokens();
         bool allTokensWithdrawn = true;
@@ -291,6 +320,11 @@ contract AaveLPManager is Context {
         return allTokensWithdrawn;
     }
 
+    /// @notice withdraws deposited tokens from Aave Lending Pool
+    /// @dev modifier onlyOwner can only be called by the contract itself or the contract owner
+    /// @param erc20TokenAddr underlying token address (not aToken)
+    /// @param amount amount to withdraw
+    /// @return total amount withdrawn
     function withdrawFromAave(address erc20TokenAddr, uint256 amount) public onlyOwner returns (uint256) {
         (bool _isSupportedToken, ) = isAaveSupportedToken(erc20TokenAddr);
         //Withdraw Unsupported Token: This token is currently not supported
@@ -303,6 +337,9 @@ contract AaveLPManager is Context {
         return LendingPool(getAaveLPAddr()).withdraw(erc20TokenAddr, amount, address(this));
     }
 
+    /// @notice withdraw all of an asset from Aave
+    /// @dev modifier onlyOwner can only be called by the contract itself or the contract owner
+    /// @param asset underlying token address (not aToken)
     function withdrawAllFromAave(address asset) public onlyOwner {
         withdrawFromAave(asset, type(uint256).max);
     }
@@ -312,10 +349,17 @@ contract AaveLPManager is Context {
      */
     event AaveLPManagerBalanceSwap(address tokenSwappedFor, uint256 amountIn, uint256 amountOut);
 
-    //We will first need to calculate current/actual percentages, then determine which tokens are under-invested, and
-    // finally swap and deposit to balance the tokens based on their targetedPercentages
-    //Note: Only buy tokens to balance instead of trying to balance by selling first then buying. This means
-    // we do not have to sort, which helps saves on gas.
+    /**
+     *
+     * @notice Responsible for balancing Aave treasury. This is done on an interval managed by the TuffKeeper contract.
+     * We will first need to calculate current/actual percentages, then determine which tokens are under-invested, and
+     * finally swap and deposit to balance the tokens based on their targetedPercentages
+     *
+     * Note: Only buy tokens to balance instead of trying to balance by selling first then buying. This means
+     * we do not have to sort, which helps saves on gas.
+     *
+     * @dev modifier onlyOwner can only be called by the contract itself or the contract owner
+     */
     function balanceAaveLendingPool() public onlyOwner {
         BalanceMetadata memory bm = getBalanceMetadata();
         (uint256 tVBTWethQuote, ) = IPriceConsumer(address(this)).getTvbtWethQuote(3600);
