@@ -120,22 +120,22 @@ const config: HardhatUserConfig = {
     namedAccounts: {
         deployer: {
             default: 0, //For tests and hardhat network, use accounts[0]
-            1: '', //TODO: Multi-sig ETH account for mainnet
+            1: '', //TODO: TUFF-151
             "kovan": '0x4d5031A3BF5b4828932D0e1C3006cC860b97aC3c',
         },
         contractOwner: {
             default: 1, //For tests and hardhat network, use accounts[1]
-            1: '', //TODO: Multi-sig ETH account for mainnet
+            1: '', //TODO: TUFF-151
             "kovan": '0x4d5031A3BF5b4828932D0e1C3006cC860b97aC3c',
         },
         buffChain: {
             default: '0x4d5031A3BF5b4828932D0e1C3006cC860b97aC3c',
-            1: '', //TODO: Multi-sig ETH account for mainnet
+            1: '', //TODO: TUFF-151
             "kovan": '',
         },
         tuffDAO: {
             default: '0x46E7BDD2b003a98C85dA07b930cd3354E97D7F0d',
-            1: '', //TODO: Multi-sig ETH account for mainnet
+            1: '', //TODO: TUFF-151
             "kovan": '',
         }
     },
