@@ -215,7 +215,7 @@ contract TokenMaturity {
             ss.wethAddr,
             ss.basePoolFee,
             amount,
-            0 //TODO: fix, should be based on an orcale
+            0 //TODO: TUFF-180
         );
 
         return erc20Token.balanceOf(address(this));

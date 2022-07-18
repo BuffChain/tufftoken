@@ -34,7 +34,6 @@ const constsMap: { [key: string]: { [key: string]: any } } = {
         "CHAINLINK_ETH_USDT_AGGR_ADDR": "0x0bF499444525a23E7Bb61997539725cA2e928138",
 
         //Current: price should be $.01, 1 DAI = 0.0004930897926165828 ETH, .01 DAI = 0.000004930897926165828 ETH
-        // todo: LP pool may impact whether this needs to be a constant or function
         "TUFF_STARTING_PRICE": hre.ethers.utils.formatEther("3138750000000")
     },
     "mainnet": {

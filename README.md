@@ -92,10 +92,24 @@ example from above, we would update the `blockNumber` configured in `hardhat.con
 start block number). We do this because then we will deploy the contract, and then apply the txs we just fetched.
 
 ## Deploying
-First, source your `.env` file. Then run the npm deploy script for the respective network. For example, if you are 
-deploying to `kovan`, then run `npm run deploy_kovan`. Review the logs after the deployment has finished. The addresses 
-and transaction hashes of the contract deployments are also persisted to `./deployments/kovan/*.json`. To finish the 
-deployment commit and push those file changes.
+
+### Pre-Deploy Checks
+1) Ensure `TUFF_STARTING_PRICE` is set to the correct value based on the current blocks ETH price
+2) Review and source your `.env` file. Enusre all wallets have the correct private key
+3) Run `npm run node` to deploy a local version of the contracts based on the current mainnet block
+4) Review logs from step above
+5) Run `npm run deploy_kovan` to deploy the contracts to kovan
+6) Review logs from step above
+
+### Deploy to mainnet
+1) Ensure wallets have sufficient ETH to pay for gas. Check the latest main GitHub actions to get estimated contract
+deployment gas cost
+2) Run `npm run deploy_mainnet` to deploy the contracts to mainnet
+3) Review logs from step above
+
+### Post-Deploy
+1) Commit deployment logs to main branch
+2) Review addresses on etherscan and dApp
 
 ## License
 [![License: AGPL v3](https://img.shields.io/badge/License-AGPL%20v3-blue.svg)](https://www.gnu.org/licenses/agpl-3.0)
