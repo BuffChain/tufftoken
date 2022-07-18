@@ -31,8 +31,4 @@ module.exports = async () => {
     const buffChainTotalCut = totalTokens.mul(BUFFCHAIN_TOTAL_TUFF_PERCENTAGE).div(100);
     log(`Sending [${buffChainTotalCut}] ${TOKEN_SYMBOL} to buffChain [${buffChain}]`);
     await (tuffDUU.connect(contractOwnerAcct) as TuffVBTDiamond).transfer(buffChain, buffChainTotalCut);
-
-    //TODO: Create a json map of holder addresses and amount to supply. Read them in and send the appropriate tokens
-    // the contractOwnerAcct
-    //TODO: Groom: Clemens: web2 with user on-boarding through email and docusign (to claim tokens)?
 };
