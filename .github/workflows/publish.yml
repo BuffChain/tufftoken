@@ -3,11 +3,9 @@ name: Publish to NPM
 on:
   pull_request:
     branches: [ main ]
-#    types: [ closed ] comment out for testing
 
 jobs:
   publish:
-#    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -24,4 +22,6 @@ jobs:
       - uses: JS-DevTools/npm-publish@v1
         with:
           access: "public"
+          greater-version-only: true
+          dry-run: github.event.pull_request.merged == false
           token: ${{ secrets.NPM_ACCESS_TOKEN }}

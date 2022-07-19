@@ -47,7 +47,7 @@ transactions will use less gas as they do not have to transfer tokens from each 
 It is encouraged to familiarize yourself with Diamonds, [this repo](https://github.com/mudgen/diamond) is a good place
 to start. Note that we chose the 3rd implementation [here](https://github.com/mudgen/diamond-3-hardhat). 
 
-It is imperative that you understand how state and storage is managed with within Diamonds. [This link](https://medium.com/1milliondevs/solidity-storage-layout-for-proxy-contracts-and-diamonds-c4f009b6903) 
+It is imperative that you understand how state and storage is managed within Diamonds. [This link](https://medium.com/1milliondevs/solidity-storage-layout-for-proxy-contracts-and-diamonds-c4f009b6903) 
 goes over several options and their pros and cons. This project uses the diamond storage method, which you can learn 
 more about [here](https://dev.to/mudgen/how-diamond-storage-works-90e) and [here](https://eips.ethereum.org/EIPS/eip-2535#facets-state-variables-and-diamond-storage). 
 There are a few additional quirks I would like to call out:
