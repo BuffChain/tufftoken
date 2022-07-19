@@ -19,9 +19,12 @@ jobs:
         run: |
           npm run clean
           npm run compile
-      - uses: JS-DevTools/npm-publish@v1
+      - id: npm_publish
+        uses: JS-DevTools/npm-publish@v1
         with:
           access: "public"
-          greater-version-only: true
           dry-run: github.event.pull_request.merged == false
           token: ${{ secrets.NPM_ACCESS_TOKEN }}
+      - if: steps.publish.outputs.type != 'none'
+        run: |
+          [[ "${{ steps.npm_publish.outputs.old-version }}" == "${{ steps.npm_publish.outputs.version }}" ]] && exit 1 || exit 0
