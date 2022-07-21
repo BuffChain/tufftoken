@@ -22,6 +22,8 @@ import "./ITuffOwnerV6.sol";
  * @notice The purpose of the AaveLPManager contract is to manage all deposit and withdraw functions to Aave as well
  * as keeping a balanced treasury based on targeted weights of the VBT supported tokens.
  *
+ * The BalanceMetadata struct not only helps organize similar values, but it also prevents a 'stack too deep' error.
+ *
  * @dev Within this contract is a purposeful difference between percentage and weight. Percentage is a token value out of
  * 100% of the total, weight decides how much influence a token should have on the total
  *
