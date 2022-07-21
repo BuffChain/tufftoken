@@ -8,7 +8,10 @@ import "./TuffOwner.sol";
 
 import {UniswapManagerLib} from "./UniswapManagerLib.sol";
 
+/// @notice Uniswap utility contract to help with token swaps. Based on these docs
+/// https://docs.uniswap.org/protocol/guides/swaps
 contract UniswapManager {
+    /// @dev functions with the onlyOwner modifier can only be called by the contract itself or the contract owner
     modifier onlyOwner() {
         TuffOwner(address(this)).requireOnlyOwner(msg.sender);
         _;
@@ -19,8 +22,12 @@ contract UniswapManager {
         return ss.isInit;
     }
 
-    //Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
-    // constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
+    /// @notice Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
+    /// constructors. We imitate a constructor with a one-time only function. This is called immediately after deployment
+    /// @dev modifier onlyOwner can only be called by the contract itself or the contract owner
+    /// @param _swapRouter swap router address
+    /// @param wethAddr WETH address
+    /// @param basePoolFee uniswap base pool fee
     function initUniswapManager(
         ISwapRouter _swapRouter,
         address wethAddr,
@@ -41,6 +48,7 @@ contract UniswapManager {
     /// @notice swapExactOutputSingle swaps a minimum possible amount of DAI for a fixed amount of WETH.
     /// @dev The calling address must approve this contract to spend its DAI for this function to succeed. As the amount of input DAI is variable,
     ///  the calling address will need to approve for a slightly higher amount, anticipating some variance.
+    /// @dev modifier onlyOwner can only be called by the contract itself or the contract owner
     /// @param amountIn The exact amount of `outputToken` to receive from the swap.
     /// @param amountOutMinimum: The lowest amount of `outputToken` we are willing to receive from spending the `amountIn` of `inputToken`
     ///     Ideally, use an oracle or other data source to choose a safer value for amountOutMinimum.
@@ -75,6 +83,7 @@ contract UniswapManager {
     /// @notice swapExactOutputSingle swaps a minimum possible amount of DAI for a fixed amount of WETH.
     /// @dev The calling address must approve this contract to spend its DAI for this function to succeed. As the amount of input DAI is variable,
     ///  the calling address will need to approve for a slightly higher amount, anticipating some variance.
+    /// @dev modifier onlyOwner can only be called by the contract itself or the contract owner
     /// @param amountOut The exact amount of WETH9 to receive from the swap.
     /// @param amountInMaximum The amount of DAI we are willing to spend to receive the specified amount of WETH9.
     /// @return amountIn The amount of DAI actually spent in the swap.
@@ -114,6 +123,7 @@ contract UniswapManager {
     }
 
     /// based on https://docs.uniswap.org/protocol/guides/swaps/multihop-swaps
+    /// @dev modifier onlyOwner can only be called by the contract itself or the contract owner
     function swapExactInputMultihop(
         address inputToken,
         address outputToken,

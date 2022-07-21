@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: agpl-3.0
 pragma solidity ^0.8.0;
 
+/// @notice storage lib for the TuffOwner contract.
 library TuffOwnerLib {
     //IMPORTANT: You must increment this string if you add a new variable to StateStorage that is not at the end
     string public constant NAMESPACE = "io.BuffChain.TuffToken.TuffOwnerLib.1";

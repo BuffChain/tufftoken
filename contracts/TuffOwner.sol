@@ -14,12 +14,15 @@ contract TuffOwner {
         return ss.isInit;
     }
 
+    /// @notice psuedo constructor
+    /// @param initialOwner contract initial owner
     function initTuffOwner(address initialOwner) public {
         //TokenOwner Already Initialized
         require(!isTuffOwnerInit(), "TOAI");
         _transferOwnership(initialOwner);
     }
 
+    /// @notice Emitted when ownership is transferred
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
 
     /**
