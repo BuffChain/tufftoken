@@ -47,7 +47,7 @@ describe("TuffKeeper", function() {
 
         expect(interval).to.equal(dayInSeconds, "interval should be 1 day.");
 
-        await assertUpkeep(setTokenMaturityInterval, getLastTokenMaturityTimestamp);
+        await assertUpkeep(setTokenMaturityInterval, getLastTokenMaturityTimestamp, "TokenMaturityUpkeepPerformed");
     });
 
     it("should perform upkeep on balancing assets", async () => {
@@ -60,7 +60,7 @@ describe("TuffKeeper", function() {
 
         expect(interval).to.equal(weekInSeconds, "interval should be 1 week.");
 
-        await assertUpkeep(setBalanceAssetsInterval, getLastBalanceAssetsTimestamp);
+        await assertUpkeep(setBalanceAssetsInterval, getLastBalanceAssetsTimestamp, "BalanceAssetsUpkeepPerformed");
 
     });
 
@@ -80,7 +80,8 @@ describe("TuffKeeper", function() {
         await tuffVBTDiamond.setBalanceAssetsInterval(newInterval);
     }
 
-    async function assertUpkeep(setInterval: (newInterval: number) => any, getTimestamp: () => Promise<BigNumber>) {
+    async function assertUpkeep(setInterval: (newInterval: number) => any, getTimestamp: () => Promise<BigNumber>,
+                                eventEmitted: string) {
         const startingTimeStamp = await getTimestamp();
 
         let [needed, performData] = await tuffVBTDiamond.checkUpkeep(randomBytes(0));
@@ -108,7 +109,14 @@ describe("TuffKeeper", function() {
 
         expect(needed).to.equal(true, "should need upkeep.");
 
-        await tuffVBTDiamond.performUpkeep(performData);
+        const upkeepTxResponse = await tuffVBTDiamond.performUpkeep(performData);
+        const upkeepTxReceipt = await upkeepTxResponse.wait();
+
+        const upkeepEvent = upkeepTxReceipt.events &&
+            upkeepTxReceipt.events.filter(event => event.event === eventEmitted);
+        expect(upkeepEvent);
+        // @ts-ignore
+        expect(upkeepEvent.length).to.equal(1);
 
         const endingTimestamp = await getTimestamp();
 
