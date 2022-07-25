@@ -1,7 +1,8 @@
 // SPDX-License-Identifier: agpl-3.0
 
 import * as fs from 'fs';
-import path from "path";
+import * as fse from 'fs-extra';
+import path from 'path';
 
 import '@nomiclabs/hardhat-ethers';
 import '@nomiclabs/hardhat-waffle';
@@ -304,19 +305,15 @@ subtask(TASK_DEPLOY_MAIN, async (taskArgs: TaskArguments, hre: HardhatRuntimeEnv
     return taskResult;
 });
 
-
-/**
- * This hooks into hardhat's compilation process to create a TuffToken npm package
- */
-subtask(TASK_COMPILE_SOLIDITY_LOG_COMPILATION_RESULT, async (taskArgs: TaskArguments, hre, runSuper) => {
-    const taskResult = await runSuper(taskArgs);
+async function buildABIModule(taskArgs: TaskArguments) {
     let contractAbisExport: string = "const abis = {\n";
     let tuffContracts: string[] = [];
 
-    const abisFile = path.join("artifacts", "abis.js");
+    const abisFile = path.join("artifacts", "abis.ts");
     await fs.promises.access(abisFile, fs.constants.F_OK)
         .then(() => fs.unlinkSync(abisFile))
-        .catch(() => {})
+        .catch(() => {
+        })
         .finally(async function() {
             await fs.promises.writeFile(abisFile, "// SPDX-License-Identifier: agpl-3.0\n");
         });
@@ -328,7 +325,6 @@ subtask(TASK_COMPILE_SOLIDITY_LOG_COMPILATION_RESULT, async (taskArgs: TaskArgum
                 const contractName = path.parse(contractFile.absolutePath).name;
                 const contractAbiPath = path.join(contractFile.sourceName, `${contractName}.json`);
 
-                console.log(`Writing import for [${contractFile.sourceName}]`);
                 await fs.promises.appendFile(abisFile, `const ${contractName}Abi = require("./${contractAbiPath}").abi;\n`);
 
                 contractAbisExport = contractAbisExport.concat(`\t${contractName}: ${contractName}Abi,\n`);
@@ -342,6 +338,29 @@ subtask(TASK_COMPILE_SOLIDITY_LOG_COMPILATION_RESULT, async (taskArgs: TaskArgum
         "export default abis;\n");
 
     await fs.promises.appendFile(abisFile, contractAbisExport);
+
+    console.log(`Created ABI module in artifacts`);
+}
+
+async function copyTypesModule() {
+    const srcDir = path.join("src", "types");
+    const destDir = path.join("artifacts", "types");
+
+    fse.copySync(srcDir, destDir, {
+        overwrite: true
+    });
+
+    console.log(`Copied contract typings to artifacts`);
+}
+
+/**
+ * This hooks into hardhat's compilation process to create a TuffToken npm package
+ */
+subtask(TASK_COMPILE_SOLIDITY_LOG_COMPILATION_RESULT, async (taskArgs: TaskArguments, hre, runSuper) => {
+    const taskResult = await runSuper(taskArgs);
+
+    await buildABIModule(taskArgs);
+    await copyTypesModule();
 
     return taskResult;
 });
