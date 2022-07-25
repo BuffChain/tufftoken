@@ -2,11 +2,24 @@
 
 ## AaveLPManagerLib
 
+
+storage lib for the AaveLPManager contract.
+
+
+
+
+
 ### NAMESPACE
 
 ```solidity
 string NAMESPACE
 ```
+
+
+
+
+
+
 
 ### POSITION
 
@@ -14,7 +27,20 @@ string NAMESPACE
 bytes32 POSITION
 ```
 
+
+
+
+
+
+
 ### StateStorage
+
+
+
+
+
+
+
 
 ```solidity
 struct StateStorage {
@@ -24,17 +50,25 @@ struct StateStorage {
   address lpProviderAddr;
   address protocolDataProviderAddr;
   address wethAddr;
+  uint24 balanceBufferPercent;
   uint256 totalTargetWeight;
+  uint24 decimalPrecision;
 }
 ```
 
 ### TokenMetadata
 
+
+
+
+
+
+
+
 ```solidity
 struct TokenMetadata {
-  uint256 targetPercent;
-  uint256 actualPercent;
-  address aToken;
+  address chainlinkEthTokenAggrAddr;
+  uint256 targetWeight;
 }
 ```
 
@@ -43,4 +77,11 @@ struct TokenMetadata {
 ```solidity
 function getState() internal pure returns (struct AaveLPManagerLib.StateStorage stateStorage)
 ```
+
+
+
+
+
+
+
 

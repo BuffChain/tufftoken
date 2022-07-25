@@ -9,9 +9,8 @@ import "@openzeppelin/contracts/governance/extensions/GovernorTimelockControl.so
 import "@openzeppelin/contracts/token/ERC20/extensions/ERC20Votes.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-/**
- * Implementation of openzepplin governance https://docs.openzeppelin.com/contracts/4.x/governance#governor
- */
+/// @notice This is the core governance contract that will be used to manage proposals and voting.
+/// @dev Implementation of openzepplin governance https://docs.openzeppelin.com/contracts/4.x/governance#governor.
 contract TuffGovernor is
     Governor,
     GovernorCompatibilityBravo,
@@ -24,45 +23,61 @@ contract TuffGovernor is
     uint256 private _votingPeriod;
     uint256 private _proposalThreshold;
 
+    /// @notice The Governor implementation uses GovernorVotesQuorumFraction which works together with ERC20Votes to
+    /// define quorum as a percentage of the total supply at the block a proposal's voting power is retrieved (4%).
+    /// @dev Quorum Fraction is set to 4%.
+    /// @param _token The underlying ERC20 token with voting capabilities.
+    /// @param _timelock Allows users to exit the system if they disagree with a decision before it is executed.
     constructor(ERC20Votes _token, TimelockController _timelock)
         Governor("TuffGovernor")
         GovernorVotes(_token)
-        // GovernorVotesQuorumFraction which works together with ERC20Votes to define quorum as a percentage of
-        // the total supply at the block a proposal’s voting power is retrieved. (4%)
         GovernorVotesQuorumFraction(4)
         GovernorTimelockControl(_timelock)
     {
-        _votingDelay = 6575; // 1 day
-        _votingPeriod = 46027; // 1 week
-        _proposalThreshold = 1; // how much voting power is needed to create a proposal
+        _votingDelay = 6575;
+        _votingPeriod = 46027;
+        _proposalThreshold = 1;
     }
 
+    /// @inheritdoc IGovernor
     function votingDelay() public view override returns (uint256) {
         return _votingDelay;
     }
 
+    /// @notice Set voting delay.
+    /// @dev Voting Delay is initially set to 1 day.
+    /// @param delay The amount of delay after a proposal is created before it can be voted on.
     function setVotingDelay(uint256 delay) public onlyOwner {
         _votingDelay = delay;
     }
 
+    /// @inheritdoc IGovernor
     function votingPeriod() public view override returns (uint256) {
         return _votingPeriod;
     }
 
+    /// @notice Set voting period.
+    /// @dev Voting Period is initially set to 1 week.
+    /// @param period The amount of time a proposal can be voted on.
     function setVotingPeriod(uint256 period) public onlyOwner {
         _votingPeriod = period;
     }
 
+    /// @inheritdoc Governor
     function proposalThreshold() public view override returns (uint256) {
         return _proposalThreshold;
     }
 
+    /// @notice Set proposal threshold.
+    /// @dev Threshold is initially set to 1.
+    /// @param threshold How much voting power is needed to create a proposal.
     function setProposalThreshold(uint256 threshold) public onlyOwner {
         _proposalThreshold = threshold;
     }
 
-    // The functions below are overrides required by Solidity.
-
+    /// @notice Minimum number of cast voted required for a proposal to be successful.
+    /// @param blockNumber quorum at specified block number
+    /// @inheritdoc GovernorVotesQuorumFraction
     function quorum(uint256 blockNumber)
         public
         view
@@ -72,6 +87,8 @@ contract TuffGovernor is
         return super.quorum(blockNumber);
     }
 
+    /// @notice Get votes for an account given a specific block number
+    /// @inheritdoc IGovernor
     function getVotes(address account, uint256 blockNumber)
         public
         view
@@ -81,6 +98,8 @@ contract TuffGovernor is
         return super.getVotes(account, blockNumber);
     }
 
+    /// @notice Current state of a proposal, following Compound's convention
+    /// @inheritdoc GovernorTimelockControl
     function state(uint256 proposalId)
         public
         view
@@ -90,6 +109,8 @@ contract TuffGovernor is
         return super.state(proposalId);
     }
 
+    /// @notice Create a proposal
+    /// @inheritdoc IGovernor
     function propose(
         address[] memory targets,
         uint256[] memory values,
@@ -99,6 +120,8 @@ contract TuffGovernor is
         return super.propose(targets, values, calldatas, description);
     }
 
+    /// @notice Overridden execute function that run the already queued proposal through the timelock.
+    /// @inheritdoc Governor
     function _execute(
         uint256 proposalId,
         address[] memory targets,
@@ -109,6 +132,8 @@ contract TuffGovernor is
         super._execute(proposalId, targets, values, calldatas, descriptionHash);
     }
 
+    /// @notice Overridden version of the {Governor-_cancel} function to cancel the timelocked proposal if it as already been queued.
+    /// @inheritdoc Governor
     function _cancel(
         address[] memory targets,
         uint256[] memory values,
@@ -118,10 +143,12 @@ contract TuffGovernor is
         return super._cancel(targets, values, calldatas, descriptionHash);
     }
 
+    /// @inheritdoc GovernorTimelockControl
     function _executor() internal view override(Governor, GovernorTimelockControl) returns (address) {
         return super._executor();
     }
 
+    /// @inheritdoc GovernorTimelockControl
     function supportsInterface(bytes4 interfaceId)
         public
         view
@@ -131,6 +158,7 @@ contract TuffGovernor is
         return super.supportsInterface(interfaceId);
     }
 
+    /// @notice propose wrapper call
     function doPropose(
         address[] memory targets,
         uint256[] memory values,
@@ -140,6 +168,7 @@ contract TuffGovernor is
         return propose(targets, values, calldatas, description);
     }
 
+    /// @notice queue wrapper call
     function doQueue(
         address[] memory targets,
         uint256[] memory values,
@@ -149,6 +178,7 @@ contract TuffGovernor is
         return super.queue(targets, values, calldatas, descriptionHash);
     }
 
+    /// @notice execute wrapper call
     function doExecute(
         address[] memory targets,
         uint256[] memory values,

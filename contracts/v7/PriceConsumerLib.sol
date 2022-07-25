@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: agpl-3.0
 pragma solidity >=0.7.0;
 
+/// @notice storage lib for the PriceConsumer contract.
 library PriceConsumerLib {
     //IMPORTANT: You must increment this string if you add a new variable to StateStorage that is not at the end
     string public constant NAMESPACE = "io.BuffChain.TuffToken.PriceConsumerLib.1";

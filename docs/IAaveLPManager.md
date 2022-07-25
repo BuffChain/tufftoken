@@ -2,11 +2,24 @@
 
 ## IAaveLPManager
 
+
+AaveLPManager interface used for cross solidity versions (v6 - v8)
+
+
+
+
+
 ### getAllAaveSupportedTokens
 
 ```solidity
 function getAllAaveSupportedTokens() external view returns (address[])
 ```
+
+
+
+
+
+
 
 ### liquidateAaveTreasury
 
@@ -14,9 +27,22 @@ function getAllAaveSupportedTokens() external view returns (address[])
 function liquidateAaveTreasury() external returns (bool)
 ```
 
+
+
+
+
+
+
 ### balanceAaveLendingPool
 
 ```solidity
 function balanceAaveLendingPool() external
 ```
+
+
+
+
+
+
+
 

@@ -1,6 +1,13 @@
 # Solidity API
 
-## UniswapPriceConsumerLib
+## PriceConsumerLib
+
+
+storage lib for the PriceConsumer contract.
+
+
+
+
 
 ### NAMESPACE
 
@@ -8,13 +15,32 @@
 string NAMESPACE
 ```
 
+
+
+
+
+
+
 ### POSITION
 
 ```solidity
 bytes32 POSITION
 ```
 
+
+
+
+
+
+
 ### StateStorage
+
+
+
+
+
+
+
 
 ```solidity
 struct StateStorage {
@@ -26,10 +52,24 @@ struct StateStorage {
 ### getState
 
 ```solidity
-function getState() internal pure returns (struct UniswapPriceConsumerLib.StateStorage stateStorage)
+function getState() internal pure returns (struct PriceConsumerLib.StateStorage stateStorage)
 ```
 
-## UniswapPriceConsumerLib
+
+
+
+
+
+
+
+## PriceConsumerLib
+
+
+storage lib for the PriceConsumer contract.
+
+
+
+
 
 ### NAMESPACE
 
@@ -37,13 +77,32 @@ function getState() internal pure returns (struct UniswapPriceConsumerLib.StateS
 string NAMESPACE
 ```
 
+
+
+
+
+
+
 ### POSITION
 
 ```solidity
 bytes32 POSITION
 ```
 
+
+
+
+
+
+
 ### StateStorage
+
+
+
+
+
+
+
 
 ```solidity
 struct StateStorage {
@@ -55,6 +114,13 @@ struct StateStorage {
 ### getState
 
 ```solidity
-function getState() internal pure returns (struct UniswapPriceConsumerLib.StateStorage stateStorage)
+function getState() internal pure returns (struct PriceConsumerLib.StateStorage stateStorage)
 ```
+
+
+
+
+
+
+
 

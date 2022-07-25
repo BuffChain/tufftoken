@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: agpl-3.0
 pragma solidity ^0.8.0;
 
+/// @notice storage lib for the TokenMaturity contract.
 library TokenMaturityLib {
     //IMPORTANT: You must increment this string if you add a new variable to StateStorage that is not at the end
     string public constant NAMESPACE = "io.BuffChain.TuffToken.TokenMaturityLib.1";
@@ -12,9 +13,9 @@ library TokenMaturityLib {
         mapping(address => uint256) ownersRedemptionBalances;
         uint256 contractMaturityTimestamp;
         bool isTreasuryLiquidated;
-        //        Should be set to TUFF total supply when token reaches maturity. Intentionally separate state variable so
-        //        that tokens burned during redemption do not impact other redemption amounts.
-        //        redemption amount = contract eth balance * holder TUFF balance / total supply for redemption
+        ///        Should be set to TUFF total supply when token reaches maturity. Intentionally separate state variable so
+        ///        that tokens burned during redemption do not impact other redemption amounts.
+        ///        redemption amount = contract eth balance * holder TUFF balance / total supply for redemption
         uint256 totalSupplyForRedemption;
         uint256 startingEthBalance;
     }
