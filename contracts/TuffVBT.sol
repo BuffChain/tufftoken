@@ -404,7 +404,6 @@ contract TuffVBT is Context, IERC20 {
             ss.balances[ss.daoWalletAddress] = ss.balances[ss.daoWalletAddress].add(daoFeeAmount);
             emit Transfer(from, ss.daoWalletAddress, daoFeeAmount);
         }
-
     }
 
     /**
