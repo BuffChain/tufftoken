@@ -328,32 +328,39 @@ describe("TuffVBT", function() {
     it("should send token correctly on behalf of other account", async () => {
         const amount = 1000;
 
-        // Setup sender account
-        const sender = owner.address;
-        await tuffVBTDiamond.includeInFee(sender);
-        expect(await tuffVBTDiamond.isExcludedFromFee(sender)).to.equal(false, "account should not be excluded from fee");
-        const senderStartingBalance = await tuffVBTDiamond.balanceOf(sender);
+        // Give owner account tokens to have transferred on their behalf
+        const testOwner = accounts[0]
+        const testOwnerAddress = testOwner.address;
+        await tuffVBTDiamond.transfer(testOwnerAddress, amount);
+        const ownerStartingBalance = await tuffVBTDiamond.balanceOf(testOwnerAddress);
+        expect(ownerStartingBalance).to.equal(amount);
+
+        // Setup spender account
+        const spender = accounts[1];
+        const spenderAddress = spender.address;
+        await tuffVBTDiamond.includeInFee(spenderAddress);
+        expect(await tuffVBTDiamond.isExcludedFromFee(spenderAddress)).to.equal(false, "account should not be excluded from fee");
 
         // Setup receiver account
-        const receiver = accounts[0].address;
+        const receiver = accounts[2].address;
         await tuffVBTDiamond.includeInFee(receiver);
         expect(await tuffVBTDiamond.isExcludedFromFee(receiver)).to.equal(false, "account should not be excluded from fee");
         const receiverStartingBalance = await tuffVBTDiamond.balanceOf(receiver);
         expect(receiverStartingBalance).to.equal(0);
 
-        // Send tokens on behalf of the sender
-        await tuffVBTDiamond.increaseAllowance(sender, amount);
-        await tuffVBTDiamond.transferFrom(sender, receiver, amount);
+        // Send tokens on behalf of the owner
+        await tuffVBTDiamond.connect(testOwner).increaseAllowance(spenderAddress, amount);
+        await tuffVBTDiamond.connect(spender).transferFrom(testOwnerAddress, receiver, amount);
 
         // Get ending balances after transaction
-        const senderEndingBalance = await tuffVBTDiamond.balanceOf(sender);
+        const ownerEndingBalance = await tuffVBTDiamond.balanceOf(testOwnerAddress);
         const receiverEndingBalance = await tuffVBTDiamond.balanceOf(receiver);
 
         // Get fees
         const { transferFeeAmount } = await getFees(amount, true);
 
         // Then determine if fees were properly taken
-        expect(senderEndingBalance).to.equal(senderStartingBalance.sub(amount), "Amount wasn't correctly taken from the sender");
+        expect(ownerEndingBalance).to.equal(ownerStartingBalance.sub(amount), "Amount wasn't correctly taken from the spender");
         expect(receiverEndingBalance).to.equal(receiverStartingBalance.add(amount).sub(transferFeeAmount), "Amount wasn't correctly sent to the receiver");
     });
 
