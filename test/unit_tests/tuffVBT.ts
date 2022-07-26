@@ -251,7 +251,6 @@ describe("TuffVBT", function() {
         const transferFeeAmount = await tuffVBTDiamond.calculateFee(amount, transferFee, takeFee);
         const daoFeeAmount = await tuffVBTDiamond.calculateFee(transferFeeAmount, daoFee, takeFee);
         const treasuryFeeAmount = transferFeeAmount.sub(daoFeeAmount);
-        console.log(amount, transferFeeAmount.toString(), treasuryFeeAmount.toString(), daoFeeAmount.toString())
         return {
             transferFeeAmount,
             treasuryFeeAmount,
@@ -261,8 +260,6 @@ describe("TuffVBT", function() {
 
     async function assetTransferBothIncludedInFee(sender: SignerWithAddress, receiver: SignerWithAddress,
                                                   amount: number, isTokenMatured: boolean) {
-        const contractStartingBalance = await tuffVBTDiamond.balanceOf(tuffVBTDiamond.address);
-        const daoWalletStartingBal = await tuffVBTDiamond.balanceOf(tuffDAOAddr);
 
         // Setup sender account
         await tuffVBTDiamond.includeInFee(sender.address);
@@ -277,6 +274,9 @@ describe("TuffVBT", function() {
         expect(await tuffVBTDiamond.isExcludedFromFee(receiver.address)).to.equal(false, "account should not be excluded from fee");
         const receiverStartingBalance = await tuffVBTDiamond.balanceOf(receiver.address);
         expect(receiverStartingBalance).to.equal(0);
+
+        const contractStartingBalance = await tuffVBTDiamond.balanceOf(tuffVBTDiamond.address);
+        const daoWalletStartingBal = await tuffVBTDiamond.balanceOf(tuffDAOAddr);
 
         // Make transaction from first account to second
         await tuffVBTDiamond.connect(sender).transfer(receiver.address, amount);
