@@ -174,6 +174,32 @@ gets the timestamp of the last time the balance assets function was performed
 | [0] | uint256 | lastBalanceAssetsTimestamp |
 
 
+### TokenMaturityUpkeepPerformed
+
+```solidity
+event TokenMaturityUpkeepPerformed()
+```
+
+
+
+_Emitted when the check to see if the token has matured has been performed_
+
+
+
+
+### BalanceAssetsUpkeepPerformed
+
+```solidity
+event BalanceAssetsUpkeepPerformed()
+```
+
+
+
+_Emitted when an attempt to balance the treasury is performed_
+
+
+
+
 ### isIntervalComplete
 
 ```solidity

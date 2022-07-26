@@ -17,11 +17,13 @@ import {task, extendEnvironment, HardhatUserConfig, subtask} from 'hardhat/confi
 import 'dotenv/config';
 import {HardhatNetworkConfig} from "hardhat/src/types/config";
 import {
+    CompilationJob,
     HardhatRuntimeEnvironment,
     RunSuperFunction,
     TaskArguments
 } from "hardhat/types";
 import 'solidity-docgen';
+import { TASK_COMPILE_SOLIDITY_LOG_COMPILATION_RESULT } from "hardhat/builtin-tasks/task-names";
 
 interface BackTestConfig {
     startBlockNumber: number
@@ -298,6 +300,48 @@ subtask(TASK_DEPLOY_MAIN, async (taskArgs: TaskArguments, hre: HardhatRuntimeEnv
         });
         await fs.promises.writeFile(manifestPath, content);
     }
+
+    return taskResult;
+});
+
+
+/**
+ * This hooks into hardhat's compilation process to create a TuffToken npm package
+ */
+subtask(TASK_COMPILE_SOLIDITY_LOG_COMPILATION_RESULT, async (taskArgs: TaskArguments, hre, runSuper) => {
+    const taskResult = await runSuper(taskArgs);
+    let contractAbisExport: string = "const abis = {\n";
+    let tuffContracts: string[] = [];
+
+    const abisFile = path.join("artifacts", "abis.js");
+    await fs.promises.access(abisFile, fs.constants.F_OK)
+        .then(() => fs.unlinkSync(abisFile))
+        .catch(() => {})
+        .finally(async function() {
+            await fs.promises.writeFile(abisFile, "// SPDX-License-Identifier: agpl-3.0\n");
+        });
+
+    for (let compilationJob of (taskArgs.compilationJobs as CompilationJob[])) {
+        for (let contractFile of compilationJob.getResolvedFiles()) {
+            // Our contracts' path start with "contracts/", while third-party/imported contracts do not
+            if (contractFile.sourceName.startsWith("contracts") && !tuffContracts.includes(contractFile.sourceName)) {
+                const contractName = path.parse(contractFile.absolutePath).name;
+                const contractAbiPath = path.join(contractFile.sourceName, `${contractName}.json`);
+
+                console.log(`Writing import for [${contractFile.sourceName}]`);
+                await fs.promises.appendFile(abisFile, `const ${contractName}Abi = require("./${contractAbiPath}").abi;\n`);
+
+                contractAbisExport = contractAbisExport.concat(`\t${contractName}: ${contractName}Abi,\n`);
+                tuffContracts.push(contractFile.sourceName);
+            }
+        }
+    }
+    contractAbisExport = contractAbisExport.concat(
+        "};\n" +
+        "\n" +
+        "export default abis;\n");
+
+    await fs.promises.appendFile(abisFile, contractAbisExport);
 
     return taskResult;
 });
