@@ -15,9 +15,9 @@ library TuffVBTLib {
         string name;
         string symbol;
         uint8 decimals;
-        uint256 farmFee;
-        uint256 devFee;
-        address devWalletAddress;
+        uint256 transferFee;
+        uint256 daoFee;
+        address daoWalletAddress;
         uint256 totalSupply;
     }
 

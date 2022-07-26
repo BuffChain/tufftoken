@@ -81,8 +81,8 @@ export function consts(constsKey: string) {
 export const TOKEN_NAME = 'TUFF VBT: DAI USDC USDT';
 export const TOKEN_SYMBOL = 'tDUU';
 export const TOKEN_DECIMALS = 18;
-export const TOKEN_FARM_FEE = 10;
-export const TOKEN_DEV_FEE = 1;
+export const TOKEN_TRANSFER_FEE = 1;
+export const TOKEN_DAO_FEE = 10;
 export const TOKEN_TOTAL_SUPPLY = 1000000000;
 
 export const TOKEN_DAYS_UNTIL_MATURITY = 6 * 365;

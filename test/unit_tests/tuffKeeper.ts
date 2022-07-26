@@ -132,7 +132,7 @@ describe("TuffKeeper", function() {
 
         await expectRevert(tuffVBTDiamond.setTokenMaturityInterval(2), "NO");
 
-        interval = await tuffVBTDiamond.getDevFee();
+        interval = await tuffVBTDiamond.getTokenMaturityInterval();
         expect(interval).to.equal(1, "interval should be left unchanged");
     });
 });

@@ -26,7 +26,7 @@ _functions with the onlyOwner modifier can only be called by the contract itself
 ### initTuffVBT
 
 ```solidity
-function initTuffVBT(address _initialOwner, string _name, string _symbol, uint8 _decimals, uint256 _farmFee, uint256 _devFee, address _devWalletAddress, uint256 _totalSupply) public
+function initTuffVBT(address _initialOwner, string _name, string _symbol, uint8 _decimals, uint256 _transferFee, uint256 _daoFee, address _daoWalletAddress, uint256 _totalSupply) public
 ```
 
 Basically a constructor, but the hardhat-deploy plugin does not support diamond contracts with facets that has
@@ -40,9 +40,9 @@ _modifier onlyOwner can only be called by the contract itself or the contract ow
 | _name | string | name of the token |
 | _symbol | string | symbol of the token |
 | _decimals | uint8 | decimals of the token |
-| _farmFee | uint256 | fee amount taken to build the treasury |
-| _devFee | uint256 | fee amount sent to dev team for continued development work |
-| _devWalletAddress | address | address to send the dev fees |
+| _transferFee | uint256 | fee amount taken to build the treasury and send back to the DAO |
+| _daoFee | uint256 | fee amount sent to dev team for continued development work |
+| _daoWalletAddress | address | address to send the collected dao fees |
 | _totalSupply | uint256 | total supply of the token |
 
 
@@ -107,10 +107,10 @@ returns the total supply of the token
 
 
 
-### getFarmFee
+### gettransferFee
 
 ```solidity
-function getFarmFee() public view returns (uint256)
+function gettransferFee() public view returns (uint256)
 ```
 
 returns the farm fee (treasury fee) of the token
@@ -119,10 +119,10 @@ returns the farm fee (treasury fee) of the token
 
 
 
-### setFarmFee
+### settransferFee
 
 ```solidity
-function setFarmFee(uint256 _farmFee) public
+function settransferFee(uint256 _transferFee) public
 ```
 
 used by contract owner to set the farm fee
@@ -132,10 +132,10 @@ _modifier onlyOwner can only be called by the contract itself or the contract ow
 
 
 
-### getDevFee
+### getDaoFee
 
 ```solidity
-function getDevFee() public view returns (uint256)
+function getDaoFee() public view returns (uint256)
 ```
 
 returns the dev fee of the token
@@ -144,10 +144,10 @@ returns the dev fee of the token
 
 
 
-### setDevFee
+### setDaoFee
 
 ```solidity
-function setDevFee(uint256 _devFee) public
+function setDaoFee(uint256 _daoFee) public
 ```
 
 used by contract owner to set the dev fee
@@ -157,10 +157,10 @@ _modifier onlyOwner can only be called by the contract itself or the contract ow
 
 
 
-### getDevWalletAddress
+### getDaoWalletAddress
 
 ```solidity
-function getDevWalletAddress() public view returns (address)
+function getDaoWalletAddress() public view returns (address)
 ```
 
 returns the dev wallet address of the token
@@ -169,10 +169,10 @@ returns the dev wallet address of the token
 
 
 
-### setDevWalletAddress
+### setDaoWalletAddress
 
 ```solidity
-function setDevWalletAddress(address _devWalletAddress) public
+function setDaoWalletAddress(address _daoWalletAddress) public
 ```
 
 used by contract owner to set the dev wallet address
