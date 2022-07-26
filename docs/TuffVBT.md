@@ -107,25 +107,25 @@ returns the total supply of the token
 
 
 
-### gettransferFee
+### getTransferFee
 
 ```solidity
-function gettransferFee() public view returns (uint256)
+function getTransferFee() public view returns (uint256)
 ```
 
-returns the farm fee (treasury fee) of the token
+returns the transfer fee (total treasury & dao fees) of the token
 
 
 
 
 
-### settransferFee
+### setTransferFee
 
 ```solidity
-function settransferFee(uint256 _transferFee) public
+function setTransferFee(uint256 _transferFee) public
 ```
 
-used by contract owner to set the farm fee
+used by contract owner to set the transfer fee
 
 _modifier onlyOwner can only be called by the contract itself or the contract owner_
 
@@ -138,7 +138,7 @@ _modifier onlyOwner can only be called by the contract itself or the contract ow
 function getDaoFee() public view returns (uint256)
 ```
 
-returns the dev fee of the token
+returns the dao fee of the token
 
 
 
@@ -150,7 +150,7 @@ returns the dev fee of the token
 function setDaoFee(uint256 _daoFee) public
 ```
 
-used by contract owner to set the dev fee
+used by contract owner to set the dao fee
 
 _modifier onlyOwner can only be called by the contract itself or the contract owner_
 
@@ -163,7 +163,7 @@ _modifier onlyOwner can only be called by the contract itself or the contract ow
 function getDaoWalletAddress() public view returns (address)
 ```
 
-returns the dev wallet address of the token
+returns the dao wallet address of the token
 
 
 
@@ -175,7 +175,7 @@ returns the dev wallet address of the token
 function setDaoWalletAddress(address _daoWalletAddress) public
 ```
 
-used by contract owner to set the dev wallet address
+used by contract owner to set the dao wallet address
 
 _modifier onlyOwner can only be called by the contract itself or the contract owner_
 
