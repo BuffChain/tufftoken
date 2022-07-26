@@ -9,7 +9,6 @@ import "@openzeppelin/contracts/utils/Address.sol";
 import {TuffVBTLib} from "./TuffVBTLib.sol";
 import "./TokenMaturity.sol";
 import "./TuffOwner.sol";
-import "hardhat/console.sol";
 
 /// @notice This contract is the implementation of a TuffVBT (volume bond token). It is an ERC20 token that takes fees
 /// upon transfer to help build up the treasury.
