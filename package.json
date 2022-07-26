@@ -1,6 +1,6 @@
 {
   "name": "@buffchain/tufftoken",
-  "version": "1.3.11",
+  "version": "1.3.12",
   "description": "TuffToken Smart Contract",
   "scripts": {
     "clean": "hardhat clean",
@@ -8,7 +8,7 @@
     "test": "hardhat test",
     "download_block_data": "hardhat download_block_data",
     "back_test": "hardhat test:backtest",
-    "node": "hardhat node --no-deploy",
+    "node": "hardhat node",
     "deploy_hardhat": "hardhat deploy",
     "deploy_kovan": "hardhat --network kovan deploy && hardhat --network kovan etherscan-verify",
     "deploy_rinkeby": "TODO: https://github.com/wighawag/hardhat-deploy/tree/master#how-to-deploy-contracts",
@@ -84,5 +84,9 @@
     "typechain": "^8.1.0",
     "typescript": "^4.7.3",
     "web3": "^1.7.3"
-  }
+  },
+  "files":[
+    "artifacts/",
+    "!artifacts/build-info/"
+  ]
 }

@@ -1,0 +1,30 @@
+name: Publish to NPM
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: '16'
+      - name: Install dependencies
+        run: npm install
+      - name: Compile Solidity and Typescript
+        run: |
+          npm run clean
+          npm run compile
+      - id: npm_publish
+        uses: JS-DevTools/npm-publish@v1
+        with:
+          access: "public"
+          dry-run: github.event.pull_request.merged == false
+          token: ${{ secrets.NPM_ACCESS_TOKEN }}
+      - if: steps.publish.outputs.type != 'none'
+        run: |
+          [[ "${{ steps.npm_publish.outputs.old-version }}" == "${{ steps.npm_publish.outputs.version }}" ]] && exit 1 || exit 0
