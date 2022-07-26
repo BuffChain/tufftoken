@@ -292,10 +292,8 @@ contract TuffVBT is Context, IERC20 {
         }
         uint256 fee = _amount.mul(feePercent).div(10**2);
 
-        if (fee <= 0) {
-            return 0;
-        }
-
+        //Insufficient Amount
+        require(fee > 0, "IA");
         return fee;
     }
 
@@ -335,6 +333,10 @@ contract TuffVBT is Context, IERC20 {
      * e.g. implement automatic token fees, slashing mechanisms, etc.
      *
      * Fees will be taken unless the address is excluded or if the token has reached maturity.
+     *
+     * DAO fee is taken as a part of the total transfer fee, not it's own independent fee. In other words, the DAO fee
+     * is a percentage of the transfer fee. If the transfer fee is 1%, and the DAO fee is 10%, 90% of the transfer fee
+     * amount is sent to the treasury while the remaining 10% is sent to the DAO.
      *
      * Emits a {Transfer} event.
      *

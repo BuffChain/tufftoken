@@ -326,7 +326,7 @@ describe("TuffVBT", function() {
     });
 
     it("should send token correctly on behalf of other account", async () => {
-        const amount = 100;
+        const amount = 1000;
 
         // Setup sender account
         const sender = owner.address;
