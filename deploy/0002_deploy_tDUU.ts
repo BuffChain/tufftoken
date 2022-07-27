@@ -3,17 +3,25 @@
 import hre from "hardhat";
 
 import {
-    consts, UNISWAP_POOL_BASE_FEE, TOKEN_NAME, TOKEN_SYMBOL, TOKEN_DECIMALS, TOKEN_FARM_FEE, TOKEN_DEV_FEE,
-    TOKEN_TOTAL_SUPPLY, TOKEN_DAYS_UNTIL_MATURITY, AAVE_BALANCE_BUFFER_PERCENTAGE
+    AAVE_BALANCE_BUFFER_PERCENTAGE,
+    consts,
+    TOKEN_DAO_FEE,
+    TOKEN_DAYS_UNTIL_MATURITY,
+    TOKEN_DECIMALS,
+    TOKEN_NAME,
+    TOKEN_SYMBOL,
+    TOKEN_TOTAL_SUPPLY,
+    TOKEN_TRANSFER_FEE,
+    UNISWAP_POOL_BASE_FEE
 } from "../utils/consts";
-import { log } from "../utils/deployment_helpers";
+import {log} from "../utils/deployment_helpers";
 
 module.exports.tags = ["v0002"];
 module.exports = async () => {
     log(`Deploying and initializing ${TOKEN_SYMBOL}`);
 
     const { deployments, getNamedAccounts } = hre;
-    const { deployer, contractOwner, buffChain } = await getNamedAccounts();
+    const { deployer, contractOwner, tuffDAO } = await getNamedAccounts();
     const contractOwnerAcct = await hre.ethers.getSigner(contractOwner);
 
     let tuffDUUDeployment = await deployments.diamond.deploy(TOKEN_SYMBOL, {
@@ -46,9 +54,9 @@ module.exports = async () => {
             TOKEN_NAME,
             TOKEN_SYMBOL,
             TOKEN_DECIMALS,
-            TOKEN_FARM_FEE,
-            TOKEN_DEV_FEE,
-            buffChain,
+            TOKEN_TRANSFER_FEE,
+            TOKEN_DAO_FEE,
+            tuffDAO,
             TOKEN_TOTAL_SUPPLY
         );
         log("Initialized TuffVBT: " + initTx.hash);
