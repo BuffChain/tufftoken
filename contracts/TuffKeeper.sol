@@ -103,6 +103,16 @@ contract TuffKeeper is KeeperCompatibleInterface {
         return ss.lastBalanceAssetsTimestamp;
     }
 
+    /**
+     * @dev Emitted when the check to see if the token has matured has been performed
+     */
+    event TokenMaturityUpkeepPerformed();
+
+    /**
+     * @dev Emitted when an attempt to balance the treasury is performed
+     */
+    event BalanceAssetsUpkeepPerformed();
+
     /// @notice checks if given timestamp completes an interval
     /// @param timestamp timestamp to check against the last execution and interval
     /// @param lastTimestamp the previous timestamp
@@ -138,6 +148,7 @@ contract TuffKeeper is KeeperCompatibleInterface {
                 tokenMaturity.onTokenMaturity();
             }
             setLastTokenMaturityTimestamp(block.timestamp);
+            emit TokenMaturityUpkeepPerformed();
         }
 
         if (
@@ -147,6 +158,7 @@ contract TuffKeeper is KeeperCompatibleInterface {
             IAaveLPManager aaveLPManager = IAaveLPManager(address(this));
             aaveLPManager.balanceAaveLendingPool();
             setLastBalanceAssetsTimestamp(block.timestamp);
+            emit BalanceAssetsUpkeepPerformed();
         }
     }
 }

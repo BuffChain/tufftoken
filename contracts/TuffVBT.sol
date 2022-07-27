@@ -30,18 +30,18 @@ contract TuffVBT is Context, IERC20 {
     /// @param _name name of the token
     /// @param _symbol symbol of the token
     /// @param _decimals decimals of the token
-    /// @param _farmFee fee amount taken to build the treasury
-    /// @param _devFee fee amount sent to dev team for continued development work
-    /// @param _devWalletAddress address to send the dev fees
+    /// @param _transferFee fee amount taken to build the treasury and send back to the DAO
+    /// @param _daoFee fee amount sent to dev team for continued development work
+    /// @param _daoWalletAddress address to send the collected dao fees
     /// @param _totalSupply total supply of the token
     function initTuffVBT(
         address _initialOwner,
         string memory _name,
         string memory _symbol,
         uint8 _decimals,
-        uint256 _farmFee,
-        uint256 _devFee,
-        address _devWalletAddress,
+        uint256 _transferFee,
+        uint256 _daoFee,
+        address _daoWalletAddress,
         uint256 _totalSupply
     ) public onlyOwner {
         //TuffVBT Already Initialized
@@ -52,9 +52,9 @@ contract TuffVBT is Context, IERC20 {
         ss.name = _name;
         ss.symbol = _symbol;
         ss.decimals = _decimals;
-        ss.farmFee = _farmFee;
-        ss.devFee = _devFee;
-        ss.devWalletAddress = _devWalletAddress;
+        ss.transferFee = _transferFee;
+        ss.daoFee = _daoFee;
+        ss.daoWalletAddress = _daoWalletAddress;
         ss.totalSupply = _totalSupply * 10**ss.decimals;
 
         //Set owner balancer and exclude from fees
@@ -93,43 +93,43 @@ contract TuffVBT is Context, IERC20 {
         return ss.totalSupply;
     }
 
-    /// @notice returns the farm fee (treasury fee) of the token
-    function getFarmFee() public view returns (uint256) {
+    /// @notice returns the transfer fee (total treasury & dao fees) of the token
+    function getTransferFee() public view returns (uint256) {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
-        return ss.farmFee;
+        return ss.transferFee;
     }
 
-    /// @notice used by contract owner to set the farm fee
+    /// @notice used by contract owner to set the transfer fee
     /// @dev modifier onlyOwner can only be called by the contract itself or the contract owner
-    function setFarmFee(uint256 _farmFee) public onlyOwner {
+    function setTransferFee(uint256 _transferFee) public onlyOwner {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
-        ss.farmFee = _farmFee;
+        ss.transferFee = _transferFee;
     }
 
-    /// @notice returns the dev fee of the token
-    function getDevFee() public view returns (uint256) {
+    /// @notice returns the dao fee of the token
+    function getDaoFee() public view returns (uint256) {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
-        return ss.devFee;
+        return ss.daoFee;
     }
 
-    /// @notice used by contract owner to set the dev fee
+    /// @notice used by contract owner to set the dao fee
     /// @dev modifier onlyOwner can only be called by the contract itself or the contract owner
-    function setDevFee(uint256 _devFee) public onlyOwner {
+    function setDaoFee(uint256 _daoFee) public onlyOwner {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
-        ss.devFee = _devFee;
+        ss.daoFee = _daoFee;
     }
 
-    /// @notice returns the dev wallet address of the token
-    function getDevWalletAddress() public view returns (address) {
+    /// @notice returns the dao wallet address of the token
+    function getDaoWalletAddress() public view returns (address) {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
-        return ss.devWalletAddress;
+        return ss.daoWalletAddress;
     }
 
-    /// @notice used by contract owner to set the dev wallet address
+    /// @notice used by contract owner to set the dao wallet address
     /// @dev modifier onlyOwner can only be called by the contract itself or the contract owner
-    function setDevWalletAddress(address _devWalletAddress) public onlyOwner {
+    function setDaoWalletAddress(address _daoWalletAddress) public onlyOwner {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
-        ss.devWalletAddress = _devWalletAddress;
+        ss.daoWalletAddress = _daoWalletAddress;
     }
 
     /// @notice get the balance of an address
@@ -290,6 +290,7 @@ contract TuffVBT is Context, IERC20 {
             return 0;
         }
         uint256 fee = _amount.mul(feePercent).div(10**2);
+
         //Insufficient Amount
         require(fee > 0, "IA");
         return fee;
@@ -332,6 +333,10 @@ contract TuffVBT is Context, IERC20 {
      *
      * Fees will be taken unless the address is excluded or if the token has reached maturity.
      *
+     * DAO fee is taken as a part of the total transfer fee, not it's own independent fee. In other words, the DAO fee
+     * is a percentage of the transfer fee. If the transfer fee is 1%, and the DAO fee is 10%, 90% of the transfer fee
+     * amount is sent to the treasury while the remaining 10% is sent to the DAO.
+     *
      * Emits a {Transfer} event.
      *
      * Requirements:
@@ -359,6 +364,7 @@ contract TuffVBT is Context, IERC20 {
         TuffVBTLib.StateStorage storage ss = TuffVBTLib.getState();
 
         uint256 fromBal = ss.balances[from];
+
         //Sender Missing Adequate Balance: Transfer amount must be greater than zero
         require(fromBal >= amount, "SMAB");
 
@@ -376,27 +382,28 @@ contract TuffVBT is Context, IERC20 {
             takeFee = false;
         }
 
-        uint256 farmFeeAmount = calculateFee(amount, ss.farmFee, takeFee);
-
-        uint256 devFeeAmount = 0;
-        if (ss.devFee != 0) {
-            devFeeAmount = calculateFee(amount, ss.devFee, takeFee);
+        uint256 transferFeeAmount = calculateFee(amount, ss.transferFee, takeFee);
+        uint256 treasuryFeeAmount = transferFeeAmount;
+        uint256 daoFeeAmount = 0;
+        if (ss.daoFee != 0) {
+            // takes the dao fee from the transfer fee amount
+            daoFeeAmount = calculateFee(transferFeeAmount, ss.daoFee, takeFee);
+            treasuryFeeAmount = treasuryFeeAmount.sub(daoFeeAmount);
         }
 
-        uint256 totalFeeAmount = farmFeeAmount.add(devFeeAmount);
-        uint256 transferAmount = amount.sub(totalFeeAmount);
+        uint256 transferAmount = amount.sub(transferFeeAmount);
 
         ss.balances[from] = fromBal.sub(amount);
         ss.balances[to] = ss.balances[to].add(transferAmount);
 
-        ss.balances[address(this)] = ss.balances[address(this)].add(farmFeeAmount);
+        ss.balances[address(this)] = ss.balances[address(this)].add(treasuryFeeAmount);
 
         emit Transfer(from, to, transferAmount);
-        emit Transfer(from, address(this), farmFeeAmount);
+        emit Transfer(from, address(this), treasuryFeeAmount);
 
-        if (devFeeAmount != 0) {
-            ss.balances[ss.devWalletAddress] = ss.balances[ss.devWalletAddress].add(devFeeAmount);
-            emit Transfer(from, ss.devWalletAddress, devFeeAmount);
+        if (daoFeeAmount != 0 && ss.daoWalletAddress != address(0)) {
+            ss.balances[ss.daoWalletAddress] = ss.balances[ss.daoWalletAddress].add(daoFeeAmount);
+            emit Transfer(from, ss.daoWalletAddress, daoFeeAmount);
         }
     }
 
